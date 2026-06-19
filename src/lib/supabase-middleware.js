@@ -30,6 +30,9 @@ export const updateSession = async (request) => {
           });
         },
       },
+      cookieOptions: {
+        name: 'lesmenu-auth-token',
+      },
     }
   );
 
@@ -57,6 +60,8 @@ export const updateSession = async (request) => {
     ) {
       url.pathname = '/login';
       url.searchParams.set('error', 'middleware_no_user');
+      url.searchParams.set('debug_url', process.env.NEXT_PUBLIC_SUPABASE_URL || 'missing');
+      url.searchParams.set('debug_key', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.substring(0, 12) + '...' : 'missing');
       return redirectWithCookies(url);
     }
   } else {
