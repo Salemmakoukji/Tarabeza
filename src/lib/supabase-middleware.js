@@ -56,9 +56,10 @@ export const updateSession = async (request) => {
       url.pathname = '/login';
       url.searchParams.set('error', 'middleware_no_user');
       url.searchParams.set('auth_error', userError?.message || 'no_error');
-      url.searchParams.set('debug_url', process.env.NEXT_PUBLIC_SUPABASE_URL || 'missing');
-      url.searchParams.set('debug_key', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.substring(0, 12) + '...' : 'missing');
-      url.searchParams.set('debug_cookies', request.cookies.getAll().map(c => c.name).join(','));
+      // Show cookie names with value lengths to detect truncation/chunking issues
+      const allCookies = request.cookies.getAll();
+      const cookieDebug = allCookies.map(c => `${c.name}(${c.value?.length || 0})`).join(',');
+      url.searchParams.set('debug_cookies', cookieDebug);
       return redirectWithCookies(url);
     }
   } else {
