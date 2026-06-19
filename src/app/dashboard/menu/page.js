@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { 
   Plus, Edit2, Trash2, Loader2, Image as ImageIcon, 
-  AlertCircle, FolderPlus, Utensils, Tag, Info, Check, Sparkles, Move, X, Copy
+  AlertCircle, FolderPlus, Utensils, Tag, Info, Check, Sparkles, Move, X, Copy,
+  Upload, Download
 } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 
@@ -19,6 +20,7 @@ export default function MenuPage() {
   const [submittingCategory, setSubmittingCategory] = useState(false);
   const [submittingItem, setSubmittingItem] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [importingCsv, setImportingCsv] = useState(false);
   
   // Stackable toasts
   const [toasts, setToasts] = useState([]);
@@ -478,6 +480,315 @@ export default function MenuPage() {
     }
   };
 
+  const parseCSV = (csvText) => {
+    const firstLine = csvText.split('\n')[0];
+    const commaCount = (firstLine.match(/,/g) || []).length;
+    const semiCount = (firstLine.match(/;/g) || []).length;
+    const separator = commaCount >= semiCount ? ',' : ';';
+
+    const rows = [];
+    let currentRow = [];
+    let currentField = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < csvText.length; i++) {
+      const char = csvText[i];
+      const nextChar = csvText[i + 1];
+
+      if (inQuotes) {
+        if (char === '"') {
+          if (nextChar === '"') {
+            currentField += '"';
+            i++;
+          } else {
+            inQuotes = false;
+          }
+        } else {
+          currentField += char;
+        }
+      } else {
+        if (char === '"') {
+          inQuotes = true;
+        } else if (char === separator) {
+          currentRow.push(currentField.trim());
+          currentField = '';
+        } else if (char === '\r' || char === '\n') {
+          if (char === '\r' && nextChar === '\n') {
+            i++;
+          }
+          currentRow.push(currentField.trim());
+          if (currentRow.some(field => field !== '')) {
+            rows.push(currentRow);
+          }
+          currentRow = [];
+          currentField = '';
+        } else {
+          currentField += char;
+        }
+      }
+    }
+    if (currentField || currentRow.length > 0) {
+      currentRow.push(currentField.trim());
+      if (currentRow.some(field => field !== '')) {
+        rows.push(currentRow);
+      }
+    }
+    return rows;
+  };
+
+  const downloadCSVTemplate = () => {
+    const headers = ['Category', 'Category_AR', 'Name', 'Name_AR', 'Description', 'Description_AR', 'Price', 'Available', 'Allergens', 'Badge'];
+    const rows = [
+      ['Starters', 'المقبلات', 'Truffle Fries', 'بطاطس بالتروفل', 'Crispy fries with truffle oil and parmesan', 'بطاطس مقلية مقرمشة بزيت الترفل والبارميزان', '8.50', 'true', 'Dairy,Gluten', 'bestseller'],
+      ['Starters', 'المقبلات', 'Margarita Pizza', 'بيتزا مارغريتا', 'Classic tomato and mozzarella pizza', 'بيتزا الطماطم والموزاريلا الكلاسيكية', '12.00', 'true', 'Dairy', 'new'],
+      ['Desserts', 'الحلويات', 'Chocolate Fondant', 'فوندان الشوكولاتة', 'Warm chocolate cake with chocolate lava center', 'كعكة الشوكولاتة الدافئة مع حشوة الشوكولاتة السائلة', '7.50', 'false', 'Dairy', 'chef']
+    ];
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(field => {
+        const clean = field.replace(/"/g, '""');
+        return clean.includes(',') || clean.includes('\n') || clean.includes('"') ? `"${clean}"` : clean;
+      }).join(','))
+    ].join('\n');
+
+    const bom = '\uFEFF';
+    const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'menu_import_template.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleCSVImport = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImportingCsv(true);
+    const reader = new FileReader();
+
+    reader.onload = async (evt) => {
+      try {
+        const text = evt.target.result;
+        const parsedRows = parseCSV(text);
+        if (parsedRows.length < 2) {
+          throw new Error('CSV file is empty or missing data rows.');
+        }
+
+        const headers = parsedRows[0];
+        const dataRows = parsedRows.slice(1);
+
+        const cleanHeaderMap = {
+          'category': 'category',
+          'القسم': 'category',
+          'الفئة': 'category',
+          'categoryar': 'category_ar',
+          'القسمبالعربية': 'category_ar',
+          'الفئةبالعربية': 'category_ar',
+          'name': 'name',
+          'الاسم': 'name',
+          'اسمالصنف': 'name',
+          'namear': 'name_ar',
+          'الاسمبالعربية': 'name_ar',
+          'description': 'description',
+          'الوصف': 'description',
+          'descriptionar': 'description_ar',
+          'الوصفبالعربية': 'description_ar',
+          'price': 'price',
+          'السعر': 'price',
+          'available': 'available',
+          'متوفر': 'available',
+          'allergens': 'allergens',
+          'مسبباتالحساسية': 'allergens',
+          'badge': 'badge',
+          'شارة': 'badge'
+        };
+
+        const colIndices = {};
+        headers.forEach((h, idx) => {
+          const cleanH = h.toLowerCase().trim().replace(/[\s_-]+/g, '');
+          const mappedKey = cleanHeaderMap[cleanH];
+          if (mappedKey) {
+            colIndices[mappedKey] = idx;
+          }
+        });
+
+        if (colIndices['category'] === undefined) {
+          throw new Error('Missing mandatory column: "Category" or "القسم"');
+        }
+        if (colIndices['name'] === undefined) {
+          throw new Error('Missing mandatory column: "Name" or "الاسم"');
+        }
+        if (colIndices['price'] === undefined) {
+          throw new Error('Missing mandatory column: "Price" or "السعر"');
+        }
+
+        const importedItems = [];
+        const uniqueCategorySet = new Set();
+        const categoryArMap = {};
+
+        dataRows.forEach((row, rowIndex) => {
+          const getValue = (key) => {
+            const idx = colIndices[key];
+            return idx !== undefined && row[idx] !== undefined ? row[idx].trim() : '';
+          };
+
+          const catName = getValue('category');
+          if (!catName) return;
+
+          const name = getValue('name');
+          const priceStr = getValue('price').replace(/[^0-9.]/g, '');
+          const price = parseFloat(priceStr);
+
+          if (!name || isNaN(price)) {
+            return;
+          }
+
+          uniqueCategorySet.add(catName);
+          const catNameAr = getValue('category_ar');
+          if (catNameAr && !categoryArMap[catName]) {
+            categoryArMap[catName] = catNameAr;
+          }
+
+          let available = true;
+          const avStr = getValue('available').toLowerCase();
+          if (avStr) {
+            const falsyValues = ['false', '0', 'no', 'n', 'لا', 'غير متوفر'];
+            if (falsyValues.includes(avStr)) {
+              available = false;
+            }
+          }
+
+          let allergens = [];
+          const algStr = getValue('allergens');
+          if (algStr) {
+            allergens = algStr.split(/[,;]/).map(a => a.trim()).filter(a => a.length > 0);
+          }
+
+          let badge = getValue('badge').toLowerCase();
+          const validBadges = ['chef', 'bestseller', 'new', 'popular', 'spicy'];
+          if (!validBadges.includes(badge)) {
+            badge = '';
+          }
+
+          importedItems.push({
+            categoryName: catName,
+            name,
+            name_ar: getValue('name_ar') || null,
+            description: getValue('description') || null,
+            description_ar: getValue('description_ar') || null,
+            price,
+            available,
+            allergens,
+            badge: badge || null,
+            csvRowIndex: rowIndex
+          });
+        });
+
+        if (importedItems.length === 0) {
+          throw new Error('No valid items could be parsed from the CSV file.');
+        }
+
+        const updatedCategories = [...categories];
+        const categoryNameToIdMap = {};
+
+        updatedCategories.forEach(cat => {
+          categoryNameToIdMap[cat.name.toLowerCase()] = cat.id;
+        });
+
+        const missingCategoriesToInsert = [];
+        Array.from(uniqueCategorySet).forEach((catName) => {
+          if (!categoryNameToIdMap[catName.toLowerCase()]) {
+            missingCategoriesToInsert.push({
+              restaurant_id: profile.id,
+              name: catName,
+              name_ar: categoryArMap[catName] || null,
+              order_index: updatedCategories.length + missingCategoriesToInsert.length
+            });
+          }
+        });
+
+        if (missingCategoriesToInsert.length > 0) {
+          const { data: insertedCats, error: catInsertError } = await supabase
+            .from('categories')
+            .insert(missingCategoriesToInsert)
+            .select();
+
+          if (catInsertError) throw catInsertError;
+          if (insertedCats) {
+            insertedCats.forEach(newCat => {
+              updatedCategories.push(newCat);
+              categoryNameToIdMap[newCat.name.toLowerCase()] = newCat.id;
+            });
+            setCategories(updatedCategories);
+          }
+        }
+
+        const maxOrderIndexByCat = {};
+        menuItems.forEach(item => {
+          const catId = item.category_id;
+          maxOrderIndexByCat[catId] = Math.max(maxOrderIndexByCat[catId] || -1, item.order_index);
+        });
+
+        const newItemsToInsert = importedItems.map(item => {
+          const catId = categoryNameToIdMap[item.categoryName.toLowerCase()];
+          if (maxOrderIndexByCat[catId] === undefined) {
+            maxOrderIndexByCat[catId] = -1;
+          }
+          const nextIndex = ++maxOrderIndexByCat[catId];
+          return {
+            restaurant_id: profile.id,
+            category_id: catId,
+            name: item.name,
+            name_ar: item.name_ar,
+            description: item.description,
+            description_ar: item.description_ar,
+            price: item.price,
+            available: item.available,
+            allergens: item.allergens,
+            badge: item.badge,
+            order_index: nextIndex
+          };
+        });
+
+        const { data: insertedItems, error: itemsInsertError } = await supabase
+          .from('menu_items')
+          .insert(newItemsToInsert)
+          .select();
+
+        if (itemsInsertError) throw itemsInsertError;
+
+        if (insertedItems) {
+          const newItemsList = [...menuItems, ...insertedItems];
+          setMenuItems(newItemsList);
+
+          if (!selectedCategoryId && updatedCategories.length > 0) {
+            setSelectedCategoryId(updatedCategories[0].id);
+          }
+        }
+
+        showNotification('success', `Imported successfully! Created ${missingCategoriesToInsert.length} new categories and ${newItemsToInsert.length} menu items.`);
+      } catch (err) {
+        showNotification('error', `Failed to import CSV: ${err.message}`);
+      } finally {
+        setImportingCsv(false);
+        e.target.value = '';
+      }
+    };
+
+    reader.onerror = () => {
+      showNotification('error', 'Error reading CSV file.');
+      setImportingCsv(false);
+      e.target.value = '';
+    };
+
+    reader.readAsText(file);
+  };
+
   const activeCategory = categories.find(c => c.id === selectedCategoryId);
   const activeItems = menuItems
     .filter(item => item.category_id === selectedCategoryId)
@@ -493,13 +804,40 @@ export default function MenuPage() {
 
   return (
     <div className="space-y-6">
+      <input
+        type="file"
+        id="csv-import-input"
+        accept=".csv"
+        onChange={handleCSVImport}
+        className="hidden"
+      />
+
       {/* Page Heading */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Menu Builder</h1>
           <p className="text-slate-500 text-sm">Drag and drop categories or items to reorder them in real time.</p>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 flex-wrap gap-2">
+          <button
+            onClick={downloadCSVTemplate}
+            className="inline-flex items-center space-x-1.5 border border-slate-200 hover:border-amber-500 hover:text-amber-600 bg-white text-slate-700 py-2.5 px-4 rounded-xl text-sm font-bold transition-all shadow-sm"
+          >
+            <Download className="h-4 w-4 text-amber-500" />
+            <span>Download Template</span>
+          </button>
+          <button
+            onClick={() => document.getElementById('csv-import-input').click()}
+            disabled={importingCsv}
+            className="inline-flex items-center space-x-1.5 border border-slate-200 hover:border-emerald-500 hover:text-emerald-600 bg-white text-slate-700 py-2.5 px-4 rounded-xl text-sm font-bold transition-all shadow-sm disabled:opacity-50"
+          >
+            {importingCsv ? (
+              <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
+            ) : (
+              <Upload className="h-4 w-4 text-emerald-500" />
+            )}
+            <span>{importingCsv ? 'Importing...' : 'Import CSV'}</span>
+          </button>
           <button
             onClick={openAddCategory}
             className="inline-flex items-center space-x-1.5 border border-slate-200 hover:border-orange-500 hover:text-orange-500 bg-white text-slate-700 py-2.5 px-4 rounded-xl text-sm font-bold transition-all shadow-sm"
@@ -558,12 +896,33 @@ export default function MenuPage() {
             <Utensils className="h-6 w-6" />
           </div>
           <h3 className="text-lg font-bold text-slate-800 mb-1.5">No Menu Categories Yet</h3>
-          <p className="text-slate-400 text-sm max-w-sm mb-6">Create your first category to start building your restaurant menu.</p>
-          <button
-            onClick={openAddCategory}
-            className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-md transition-all active:scale-[0.98]"
+          <p className="text-slate-400 text-sm max-w-sm mb-6">Create your first category or import your menu from a CSV spreadsheet to get started.</p>
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <button
+              onClick={openAddCategory}
+              className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-md transition-all active:scale-[0.98]"
+            >
+              Create Category
+            </button>
+            <button
+              onClick={() => document.getElementById('csv-import-input').click()}
+              disabled={importingCsv}
+              className="bg-white border border-slate-200 hover:border-emerald-500 hover:text-emerald-500 text-slate-700 font-bold py-2.5 px-5 rounded-xl text-sm shadow-sm transition-all active:scale-[0.98] inline-flex items-center space-x-1.5 disabled:opacity-50"
+            >
+              {importingCsv ? (
+                <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
+              ) : (
+                <Upload className="h-4 w-4 text-emerald-500" />
+              )}
+              <span>Import CSV Menu</span>
+            </button>
+          </div>
+          <button 
+            type="button"
+            onClick={downloadCSVTemplate}
+            className="mt-4 text-xs font-semibold text-slate-400 hover:text-orange-500 underline transition-all"
           >
-            Create Category
+            Download CSV Import Template
           </button>
         </div>
       ) : (
@@ -626,6 +985,16 @@ export default function MenuPage() {
               <Info className="h-3.5 w-3.5 text-slate-300 shrink-0 mt-0.5" />
               <span>Drag categories to reorder them in the customer-facing menu.</span>
             </p>
+            <div className="mt-4 pt-4 border-t border-slate-100 px-2">
+              <button
+                type="button"
+                onClick={downloadCSVTemplate}
+                className="w-full inline-flex items-center justify-center space-x-1.5 py-2 px-3 border border-dashed border-slate-200 hover:border-orange-500 hover:text-orange-500 text-slate-500 rounded-xl text-xs font-semibold transition-all bg-slate-50/50 hover:bg-orange-50/30"
+              >
+                <Download className="h-3.5 w-3.5 text-orange-500" />
+                <span>CSV Import Template</span>
+              </button>
+            </div>
           </div>
 
           {/* Items Display Panel */}
