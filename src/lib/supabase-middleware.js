@@ -3,7 +3,9 @@ import { NextResponse } from 'next/server';
 
 export const updateSession = async (request) => {
   let response = NextResponse.next({
-    request,
+    request: {
+      headers: request.headers,
+    },
   });
 
   const supabase = createServerClient(
@@ -19,7 +21,9 @@ export const updateSession = async (request) => {
             request.cookies.set(name, value);
           });
           response = NextResponse.next({
-            request,
+            request: {
+              headers: request.headers,
+            },
           });
           cookiesToSet.forEach(({ name, value, options }) => {
             response.cookies.set(name, value, options);
@@ -35,6 +39,15 @@ export const updateSession = async (request) => {
   const url = request.nextUrl.clone();
   const role = user?.user_metadata?.role || 'merchant';
 
+  // Helper to redirect while keeping updated cookies
+  const redirectWithCookies = (targetUrl) => {
+    const redirectResponse = NextResponse.redirect(targetUrl);
+    response.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie.name, cookie.value, cookie.options);
+    });
+    return redirectResponse;
+  };
+
   if (!user) {
     // If not logged in and accessing protected pages, redirect to login
     if (
@@ -43,7 +56,7 @@ export const updateSession = async (request) => {
       url.pathname.startsWith('/customer/dashboard')
     ) {
       url.pathname = '/login';
-      return NextResponse.redirect(url);
+      return redirectWithCookies(url);
     }
   } else {
     // If logged in
@@ -56,7 +69,7 @@ export const updateSession = async (request) => {
         url.pathname.startsWith('/register')
       ) {
         url.pathname = '/customer/dashboard';
-        return NextResponse.redirect(url);
+        return redirectWithCookies(url);
       }
     } else {
       // Merchants should only access merchant dashboard, redirect if diner dashboard or auth pages
@@ -66,7 +79,7 @@ export const updateSession = async (request) => {
         url.pathname.startsWith('/register')
       ) {
         url.pathname = '/dashboard';
-        return NextResponse.redirect(url);
+        return redirectWithCookies(url);
       }
     }
   }
