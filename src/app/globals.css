@@ -135,3 +135,7 @@
 [dir="rtl"] *:not(code):not(pre):not(kbd):not(samp):not(.font-mono) {
   font-family: var(--font-cairo), sans-serif !important;
 }
+
+html {
+  scroll-behavior: smooth;
+}

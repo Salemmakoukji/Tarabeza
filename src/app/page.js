@@ -449,7 +449,7 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works Section */}
-      <section className="bg-slate-950 border-t border-slate-900 py-20 lg:py-28 px-6">
+      <section id="how-it-works" className="bg-slate-950 border-t border-slate-900 py-20 lg:py-28 px-6">
         <div className="max-w-7xl mx-auto space-y-16">
           <div className="text-center max-w-xl mx-auto space-y-4">
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight bg-gradient-to-b from-white to-slate-400 bg-clip-text text-transparent">
@@ -492,7 +492,7 @@ export default function LandingPage() {
       </section>
 
       {/* Features Grid */}
-      <section className="bg-slate-950 border-t border-slate-900 py-20 lg:py-28 px-6">
+      <section id="features" className="bg-slate-950 border-t border-slate-900 py-20 lg:py-28 px-6">
         <div className="max-w-7xl mx-auto space-y-16">
           <div className="text-center max-w-xl mx-auto space-y-4">
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight bg-gradient-to-b from-white to-slate-400 bg-clip-text text-transparent">
@@ -523,7 +523,7 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing Section */}
-      <section className="bg-slate-950 border-t border-slate-900 py-20 lg:py-28 px-6 relative">
+      <section id="pricing" className="bg-slate-950 border-t border-slate-900 py-20 lg:py-28 px-6 relative">
         <div className="max-w-7xl mx-auto space-y-16">
           <div className="text-center max-w-xl mx-auto space-y-4">
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight bg-gradient-to-b from-white to-slate-400 bg-clip-text text-transparent">
@@ -643,25 +643,25 @@ export default function LandingPage() {
             <h4 className="text-white text-xs font-bold uppercase tracking-wider mb-4">{t.product}</h4>
             <ul className="space-y-2 text-xs text-slate-500">
               <li><Link href="/restaurants" className="hover:text-orange-400 transition-colors">{t.exploreDirectory}</Link></li>
-              <li><a href="#" className="hover:text-orange-400 transition-colors">{t.featuresTitle}</a></li>
-              <li><a href="#" className="hover:text-orange-400 transition-colors">{t.pricingTitle}</a></li>
+              <li><Link href="#features" className="hover:text-orange-400 transition-colors">{t.featuresTitle}</Link></li>
+              <li><Link href="#pricing" className="hover:text-orange-400 transition-colors">{t.pricingTitle}</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="text-white text-xs font-bold uppercase tracking-wider mb-4">{t.company}</h4>
             <ul className="space-y-2 text-xs text-slate-500">
-              <li><a href="#" className="hover:text-orange-400 transition-colors">{t.about}</a></li>
-              <li><a href="#" className="hover:text-orange-400 transition-colors">{t.careers}</a></li>
-              <li><a href="#" className="hover:text-orange-400 transition-colors">{t.contact}</a></li>
+              <li><Link href="/about" className="hover:text-orange-400 transition-colors">{t.about}</Link></li>
+              <li><Link href="/careers" className="hover:text-orange-400 transition-colors">{t.careers}</Link></li>
+              <li><Link href="/contact" className="hover:text-orange-400 transition-colors">{t.contact}</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="text-white text-xs font-bold uppercase tracking-wider mb-4">{t.legal}</h4>
             <ul className="space-y-2 text-xs text-slate-500">
-              <li><a href="#" className="hover:text-orange-400 transition-colors">{t.terms}</a></li>
-              <li><a href="#" className="hover:text-orange-400 transition-colors">{t.privacy}</a></li>
+              <li><Link href="/terms" className="hover:text-orange-400 transition-colors">{t.terms}</Link></li>
+              <li><Link href="/privacy" className="hover:text-orange-400 transition-colors">{t.privacy}</Link></li>
             </ul>
           </div>
         </div>
