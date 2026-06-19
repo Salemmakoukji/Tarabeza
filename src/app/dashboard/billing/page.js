@@ -7,12 +7,10 @@ export const dynamic = 'force-dynamic';
 export default async function BillingPage() {
   const supabase = await createClient();
 
-  // Use getSession() — the middleware already validated the user via getUser()
-  const { data: { session } } = await supabase.auth.getSession();
-  const user = session?.user;
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect('/login?from=billing');
+  if (userError || !user) {
+    redirect('/login');
   }
 
   // Fetch the restaurant profile

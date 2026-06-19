@@ -29,10 +29,11 @@ export const updateSession = async (request) => {
     }
   );
 
-  // IMPORTANT: Do NOT call supabase.auth.getSession() here.
-  // Use getUser() instead — it sends a request to the Supabase Auth server
-  // to revalidate the Auth token, while getSession does not.
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  // Use getSession() to read the session from the cookie locally.
+  // This avoids network calls from the Edge Runtime which can fail.
+  // The layout/page will use getUser() for full server-side validation when needed.
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
 
   const url = request.nextUrl.clone();
   const role = user?.user_metadata?.role || 'merchant';
@@ -54,7 +55,6 @@ export const updateSession = async (request) => {
       url.pathname.startsWith('/customer/dashboard')
     ) {
       url.pathname = '/login';
-      url.searchParams.set('from', 'middleware');
       return redirectWithCookies(url);
     }
   } else {
@@ -68,7 +68,6 @@ export const updateSession = async (request) => {
         url.pathname.startsWith('/register')
       ) {
         url.pathname = '/customer/dashboard';
-        url.searchParams.set('error', 'middleware_customer_role_mismatch');
         return redirectWithCookies(url);
       }
     } else {
