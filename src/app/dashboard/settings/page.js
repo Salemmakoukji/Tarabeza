@@ -42,7 +42,14 @@ export default function SettingsPage() {
   const [description, setDescription] = useState('');
   const [templateId, setTemplateId] = useState('classic-dark');
   const [themeId, setThemeId] = useState('obsidian-dark');
+  const [styleId, setStyleId] = useState('modern-minimalist');
+  const [headerStyle, setHeaderStyle] = useState('centered-overlap');
+  const [colorBg, setColorBg] = useState('#0f172a');
+  const [colorText, setColorText] = useState('#f8fafc');
+  const [colorCardBg, setColorCardBg] = useState('#1e293b');
+  const [colorCardText, setColorCardText] = useState('#f8fafc');
   const [origin, setOrigin] = useState('');
+
 
   // Wi-Fi fields
   const [wifiSsid, setWifiSsid] = useState('');
@@ -100,6 +107,13 @@ export default function SettingsPage() {
           setDescription(data.description || '');
           setTemplateId(data.template_id || 'classic-dark');
           setThemeId(data.theme_id || 'obsidian-dark');
+          setStyleId(data.style_id || 'modern-minimalist');
+          setHeaderStyle(data.header_style || 'centered-overlap');
+          setColorBg(data.color_bg || '#0f172a');
+          setColorText(data.color_text || '#f8fafc');
+          setColorCardBg(data.color_card_bg || '#1e293b');
+          setColorCardText(data.color_card_text || '#f8fafc');
+
           setCurrency(data.currency || 'USD');
           setPromoBannerActive(data.promo_banner_active || false);
           setPromoBannerText(data.promo_banner_text || '');
@@ -232,7 +246,14 @@ export default function SettingsPage() {
         description,
         template_id: templateId,
         theme_id: themeId,
+        style_id: styleId,
+        header_style: headerStyle,
+        color_bg: colorBg,
+        color_text: colorText,
+        color_card_bg: colorCardBg,
+        color_card_text: colorCardText,
         currency,
+
         promo_banner_active: promoBannerActive,
         promo_banner_text: promoBannerText,
         promo_banner_text_ar: promoBannerTextAr,
@@ -480,31 +501,24 @@ export default function SettingsPage() {
 
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
-                Menu Layout & Style Theme
+                Menu Layout Templates
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
                   {
                     id: 'classic-dark',
-                    name: 'Classic Rows (Obsidian Dark)',
-                    desc: 'Single-column horizontal row cards (image next to text) with modern neon glows. Best for late-night spots, bars, and premium lounges.',
+                    name: 'Classic Rows',
+                    desc: 'Single-column horizontal row cards (image next to text) with modern border lines. Best for general dining spots and lounges.',
                     bg: 'bg-slate-950',
                     accent: '#f97316',
                     preview: (
-                      <div className="h-20 w-full rounded-lg bg-gradient-to-tr from-slate-950 via-slate-900 to-indigo-950 p-2 flex flex-col justify-between border border-slate-800">
+                      <div className="h-20 w-full rounded-lg bg-gradient-to-tr from-slate-950 via-slate-900 to-indigo-955 p-2 flex flex-col justify-between border border-slate-800">
                         <div className="flex justify-between items-center">
                           <span className="h-1.5 w-10 bg-slate-800 rounded"></span>
                           <span className="h-2 w-2 rounded-full bg-orange-500"></span>
                         </div>
                         <div className="space-y-1.5">
-                          <div className="h-6 w-full rounded bg-slate-900/60 border border-slate-800 flex items-center justify-between p-1">
-                            <div className="flex items-center space-x-1 gap-1">
-                              <span className="h-4 w-4 bg-slate-800 rounded shrink-0"></span>
-                              <span className="h-1 w-8 bg-slate-700 rounded"></span>
-                            </div>
-                            <span className="h-1 w-2 bg-orange-500 rounded"></span>
-                          </div>
-                          <div className="h-6 w-full rounded bg-slate-900/60 border border-slate-800 flex items-center justify-between p-1">
+                          <div className="h-6 w-full rounded bg-slate-900/60 border border-slate-850 flex items-center justify-between p-1">
                             <div className="flex items-center space-x-1 gap-1">
                               <span className="h-4 w-4 bg-slate-800 rounded shrink-0"></span>
                               <span className="h-1 w-8 bg-slate-700 rounded"></span>
@@ -517,30 +531,20 @@ export default function SettingsPage() {
                   },
                   {
                     id: 'modern-light',
-                    name: '2-Column Grid (Clean Light)',
-                    desc: 'Visual 2-column stacked card grid with prominent top images. Perfect for dessert shops, coffee spots, and visually rich menus.',
-                    bg: 'bg-slate-50',
+                    name: '2-Column Grid',
+                    desc: 'Visual 2-column stacked card grid with prominent top images. Perfect for dessert shops and coffee spots.',
+                    bg: 'bg-slate-5',
                     accent: '#10b981',
                     preview: (
                       <div className="h-20 w-full rounded-lg bg-gradient-to-tr from-slate-50 to-slate-100 p-2 flex flex-col justify-between border border-slate-200">
-                        <div className="flex justify-between items-center">
-                          <span className="h-1.5 w-10 bg-slate-300 rounded"></span>
-                          <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-1.5">
+                        <div className="grid grid-cols-2 gap-1.5 pt-4">
                           <div className="h-11 rounded bg-white border border-slate-200 shadow-sm flex flex-col p-1 gap-1">
                             <span className="h-3 w-full bg-slate-200 rounded shrink-0"></span>
-                            <div className="flex justify-between items-center">
-                              <span className="h-1 w-5 bg-slate-400 rounded"></span>
-                              <span className="h-1 w-2 bg-emerald-500 rounded"></span>
-                            </div>
+                            <span className="h-1 w-5 bg-slate-400 rounded"></span>
                           </div>
                           <div className="h-11 rounded bg-white border border-slate-200 shadow-sm flex flex-col p-1 gap-1">
                             <span className="h-3 w-full bg-slate-200 rounded shrink-0"></span>
-                            <div className="flex justify-between items-center">
-                              <span className="h-1 w-5 bg-slate-400 rounded"></span>
-                              <span className="h-1 w-2 bg-emerald-500 rounded"></span>
-                            </div>
+                            <span className="h-1 w-5 bg-slate-400 rounded"></span>
                           </div>
                         </div>
                       </div>
@@ -548,28 +552,20 @@ export default function SettingsPage() {
                   },
                   {
                     id: 'forest-bistro',
-                    name: 'Text Only List (Cozy Emerald)',
-                    desc: 'Elegant text-only list layout (no item images shown) with cozy warm gold serif details. Excellent for fine dining, wine collections, and bistros.',
+                    name: 'Text Only List',
+                    desc: 'Elegant text-only list layout (no item images shown) with dotted leaders. Excellent for fine dining and wine lists.',
                     bg: 'bg-emerald-950',
                     accent: '#fbbf24',
                     preview: (
                       <div className="h-20 w-full rounded-lg bg-gradient-to-tr from-emerald-950 to-slate-900 p-2 flex flex-col justify-between border border-emerald-900">
-                        <div className="flex justify-between items-center">
-                          <span className="h-1.5 w-10 bg-emerald-900 rounded"></span>
-                          <span className="h-2 w-2 rounded-full bg-amber-400"></span>
-                        </div>
-                        <div className="space-y-1 py-1">
+                        <div className="space-y-1 py-1 pt-4">
                           <div className="flex justify-between items-center border-b border-emerald-900/40 pb-1">
-                            <span className="h-1 w-12 bg-emerald-800 rounded"></span>
-                            <span className="h-1 w-3 bg-amber-400 rounded"></span>
+                            <span className="h-1.5 w-12 bg-emerald-800 rounded"></span>
+                            <span className="h-1.5 w-3 bg-amber-400 rounded"></span>
                           </div>
                           <div className="flex justify-between items-center border-b border-emerald-900/40 pb-1">
-                            <span className="h-1 w-12 bg-emerald-800 rounded"></span>
-                            <span className="h-1 w-3 bg-amber-400 rounded"></span>
-                          </div>
-                          <div className="flex justify-between items-center border-b border-emerald-900/40 pb-1">
-                            <span className="h-1 w-12 bg-emerald-800 rounded"></span>
-                            <span className="h-1 w-3 bg-amber-400 rounded"></span>
+                            <span className="h-1.5 w-12 bg-emerald-800 rounded"></span>
+                            <span className="h-1.5 w-3 bg-amber-400 rounded"></span>
                           </div>
                         </div>
                       </div>
@@ -577,24 +573,153 @@ export default function SettingsPage() {
                   },
                   {
                     id: 'retro-sunset',
-                    name: 'Spotlight Focus (Retro Crimson)',
-                    desc: 'Structural spotlight view where the first items are featured as large cards with full background photo overlays. Fits burger bars and pizzerias.',
+                    name: 'Spotlight Focus',
+                    desc: 'The first menu item in a category is highlighted as a large banner, followed by standard list items.',
                     bg: 'bg-amber-50',
                     accent: '#dc2626',
                     preview: (
-                      <div className="h-20 w-full rounded-lg bg-gradient-to-tr from-amber-50 to-orange-50/20 p-2 flex flex-col justify-between border border-slate-900">
-                        <div className="flex justify-between items-center">
-                          <span className="h-1.5 w-10 bg-slate-300 rounded"></span>
-                          <span className="h-2 w-2 rounded-full bg-red-600"></span>
-                        </div>
-                        <div className="space-y-1.5">
-                          <div className="h-7 w-full rounded bg-white border border-slate-900 flex items-end p-0.5 relative overflow-hidden">
-                            <div className="absolute inset-0 bg-red-600/10" />
-                            <span className="h-1 w-8 bg-slate-905 rounded relative z-10"></span>
+                      <div className="h-20 w-full rounded-lg bg-gradient-to-tr from-amber-50 to-orange-50/20 p-2 flex flex-col justify-between border border-slate-350">
+                        <div className="space-y-1">
+                          <div className="h-8 w-full rounded bg-white border border-slate-900 flex items-end p-0.5 relative overflow-hidden">
+                            <div className="absolute inset-0 bg-red-500/10" />
+                            <span className="h-1.5 w-8 bg-slate-900 rounded relative z-10"></span>
                           </div>
-                          <div className="h-5 w-full rounded bg-white border border-slate-900/60 flex items-center justify-between px-1">
+                          <div className="h-5 w-full rounded bg-white border border-slate-900/40 flex items-center justify-between px-1">
                             <span className="h-1 w-6 bg-slate-400 rounded"></span>
-                            <span className="h-1 w-2 bg-red-600 rounded"></span>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  },
+                  {
+                    id: 'minimalist-rows',
+                    name: 'Minimalist Rows',
+                    desc: 'Ultra-compact rows with small square thumbnails and no descriptions. Maximizes screen density.',
+                    bg: 'bg-slate-950',
+                    accent: '#06b6d4',
+                    preview: (
+                      <div className="h-20 w-full rounded-lg bg-slate-900 p-2 flex flex-col justify-center space-y-1 border border-slate-800">
+                        <div className="h-4 w-full rounded bg-slate-950 flex items-center justify-between px-1">
+                          <div className="flex items-center space-x-1 gap-1">
+                            <span className="h-2 w-2 bg-slate-850 rounded"></span>
+                            <span className="h-1 w-8 bg-slate-700 rounded"></span>
+                          </div>
+                          <span className="h-1 w-2 bg-cyan-500 rounded"></span>
+                        </div>
+                        <div className="h-4 w-full rounded bg-slate-955 flex items-center justify-between px-1">
+                          <div className="flex items-center space-x-1 gap-1">
+                            <span className="h-2 w-2 bg-slate-850 rounded"></span>
+                            <span className="h-1 w-8 bg-slate-700 rounded"></span>
+                          </div>
+                          <span className="h-1 w-2 bg-cyan-500 rounded"></span>
+                        </div>
+                      </div>
+                    )
+                  },
+                  {
+                    id: 'widescreen-cards',
+                    name: 'Widescreen Cards',
+                    desc: 'Cinematic widescreen landscape cards. Best for high-end signature dishes and chef creations.',
+                    bg: 'bg-slate-900',
+                    accent: '#eab308',
+                    preview: (
+                      <div className="h-20 w-full rounded-lg bg-slate-900 p-1.5 flex flex-col justify-center space-y-1 border border-slate-800">
+                        <div className="h-11 w-full rounded-md bg-slate-950 overflow-hidden relative border border-slate-850">
+                          <div className="h-6 w-full bg-slate-800"></div>
+                          <div className="p-1 flex justify-between">
+                            <span className="h-1 w-6 bg-slate-400 rounded"></span>
+                            <span className="h-1 w-3 bg-amber-400 rounded"></span>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  },
+                  {
+                    id: 'alternating-magazine',
+                    name: 'Alternating Rows',
+                    desc: 'Row layout that alternates photos between the left and right sides for a dynamic magazine feel.',
+                    bg: 'bg-slate-50',
+                    accent: '#8b5cf6',
+                    preview: (
+                      <div className="h-20 w-full rounded-lg bg-slate-50 p-2 flex flex-col justify-center space-y-1 border border-slate-200">
+                        <div className="h-6 w-full bg-white border border-slate-150 rounded flex p-0.5 gap-1.5">
+                          <span className="h-full w-4 bg-slate-200 rounded shrink-0"></span>
+                          <span className="h-1 w-8 bg-slate-400 rounded mt-0.5"></span>
+                        </div>
+                        <div className="h-6 w-full bg-white border border-slate-150 rounded flex p-0.5 gap-1.5 justify-between">
+                          <span className="h-1 w-8 bg-slate-400 rounded mt-0.5 ml-1"></span>
+                          <span className="h-full w-4 bg-slate-200 rounded shrink-0"></span>
+                        </div>
+                      </div>
+                    )
+                  },
+                  {
+                    id: 'three-column-gallery',
+                    name: '3-Column Gallery',
+                    desc: 'Denser 3-column photo grid layout for larger menus. Excellent for quick-service delis and bakeries.',
+                    bg: 'bg-slate-50',
+                    accent: '#ec4899',
+                    preview: (
+                      <div className="h-20 w-full rounded-lg bg-slate-50 p-1.5 flex flex-col justify-center border border-slate-200">
+                        <div className="grid grid-cols-3 gap-1 pt-1">
+                          <div className="h-12 rounded bg-white border border-slate-200 flex flex-col p-0.5 gap-0.5">
+                            <span className="h-5 w-full bg-slate-200 rounded shrink-0"></span>
+                            <span className="h-0.5 w-4 bg-slate-400 rounded"></span>
+                          </div>
+                          <div className="h-12 rounded bg-white border border-slate-200 flex flex-col p-0.5 gap-0.5">
+                            <span className="h-5 w-full bg-slate-200 rounded shrink-0"></span>
+                            <span className="h-0.5 w-4 bg-slate-400 rounded"></span>
+                          </div>
+                          <div className="h-12 rounded bg-white border border-slate-200 flex flex-col p-0.5 gap-0.5">
+                            <span className="h-5 w-full bg-slate-200 rounded shrink-0"></span>
+                            <span className="h-0.5 w-4 bg-slate-400 rounded"></span>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  },
+                  {
+                    id: 'dense-grid',
+                    name: 'Dense Grid',
+                    desc: '2-column stacked grid showing only photos, title and price (no descriptions). Clean and visual.',
+                    bg: 'bg-slate-900',
+                    accent: '#f43f5e',
+                    preview: (
+                      <div className="h-20 w-full rounded-lg bg-slate-900 p-2 flex flex-col justify-center border border-slate-800">
+                        <div className="grid grid-cols-2 gap-1 pt-1">
+                          <div className="h-12 rounded bg-slate-950 border border-slate-850 flex flex-col p-0.5 gap-0.5">
+                            <span className="h-7 w-full bg-slate-800 rounded shrink-0"></span>
+                            <span className="h-1 w-3 bg-red-400 rounded"></span>
+                          </div>
+                          <div className="h-12 rounded bg-slate-950 border border-slate-850 flex flex-col p-0.5 gap-0.5">
+                            <span className="h-7 w-full bg-slate-800 rounded shrink-0"></span>
+                            <span className="h-1 w-3 bg-red-400 rounded"></span>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  },
+                  {
+                    id: 'horizontal-swiper',
+                    name: 'Horizontal Swiper',
+                    desc: 'Categories display items in horizontal sliding rows. Patrons swipe right to explore dishes.',
+                    bg: 'bg-slate-950',
+                    accent: '#f97316',
+                    preview: (
+                      <div className="h-20 w-full rounded-lg bg-slate-950 p-2 flex flex-col justify-between border border-slate-900">
+                        <span className="h-1.5 w-8 bg-slate-800 rounded shrink-0"></span>
+                        <div className="flex gap-1 overflow-hidden">
+                          <div className="h-10 w-12 rounded bg-slate-900 border border-slate-800 shrink-0 p-0.5 flex flex-col justify-between">
+                            <span className="h-3 w-full bg-slate-850 rounded"></span>
+                            <span className="h-1 w-3 bg-orange-500 rounded"></span>
+                          </div>
+                          <div className="h-10 w-12 rounded bg-slate-900 border border-slate-800 shrink-0 p-0.5 flex flex-col justify-between">
+                            <span className="h-3 w-full bg-slate-850 rounded"></span>
+                            <span className="h-1 w-3 bg-orange-500 rounded"></span>
+                          </div>
+                          <div className="h-10 w-12 rounded bg-slate-900 border border-slate-800 shrink-0 p-0.5 flex flex-col justify-between">
+                            <span className="h-3 w-full bg-slate-850 rounded"></span>
+                            <span className="h-1 w-3 bg-orange-500 rounded"></span>
                           </div>
                         </div>
                       </div>
@@ -663,6 +788,50 @@ export default function SettingsPage() {
                     name: 'Crimson Retro',
                     desc: 'Classic off-white & red theme.',
                     colors: ['bg-[#fafaf9]', 'bg-white', 'bg-red-600']
+                  },
+                  {
+                    id: 'emerald-palace',
+                    name: 'Emerald Palace',
+                    desc: 'Luxury dark green & gold theme.',
+                    colors: ['bg-emerald-950', 'bg-[#064e3b]', 'bg-[#fbbf24]']
+                  },
+                  {
+                    id: 'rose-gold',
+                    name: 'Rose Gold',
+                    desc: 'Soft rose & pastel pink theme.',
+                    colors: ['bg-[#fff1f2]', 'bg-white', 'bg-[#f43f5e]']
+                  },
+                  {
+                    id: 'midnight-neon',
+                    name: 'Midnight Neon',
+                    desc: 'Cyberpunk black & fuchsia theme.',
+                    colors: ['bg-black', 'bg-slate-900', 'bg-fuchsia-500']
+                  },
+                  {
+                    id: 'nordic-frost',
+                    name: 'Nordic Frost',
+                    desc: 'Cool ice blue & deep navy theme.',
+                    colors: ['bg-[#f0f4f8]', 'bg-white', 'bg-[#0284c7]']
+                  },
+                  {
+                    id: 'chocolate-truffle',
+                    name: 'Chocolate Truffle',
+                    desc: 'Decadent cocoa & caramel theme.',
+                    colors: ['bg-[#271a15]', 'bg-[#3e2c24]', 'bg-[#d97706]']
+                  },
+                  {
+                    id: 'sunset-glow',
+                    name: 'Sunset Glow',
+                    desc: 'Terracotta & warm amber theme.',
+                    colors: ['bg-[#fff7ed]', 'bg-white', 'bg-[#ea580c]']
+                  },
+
+                  {
+                    id: 'custom',
+                    name: 'Custom Colors',
+                    desc: 'Design your own custom color scheme.',
+                    colors: [colorBg, colorCardBg, themeColor],
+                    isCustom: true
                   }
                 ].map((th) => {
                   const isSelected = themeId === th.id;
@@ -688,12 +857,187 @@ export default function SettingsPage() {
                       {/* Color dots preview */}
                       <div className="flex gap-1.5 mb-2 shrink-0">
                         {th.colors.map((c, idx) => (
-                          <span key={idx} className={`h-4 w-4 rounded-full border border-slate-200/50 shadow-inner ${c}`} />
+                          <span 
+                            key={idx} 
+                            className={`h-4 w-4 rounded-full border border-slate-200/50 shadow-inner ${th.isCustom ? '' : c}`}
+                            style={th.isCustom ? { backgroundColor: c } : undefined}
+                          />
                         ))}
                       </div>
 
                       <span className="font-bold text-xs text-slate-800 mb-0.5">{th.name}</span>
-                      <span className="text-slate-450 text-[10px] leading-tight line-clamp-2">{th.desc}</span>
+                      <span className="text-slate-455 text-[10px] leading-tight line-clamp-2">{th.desc}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {themeId === 'custom' && (
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-2 mb-2">
+                  <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Custom Color Theme Settings</h4>
+                  <span className="text-[10px] text-orange-500 font-semibold bg-orange-50 px-2 py-0.5 rounded-full">Color by Color</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 font-sans">
+                  {/* Page Background */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Page Background
+                    </label>
+                    <div className="flex items-center space-x-2.5 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 h-[38px] shadow-sm">
+                      <input
+                        type="color"
+                        value={colorBg}
+                        onChange={(e) => setColorBg(e.target.value)}
+                        className="h-6 w-9 border border-slate-200 rounded cursor-pointer"
+                      />
+                      <span className="text-[10px] font-mono text-slate-600">
+                        {colorBg.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                  {/* Primary Text */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Primary Text
+                    </label>
+                    <div className="flex items-center space-x-2.5 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 h-[38px] shadow-sm">
+                      <input
+                        type="color"
+                        value={colorText}
+                        onChange={(e) => setColorText(e.target.value)}
+                        className="h-6 w-9 border border-slate-200 rounded cursor-pointer"
+                      />
+                      <span className="text-[10px] font-mono text-slate-600">
+                        {colorText.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                  {/* Card Background */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Card Background
+                    </label>
+                    <div className="flex items-center space-x-2.5 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 h-[38px] shadow-sm">
+                      <input
+                        type="color"
+                        value={colorCardBg}
+                        onChange={(e) => setColorCardBg(e.target.value)}
+                        className="h-6 w-9 border border-slate-200 rounded cursor-pointer"
+                      />
+                      <span className="text-[10px] font-mono text-slate-600">
+                        {colorCardBg.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                  {/* Card Text */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Card Text Color
+                    </label>
+                    <div className="flex items-center space-x-2.5 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 h-[38px] shadow-sm">
+                      <input
+                        type="color"
+                        value={colorCardText}
+                        onChange={(e) => setColorCardText(e.target.value)}
+                        className="h-6 w-9 border border-slate-200 rounded cursor-pointer"
+                      />
+                      <span className="text-[10px] font-mono text-slate-600">
+                        {colorCardText.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-400 leading-normal font-sans">
+                  *Tip: The menu accent points (buttons, prices, and highlighted tabs) use your saved <strong>Brand Accent Color</strong> (customizable under Business Information above).
+                </p>
+              </div>
+            )}
+
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+                Menu Typography & Style Preset
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                {[
+                  { id: 'modern-minimalist', name: 'Modern Minimalist', desc: 'Clean sans-serif, borderless, soft curves.' },
+                  { id: 'classic-serif', name: 'Classic Serif', desc: 'Elegant serif headers and traditional lines.' },
+                  { id: 'neo-brutalism', name: 'Neo-Brutalism', desc: 'Thick black strokes and high-contrast blocky shadows.' },
+                  { id: 'pill-rounded', name: 'Pill Rounded', desc: 'Max curved buttons and pill-shaped elements.' },
+                  { id: 'glassmorphism', name: 'Glassmorphic', desc: 'Semi-transparent frosted glass cards.' },
+                  { id: 'vintage-newspaper', name: 'Vintage Newspaper', desc: 'Retro monospace type and newspaper double borders.' },
+                  { id: 'clean-borderless', name: 'Clean Borderless', desc: 'Minimal flat panels, borderless, zero shadows.' },
+                  { id: 'elegant-gold-rim', name: 'Royal Gold Rim', desc: 'Thin gold line framing for premium dining.' },
+                  { id: 'soft-float', name: 'Soft Hover Float', desc: 'Gently elevated shadows with lift transitions.' },
+                  { id: 'cyber-grid', name: 'Cyberpunk Grid', desc: 'Glowing dashed neon outlines and terminal fonts.' }
+                ].map((st) => {
+                  const isSelected = styleId === st.id;
+                  return (
+                    <button
+                      key={st.id}
+                      type="button"
+                      onClick={() => setStyleId(st.id)}
+                      className={`flex flex-col text-left p-3 rounded-2xl border transition-all relative overflow-hidden group ${isSelected
+                        ? 'border-orange-500 ring-2 ring-orange-500/10 bg-orange-50/5'
+                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-55 bg-white'
+                        }`}
+                    >
+                      {/* Check indicator */}
+                      {isSelected && (
+                        <span className="absolute top-2 right-2 bg-orange-500 text-white rounded-full p-0.5 z-10">
+                          <svg className="h-2.5 w-2.5 fill-current" viewBox="0 0 20 20">
+                            <path d="M0 11l2-2 5 5L18 3l2 2L7 18z" />
+                          </svg>
+                        </span>
+                      )}
+
+                      <span className="font-bold text-xs text-slate-800 mb-1 line-clamp-1">{st.name}</span>
+                      <span className="text-slate-455 text-[10px] leading-tight line-clamp-3">{st.desc}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+                Menu Header (First Section) Style
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                {[
+                  { id: 'centered-overlap', name: 'Centered Overlap', desc: 'Cover image banner on top, centered profile logo overlapping, centered text.' },
+                  { id: 'inline-clean', name: 'Inline Left-Aligned', desc: 'Thin banner, logo next to title on the left, left-aligned layout.' },
+                  { id: 'glassy-hero', name: 'Glassy Hero Card', desc: 'Full-screen cover backdrop, logo and info centered inside floating frosted glass panel.' },
+                  { id: 'minimalist-flat', name: 'Flat Minimalist', desc: 'Zero cover banner. Clean flat row with a circular logo next to title.' },
+                  { id: 'split-magazine', name: 'Split Columns', desc: 'Magazine layout: cover image on the left side, brand details on the right.' },
+                  { id: 'banner-neon', name: 'Neon Cyberpunk', desc: 'Futuristic terminal theme: glowing neon borders, dark backdrop, monospace font.' },
+                  { id: 'newspaper-retro', name: 'Newspaper Vintage', desc: 'Retro monochrome layout: double black border outlines, grayscale styling.' },
+                  { id: 'royal-gold', name: 'Royal Gold Rim', desc: 'Luxury layout: thin gold border frame, elegant gold typography accents, dark gold-etched panel.' }
+                ].map((hs) => {
+                  const isSelected = headerStyle === hs.id;
+                  return (
+                    <button
+                      key={hs.id}
+                      type="button"
+                      onClick={() => setHeaderStyle(hs.id)}
+                      className={`flex flex-col text-left p-3 rounded-2xl border transition-all relative overflow-hidden group ${isSelected
+                        ? 'border-orange-500 ring-2 ring-orange-500/10 bg-orange-50/5'
+                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-55 bg-white'
+                        }`}
+                    >
+                      {/* Check indicator */}
+                      {isSelected && (
+                        <span className="absolute top-2 right-2 bg-orange-500 text-white rounded-full p-0.5 z-10">
+                          <svg className="h-2.5 w-2.5 fill-current" viewBox="0 0 20 20">
+                            <path d="M0 11l2-2 5 5L18 3l2 2L7 18z" />
+                          </svg>
+                        </span>
+                      )}
+
+                      <span className="font-bold text-xs text-slate-800 mb-1 line-clamp-1">{hs.name}</span>
+                      <span className="text-slate-455 text-[10px] leading-tight line-clamp-3">{hs.desc}</span>
                     </button>
                   );
                 })}

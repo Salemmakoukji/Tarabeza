@@ -3,9 +3,7 @@ import { NextResponse } from 'next/server';
 
 export const updateSession = async (request) => {
   let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
+    request,
   });
 
   const supabase = createServerClient(
@@ -21,9 +19,7 @@ export const updateSession = async (request) => {
             request.cookies.set({ name, value, ...options });
           });
           response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
+            request,
           });
           cookiesToSet.forEach(({ name, value, options }) => {
             response.cookies.set({ name, value, ...options });

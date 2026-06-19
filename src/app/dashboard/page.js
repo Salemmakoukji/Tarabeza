@@ -18,6 +18,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [ratings, setRatings] = useState([]);
   const [categoryDistribution, setCategoryDistribution] = useState([]);
+  const [scansCount, setScansCount] = useState(0);
+  const [weeklyViews, setWeeklyViews] = useState([]);
 
   useEffect(() => {
     async function loadStats() {
@@ -35,8 +37,8 @@ export default function DashboardPage() {
         setProfile(profileData);
 
         if (profileData) {
-          // 2. Fetch counts, categories and ratings in parallel
-          const [catRes, itemsRes, ratingsRes] = await Promise.all([
+          // 2. Fetch counts, categories, ratings, and scans in parallel
+          const [catRes, itemsRes, ratingsRes, scansRes] = await Promise.all([
             supabase
               .from('categories')
               .select('id, name')
@@ -48,16 +50,22 @@ export default function DashboardPage() {
             supabase
               .from('ratings')
               .select('*')
+              .eq('restaurant_id', profileData.id),
+            supabase
+              .from('scans_log')
+              .select('scanned_at')
               .eq('restaurant_id', profileData.id)
           ]);
 
           const catList = catRes.data || [];
           const itemsList = itemsRes.data || [];
           const ratingsList = ratingsRes.data || [];
+          const scansList = scansRes?.data || [];
 
           setCategoriesCount(catList.length);
           setItemsCount(itemsList.length);
           setRatings(ratingsList);
+          setScansCount(scansList.length);
 
           // Calculate category weight distribution
           const catMap = {};
@@ -71,6 +79,31 @@ export default function DashboardPage() {
           });
           const distribution = Object.values(catMap).sort((a, b) => b.count - a.count);
           setCategoryDistribution(distribution);
+
+          // Calculate scans per day for the last 7 days
+          const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+          const last7Days = [];
+          for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const dateStr = d.toDateString();
+            const dayName = daysOfWeek[d.getDay()];
+            last7Days.push({
+              dateStr,
+              day: dayName,
+              count: 0
+            });
+          }
+
+          scansList.forEach(scan => {
+            if (!scan.scanned_at) return;
+            const scanDateStr = new Date(scan.scanned_at).toDateString();
+            const matchingDay = last7Days.find(item => item.dateStr === scanDateStr);
+            if (matchingDay) {
+              matchingDay.count += 1;
+            }
+          });
+          setWeeklyViews(last7Days);
 
           // 3. Generate QR code
           const fullMenuUrl = `${window.location.origin}/menu/${profileData.slug}`;
@@ -121,16 +154,7 @@ export default function DashboardPage() {
     return { stars, count, percentage };
   });
 
-  const weeklyViewsSim = [
-    { day: 'Mon', count: 184 },
-    { day: 'Tue', count: 215 },
-    { day: 'Wed', count: 198 },
-    { day: 'Thu', count: 245 },
-    { day: 'Fri', count: 320 },
-    { day: 'Sat', count: 350 },
-    { day: 'Sun', count: 290 },
-  ];
-
+  const maxScans = Math.max(...weeklyViews.map(v => v.count), 1);
   const totalItemsCount = itemsCount || 1;
   const publicLink = profile ? `${window.location.origin}/menu/${profile.slug}` : '';
 
@@ -197,7 +221,7 @@ export default function DashboardPage() {
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Menu Views</span>
-            <h3 className="text-2xl font-black text-slate-800 mt-1">1,248</h3>
+            <h3 className="text-2xl font-black text-slate-800 mt-1">{scansCount}</h3>
           </div>
           <div className="h-12 w-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 shadow-inner">
             <Eye className="h-6 w-6" />
@@ -293,18 +317,18 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-end justify-between h-36 pt-4 px-2 border-b border-slate-100">
-            {weeklyViewsSim.map((view) => {
-              const heightPercent = (view.count / 380) * 100;
+            {weeklyViews.map((view) => {
+              const heightPercent = (view.count / maxScans) * 100;
               return (
-                <div key={view.day} className="flex flex-col items-center flex-1 group relative">
+                <div key={view.dateStr} className="flex flex-col items-center flex-1 group relative">
                   {/* Tooltip */}
                   <div className="absolute bottom-full mb-2 bg-slate-900 text-white text-[10px] font-bold py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-md z-10 whitespace-nowrap">
                     {view.count} scans
                   </div>
                   {/* Bar */}
                   <div 
-                    className="w-7 sm:w-10 bg-indigo-500/10 hover:bg-indigo-500 rounded-t-lg transition-all duration-300 relative overflow-hidden group-hover:shadow-[0_0_8px_rgba(99,102,241,0.4)] cursor-pointer"
-                    style={{ height: `${heightPercent}%` }}
+                    className="w-7 sm:w-10 bg-indigo-500/10 hover:bg-indigo-500 rounded-t-lg transition-all duration-300 relative overflow-hidden group-hover:shadow-[0_0_8px_rgba(99,102,241,0.4)] cursor-pointer animate-fade-in"
+                    style={{ height: view.count > 0 ? `${heightPercent}%` : '4px' }}
                   >
                     <div className="absolute bottom-0 inset-x-0 bg-indigo-500 h-full origin-bottom transform scale-y-[0.8] group-hover:scale-y-[1.0] transition-transform duration-300" />
                   </div>

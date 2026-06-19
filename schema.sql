@@ -359,7 +359,15 @@ begin
 end;
 $$ language plpgsql security definer;
 
+-- Migration for style_id
+ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS style_id text DEFAULT 'modern-minimalist';
 
+-- Migration for header_style
+ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS header_style text DEFAULT 'centered-overlap';
 
-
+-- Migration for custom color themes (color by color)
+ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS color_bg text DEFAULT '#0f172a';
+ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS color_text text DEFAULT '#f8fafc';
+ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS color_card_bg text DEFAULT '#1e293b';
+ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS color_card_text text DEFAULT '#f8fafc';
 
