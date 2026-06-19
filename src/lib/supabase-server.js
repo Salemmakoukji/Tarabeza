@@ -1,11 +1,9 @@
 import { createServerClient } from '@supabase/ssr';
-import { cookies, headers } from 'next/headers';
+import { cookies } from 'next/headers';
 
 export const createClient = async () => {
   const cookieStore = await cookies();
-  const headersList = await headers();
-  const xForwardedProto = headersList.get('x-forwarded-proto');
-  const isHttps = xForwardedProto === 'https';
+  const isProd = process.env.NODE_ENV === 'production';
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://gijgxturrhglkucpgdnp.supabase.co',
@@ -23,7 +21,7 @@ export const createClient = async () => {
                 value,
                 ...options,
                 httpOnly: false,
-                secure: isHttps,
+                secure: isProd,
                 sameSite: 'lax',
                 path: '/',
               });
@@ -37,7 +35,7 @@ export const createClient = async () => {
       },
       cookieOptions: {
         httpOnly: false,
-        secure: isHttps,
+        secure: isProd,
         sameSite: 'lax',
         path: '/',
       }

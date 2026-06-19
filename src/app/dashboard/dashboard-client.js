@@ -23,6 +23,13 @@ export default function DashboardClient({
   const [categoryDistribution, setCategoryDistribution] = useState([]);
   const [scansCount] = useState(initialScans.length);
   const [weeklyViews, setWeeklyViews] = useState([]);
+  const [origin, setOrigin] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setOrigin(window.location.origin);
+    }
+  }, []);
 
   useEffect(() => {
     // 1. Calculate category weight distribution
@@ -65,9 +72,9 @@ export default function DashboardClient({
 
     // 3. Generate QR code
     async function generateQR() {
-      if (!profile) return;
+      if (!profile || !origin) return;
       try {
-        const fullMenuUrl = `${window.location.origin}/menu/${profile.slug}`;
+        const fullMenuUrl = `${origin}/menu/${profile.slug}`;
         const qrDataUrl = await QRCode.toDataURL(fullMenuUrl, {
           width: 400,
           margin: 2,
@@ -82,11 +89,11 @@ export default function DashboardClient({
       }
     }
     generateQR();
-  }, [initialCategories, initialMenuItems, initialScans, profile]);
+  }, [initialCategories, initialMenuItems, initialScans, profile, origin]);
 
   const handleCopyLink = () => {
-    if (!profile) return;
-    const fullMenuUrl = `${window.location.origin}/menu/${profile.slug}`;
+    if (!profile || !origin) return;
+    const fullMenuUrl = `${origin}/menu/${profile.slug}`;
     navigator.clipboard.writeText(fullMenuUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -105,7 +112,7 @@ export default function DashboardClient({
 
   const maxScans = Math.max(...weeklyViews.map(v => v.count), 1);
   const totalItemsCount = itemsCount || 1;
-  const publicLink = profile ? `${window.location.origin}/menu/${profile.slug}` : '';
+  const publicLink = profile && origin ? `${origin}/menu/${profile.slug}` : '';
 
   return (
     <div className="space-y-8 animate-slide-up">
