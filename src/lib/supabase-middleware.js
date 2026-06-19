@@ -45,7 +45,7 @@ export const updateSession = async (request) => {
   );
 
   // This will refresh the session token if it is expired
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
 
   const url = request.nextUrl.clone();
   const role = user?.user_metadata?.role || 'merchant';
@@ -68,6 +68,7 @@ export const updateSession = async (request) => {
     ) {
       url.pathname = '/login';
       url.searchParams.set('error', 'middleware_no_user');
+      url.searchParams.set('auth_error', userError?.message || 'no_error');
       url.searchParams.set('debug_url', process.env.NEXT_PUBLIC_SUPABASE_URL || 'missing');
       url.searchParams.set('debug_key', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.substring(0, 12) + '...' : 'missing');
       url.searchParams.set('debug_cookies', request.cookies.getAll().map(c => c.name).join(','));
