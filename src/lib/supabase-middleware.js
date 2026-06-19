@@ -16,13 +16,13 @@ export const updateSession = async (request) => {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set({ name, value, ...options });
+            request.cookies.set(name, value);
           });
           response = NextResponse.next({
             request,
           });
           cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set({ name, value, ...options });
+            response.cookies.set(name, value, options);
           });
         },
       },
@@ -38,8 +38,8 @@ export const updateSession = async (request) => {
   if (!user) {
     // If not logged in and accessing protected pages, redirect to login
     if (
-      url.pathname.startsWith('/dashboard') || 
-      url.pathname.startsWith('/onboarding') || 
+      url.pathname.startsWith('/dashboard') ||
+      url.pathname.startsWith('/onboarding') ||
       url.pathname.startsWith('/customer/dashboard')
     ) {
       url.pathname = '/login';
@@ -50,9 +50,9 @@ export const updateSession = async (request) => {
     if (role === 'customer') {
       // Diners should only access diner dashboard, redirect if elsewhere
       if (
-        url.pathname.startsWith('/dashboard') || 
-        url.pathname.startsWith('/onboarding') || 
-        url.pathname.startsWith('/login') || 
+        url.pathname.startsWith('/dashboard') ||
+        url.pathname.startsWith('/onboarding') ||
+        url.pathname.startsWith('/login') ||
         url.pathname.startsWith('/register')
       ) {
         url.pathname = '/customer/dashboard';
@@ -61,8 +61,8 @@ export const updateSession = async (request) => {
     } else {
       // Merchants should only access merchant dashboard, redirect if diner dashboard or auth pages
       if (
-        url.pathname.startsWith('/customer/dashboard') || 
-        url.pathname.startsWith('/login') || 
+        url.pathname.startsWith('/customer/dashboard') ||
+        url.pathname.startsWith('/login') ||
         url.pathname.startsWith('/register')
       ) {
         url.pathname = '/dashboard';
