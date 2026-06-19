@@ -7,10 +7,15 @@ export const dynamic = 'force-dynamic';
 
 export default async function DashboardLayout({ children }) {
   const supabase = await createClient();
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  
+  // Try getSession first (local cookie read, no network call)
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  const user = session?.user;
 
-  if (userError || !user) {
-    redirect('/login');
+  if (!user) {
+    // Include debug info to understand why session is null
+    const errMsg = sessionError?.message || 'no_session';
+    redirect(`/login?from=layout&reason=${encodeURIComponent(errMsg)}`);
   }
 
   // Fetch the restaurant profile

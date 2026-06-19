@@ -29,59 +29,9 @@ export const updateSession = async (request) => {
     }
   );
 
-  // Use getSession() to read the session from the cookie locally.
-  // This avoids network calls from the Edge Runtime which can fail.
-  // The layout/page will use getUser() for full server-side validation when needed.
-  const { data: { session } } = await supabase.auth.getSession();
-  const user = session?.user;
-
-  const url = request.nextUrl.clone();
-  const role = user?.user_metadata?.role || 'merchant';
-
-  // Helper to redirect while preserving Supabase cookie refreshes
-  const redirectWithCookies = (targetUrl) => {
-    const redirectResponse = NextResponse.redirect(targetUrl);
-    supabaseResponse.cookies.getAll().forEach((cookie) => {
-      redirectResponse.cookies.set(cookie.name, cookie.value, cookie.options);
-    });
-    return redirectResponse;
-  };
-
-  if (!user) {
-    // If not logged in and accessing protected pages, redirect to login
-    if (
-      url.pathname.startsWith('/dashboard') ||
-      url.pathname.startsWith('/onboarding') ||
-      url.pathname.startsWith('/customer/dashboard')
-    ) {
-      url.pathname = '/login';
-      return redirectWithCookies(url);
-    }
-  } else {
-    // If logged in
-    if (role === 'customer') {
-      // Diners should only access diner dashboard
-      if (
-        url.pathname.startsWith('/dashboard') ||
-        url.pathname.startsWith('/onboarding') ||
-        url.pathname.startsWith('/login') ||
-        url.pathname.startsWith('/register')
-      ) {
-        url.pathname = '/customer/dashboard';
-        return redirectWithCookies(url);
-      }
-    } else {
-      // Merchants should only access merchant dashboard
-      if (
-        url.pathname.startsWith('/customer/dashboard') ||
-        url.pathname.startsWith('/login') ||
-        url.pathname.startsWith('/register')
-      ) {
-        url.pathname = '/dashboard';
-        return redirectWithCookies(url);
-      }
-    }
-  }
+  // Refresh the session token if needed — but do NOT gate access here.
+  // Let the layout handle auth. This just keeps cookies fresh.
+  await supabase.auth.getSession();
 
   return supabaseResponse;
 };
