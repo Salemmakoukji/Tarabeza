@@ -15,6 +15,7 @@ export const updateSession = async (request) => {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
+          const isHttps = request.nextUrl.protocol === 'https:';
           cookiesToSet.forEach(({ name, value, options }) =>
             request.cookies.set(name, value)
           );
@@ -22,13 +23,19 @@ export const updateSession = async (request) => {
             request,
           });
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            supabaseResponse.cookies.set(name, value, {
+              ...options,
+              httpOnly: false,
+              secure: isHttps,
+              sameSite: 'lax',
+              path: '/',
+            })
           );
         },
       },
       cookieOptions: {
         httpOnly: false,
-        secure: process.env.NODE_ENV === 'production',
+        secure: request.nextUrl.protocol === 'https:',
         sameSite: 'lax',
         path: '/',
       }

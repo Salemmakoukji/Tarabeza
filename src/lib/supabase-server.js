@@ -1,8 +1,11 @@
 import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 
 export const createClient = async () => {
   const cookieStore = await cookies();
+  const headersList = await headers();
+  const xForwardedProto = headersList.get('x-forwarded-proto');
+  const isHttps = xForwardedProto === 'https';
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://gijgxturrhglkucpgdnp.supabase.co',
@@ -15,7 +18,15 @@ export const createClient = async () => {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set({ name, value, ...options });
+              cookieStore.set({
+                name,
+                value,
+                ...options,
+                httpOnly: false,
+                secure: isHttps,
+                sameSite: 'lax',
+                path: '/',
+              });
             });
           } catch (error) {
             // The `setAll` method was called from a Server Component.
@@ -26,7 +37,7 @@ export const createClient = async () => {
       },
       cookieOptions: {
         httpOnly: false,
-        secure: process.env.NODE_ENV === 'production',
+        secure: isHttps,
         sameSite: 'lax',
         path: '/',
       }
