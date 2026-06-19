@@ -13,7 +13,7 @@ export default async function DashboardLayout({ children }) {
   const user = session?.user;
 
   if (sessionError || !user) {
-    redirect('/login');
+    redirect('/login?from=layout');
   }
 
   // Fetch the restaurant profile
@@ -24,7 +24,7 @@ export default async function DashboardLayout({ children }) {
     .single();
 
   if (!profile) {
-    redirect('/login?error=layout_no_profile');
+    redirect('/login?from=layout_no_profile');
   }
 
   if (!profile.phone || !profile.address) {

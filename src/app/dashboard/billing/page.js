@@ -12,7 +12,7 @@ export default async function BillingPage() {
   const user = session?.user;
 
   if (!user) {
-    redirect('/login');
+    redirect('/login?from=billing');
   }
 
   // Fetch the restaurant profile

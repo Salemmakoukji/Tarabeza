@@ -54,6 +54,7 @@ export const updateSession = async (request) => {
       url.pathname.startsWith('/customer/dashboard')
     ) {
       url.pathname = '/login';
+      url.searchParams.set('from', 'middleware');
       return redirectWithCookies(url);
     }
   } else {
