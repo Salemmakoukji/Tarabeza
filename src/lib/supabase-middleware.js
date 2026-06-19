@@ -2,10 +2,8 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 
 export const updateSession = async (request) => {
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
+  let supabaseResponse = NextResponse.next({
+    request,
   });
 
   const supabase = createServerClient(
@@ -13,47 +11,36 @@ export const updateSession = async (request) => {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key',
     {
       cookies: {
-        get(name) {
-          return request.cookies.get(name)?.value;
+        getAll() {
+          return request.cookies.getAll();
         },
-        set(name, value, options) {
-          request.cookies.set({ name, value, ...options });
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            request.cookies.set(name, value)
+          );
+          supabaseResponse = NextResponse.next({
+            request,
           });
-          response.cookies.set({ name, value, ...options });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          );
         },
-        remove(name, options) {
-          request.cookies.set({ name, value: '', ...options });
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
-          response.cookies.set({ name, value: '', ...options });
-        },
-      },
-      cookieOptions: {
-        name: 'lesmenu-auth-token',
-        path: '/',
-        sameSite: 'lax',
-        secure: true,
       },
     }
   );
 
-  // This will refresh the session token if it is expired
+  // IMPORTANT: Do NOT call supabase.auth.getSession() here.
+  // Use getUser() instead — it sends a request to the Supabase Auth server
+  // to revalidate the Auth token, while getSession does not.
   const { data: { user }, error: userError } = await supabase.auth.getUser();
 
   const url = request.nextUrl.clone();
   const role = user?.user_metadata?.role || 'merchant';
 
-  // Helper to redirect while keeping updated cookies
+  // Helper to redirect while preserving Supabase cookie refreshes
   const redirectWithCookies = (targetUrl) => {
     const redirectResponse = NextResponse.redirect(targetUrl);
-    response.cookies.getAll().forEach((cookie) => {
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
       redirectResponse.cookies.set(cookie.name, cookie.value, cookie.options);
     });
     return redirectResponse;
@@ -77,7 +64,7 @@ export const updateSession = async (request) => {
   } else {
     // If logged in
     if (role === 'customer') {
-      // Diners should only access diner dashboard, redirect if elsewhere
+      // Diners should only access diner dashboard
       if (
         url.pathname.startsWith('/dashboard') ||
         url.pathname.startsWith('/onboarding') ||
@@ -89,7 +76,7 @@ export const updateSession = async (request) => {
         return redirectWithCookies(url);
       }
     } else {
-      // Merchants should only access merchant dashboard, redirect if diner dashboard or auth pages
+      // Merchants should only access merchant dashboard
       if (
         url.pathname.startsWith('/customer/dashboard') ||
         url.pathname.startsWith('/login') ||
@@ -101,5 +88,5 @@ export const updateSession = async (request) => {
     }
   }
 
-  return response;
+  return supabaseResponse;
 };

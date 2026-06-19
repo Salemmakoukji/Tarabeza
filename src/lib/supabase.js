@@ -2,13 +2,5 @@ import { createBrowserClient } from '@supabase/ssr';
 
 export const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-url.supabase.co',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key',
-  {
-    cookieOptions: {
-      name: 'lesmenu-auth-token',
-      path: '/',
-      sameSite: 'lax',
-      secure: true,
-    },
-  }
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key'
 );
