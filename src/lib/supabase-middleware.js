@@ -26,12 +26,39 @@ export const updateSession = async (request) => {
           );
         },
       },
+      cookieOptions: {
+        httpOnly: false,
+        secure: true,
+        sameSite: 'lax',
+        path: '/',
+      }
     }
   );
 
-  // Refresh the session token if needed — but do NOT gate access here.
-  // Let the layout handle auth. This just keeps cookies fresh.
-  await supabase.auth.getSession();
+  // Validate session and refresh tokens if needed
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+  const url = new URL(request.url);
+  const isDashboardRoute = url.pathname.startsWith('/dashboard');
+
+  if (isDashboardRoute) {
+    if (userError || !user) {
+      const redirectUrl = new URL('/login', request.url);
+      redirectUrl.searchParams.set('from', 'middleware');
+      if (userError) {
+        redirectUrl.searchParams.set('reason', userError.message);
+      }
+      
+      const redirectResponse = NextResponse.redirect(redirectUrl);
+      
+      // Copy any updated cookies (like cleared tokens) from the Supabase response to the redirect response
+      supabaseResponse.cookies.getAll().forEach((cookie) => {
+        redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
+      });
+      
+      return redirectResponse;
+    }
+  }
 
   return supabaseResponse;
 };

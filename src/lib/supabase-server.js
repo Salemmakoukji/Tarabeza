@@ -24,6 +24,12 @@ export const createClient = async () => {
           }
         },
       },
+      cookieOptions: {
+        httpOnly: false,
+        secure: true,
+        sameSite: 'lax',
+        path: '/',
+      }
     }
   );
 };
