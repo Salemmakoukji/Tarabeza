@@ -28,7 +28,7 @@ export const updateSession = async (request) => {
       },
       cookieOptions: {
         httpOnly: false,
-        secure: true,
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/',
       }
@@ -51,14 +51,14 @@ export const updateSession = async (request) => {
       } else {
         redirectUrl.searchParams.set('reason', 'Auth session missing!');
       }
-      
+
       const redirectResponse = NextResponse.redirect(redirectUrl);
-      
+
       // Copy any updated cookies (like cleared tokens) from the Supabase response to the redirect response
       supabaseResponse.cookies.getAll().forEach((cookie) => {
         redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
       });
-      
+
       return redirectResponse;
     }
   }

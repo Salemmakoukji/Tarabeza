@@ -32,6 +32,13 @@ function LoginForm() {
         throw error;
       }
 
+      // Wait for the cookie to be written by the Supabase auth listener (up to 2 seconds)
+      let checks = 0;
+      while (!document.cookie.split(';').some(c => c.trim().startsWith('sb-') && c.includes('-auth-token')) && checks < 20) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        checks++;
+      }
+
       window.location.href = '/dashboard';
     } catch (error) {
       setErrorMsg(error.message || 'An unexpected error occurred.');

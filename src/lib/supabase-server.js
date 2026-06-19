@@ -26,7 +26,7 @@ export const createClient = async () => {
       },
       cookieOptions: {
         httpOnly: false,
-        secure: true,
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/',
       }

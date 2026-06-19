@@ -53,6 +53,11 @@ export default function RegisterPage() {
 
       // If user is immediately logged in
       if (data?.session) {
+        let checks = 0;
+        while (!document.cookie.split(';').some(c => c.trim().startsWith('sb-') && c.includes('-auth-token')) && checks < 20) {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          checks++;
+        }
         window.location.href = role === 'customer' ? '/customer/dashboard' : '/onboarding';
       } else {
         setSuccess(true);
