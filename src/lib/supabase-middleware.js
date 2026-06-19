@@ -45,8 +45,11 @@ export const updateSession = async (request) => {
     if (userError || !user) {
       const redirectUrl = new URL('/login', request.url);
       redirectUrl.searchParams.set('from', 'middleware');
+      redirectUrl.searchParams.set('url_val', process.env.NEXT_PUBLIC_SUPABASE_URL || 'undefined');
       if (userError) {
         redirectUrl.searchParams.set('reason', userError.message);
+      } else {
+        redirectUrl.searchParams.set('reason', 'Auth session missing!');
       }
       
       const redirectResponse = NextResponse.redirect(redirectUrl);
