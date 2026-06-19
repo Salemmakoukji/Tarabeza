@@ -6,7 +6,7 @@ import BillingBlocker from '@/components/dashboard/billing-blocker';
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardLayout({ children }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   const { data: { user }, error: userError } = await supabase.auth.getUser();
 

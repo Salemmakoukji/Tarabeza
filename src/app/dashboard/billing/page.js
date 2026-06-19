@@ -5,7 +5,7 @@ import BillingPortal from '@/components/dashboard/billing-portal';
 export const dynamic = 'force-dynamic';
 
 export default async function BillingPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: { user }, error: userError } = await supabase.auth.getUser();
 
