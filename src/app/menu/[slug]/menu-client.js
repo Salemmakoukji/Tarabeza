@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Search, MapPin, Phone, Sparkles, Globe, Star, X, Loader2, Share2, Check, Heart } from 'lucide-react';
+import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 
 export default function MenuViewClient({ profile, categories = [], menuItems = [], initialRatings = [] }) {
@@ -551,10 +552,13 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
         <div className="relative h-44 w-full bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 overflow-hidden shrink-0">
           {profile.cover_url ? (
             <>
-              <img 
+              <Image 
                 src={profile.cover_url} 
                 alt={`${profile.name} Cover`} 
-                className="w-full h-full object-cover"
+                fill
+                priority
+                sizes="100vw"
+                className="object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-black/20" />
             </>
@@ -588,10 +592,13 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
           {/* Logo Overlapping Cover Banner */}
           <div className="relative -mt-16 mb-3.5 z-10 shrink-0">
             {profile.logo_url ? (
-              <img 
+              <Image 
                 src={profile.logo_url} 
                 alt={profile.name} 
-                className={`h-24 w-24 rounded-3xl object-cover bg-white ${currentTheme.logoBorder}`}
+                width={96}
+                height={96}
+                priority
+                className={`rounded-3xl object-cover bg-white ${currentTheme.logoBorder}`}
               />
             ) : (
               <div className={`h-20 w-20 rounded-3xl flex items-center justify-center ${currentTheme.logoFallback}`}>
@@ -729,10 +736,13 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
                           {/* Top aligned photo */}
                           {item.image_url ? (
                             <div className={`relative h-28 w-full shrink-0 ${currentTheme.itemImageBg}`}>
-                              <img 
+                              <Image 
                                 src={item.image_url} 
                                 alt={displayName} 
-                                className="h-full w-full object-cover"
+                                fill
+                                sizes="(max-width: 768px) 100vw, 33vw"
+                                loading="lazy"
+                                className="object-cover"
                               />
                               {!item.available && (
                                 <div className={currentTheme.itemSoldOutOverlay}>
@@ -823,10 +833,13 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
                             >
                             {/* Full card background picture */}
                             <div className={`h-44 w-full relative overflow-hidden shrink-0 ${currentTheme.itemImageBg}`}>
-                              <img 
+                              <Image 
                                 src={item.image_url} 
                                 alt={displayName} 
-                                className="h-full w-full object-cover"
+                                fill
+                                sizes="(max-width: 768px) 100vw, 50vw"
+                                loading="lazy"
+                                className="object-cover"
                               />
                               <div className="absolute inset-0 bg-gradient-to-t from-slate-955 via-slate-955/20 to-transparent" />
                               
@@ -881,10 +894,13 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
                         >
                           {item.image_url && (
                             <div className={`relative h-20 w-20 rounded-xl overflow-hidden shrink-0 ${currentTheme.itemImageBg}`}>
-                              <img 
+                              <Image 
                                 src={item.image_url} 
                                 alt={displayName} 
-                                className="h-full w-full object-cover"
+                                fill
+                                sizes="80px"
+                                loading="lazy"
+                                className="object-cover"
                               />
                               {!item.available && (
                                 <div className={currentTheme.itemSoldOutOverlay}>
@@ -935,10 +951,13 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
                           {/* Left/Right Photo based on dir */}
                           {item.image_url && (
                             <div className={`relative h-20 w-20 rounded-xl overflow-hidden shrink-0 ${currentTheme.itemImageBg}`}>
-                              <img 
+                              <Image 
                                 src={item.image_url} 
                                 alt={displayName} 
-                                className="h-full w-full object-cover"
+                                fill
+                                sizes="80px"
+                                loading="lazy"
+                                className="object-cover"
                               />
                               {!item.available && (
                                 <div className={currentTheme.itemSoldOutOverlay}>
@@ -1181,10 +1200,13 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
             {/* Dish Image Banner */}
             {selectedItem.image_url ? (
               <div className="h-56 w-full relative overflow-hidden shrink-0 select-none">
-                <img 
+                <Image 
                   src={selectedItem.image_url} 
                   alt={isRtl && selectedItem.name_ar ? selectedItem.name_ar : selectedItem.name} 
-                  className="w-full h-full object-cover"
+                  fill
+                  priority
+                  sizes="(max-width: 768px) 100vw, 450px"
+                  className="object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-black/10" />
               </div>

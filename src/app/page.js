@@ -14,7 +14,9 @@ import {
   ArrowLeft,
   Zap, 
   Shield, 
-  Star 
+  Star,
+  Menu,
+  X
 } from 'lucide-react';
 import Logo from '@/components/logo';
 
@@ -171,6 +173,7 @@ const content = {
 
 export default function LandingPage() {
   const [lang, setLang] = useState('en');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const t = content[lang];
   const isRtl = lang === 'ar';
 
@@ -199,17 +202,20 @@ export default function LandingPage() {
       dir={t.dir}
     >
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur border-b border-slate-900">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center space-x-3 gap-2">
-            <Logo variant="white" lang={lang} />
+      <header className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
+          <div className="flex items-center">
+            <Link href="/" className="flex items-center active:scale-95 transition-transform">
+              <Logo className="h-10 sm:h-11 md:h-12" />
+            </Link>
           </div>
 
-          <div className="flex items-center space-x-4 gap-4">
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-4 lg:gap-6">
             {/* Language Switcher Button */}
             <button
               onClick={toggleLanguage}
-              className="flex items-center space-x-1.5 gap-1.5 px-3 py-1.5 rounded-xl border border-slate-800 hover:border-orange-500 bg-slate-900 text-xs font-semibold text-slate-300 transition-all active:scale-95"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-800 hover:border-orange-500 bg-slate-900 text-xs font-semibold text-slate-300 transition-all active:scale-95"
             >
               <Globe className="h-4 w-4" />
               <span>{lang === 'en' ? 'العربية' : 'English'}</span>
@@ -234,7 +240,60 @@ export default function LandingPage() {
               {t.getStarted}
             </Link>
           </div>
+
+          {/* Mobile Actions Header */}
+          <div className="flex md:hidden items-center gap-2">
+            {/* Language Switcher Button (Compact for Mobile) */}
+            <button
+              onClick={toggleLanguage}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-slate-800 bg-slate-900 text-[11px] font-semibold text-slate-300 transition-all active:scale-95"
+              aria-label="Toggle Language"
+            >
+              <Globe className="h-3.5 w-3.5" />
+              <span>{lang === 'en' ? 'AR' : 'EN'}</span>
+            </button>
+
+            {/* Hamburger Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 rounded-xl border border-slate-800 hover:border-slate-700 bg-slate-900 text-slate-300 transition-all active:scale-95"
+              aria-label="Toggle Menu"
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Navigation Dropdown */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-b border-slate-900 bg-slate-950/95 backdrop-blur-lg absolute top-20 left-0 right-0 z-40 transition-all duration-300 ease-in-out">
+            <div className="px-6 py-6 flex flex-col space-y-4">
+              <Link
+                href="/restaurants"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-base font-semibold text-slate-300 hover:text-white py-2 border-b border-slate-900/50 transition-colors flex items-center justify-between"
+              >
+                <span>{t.exploreDirectory}</span>
+                <ArrowRight className={`h-4 w-4 text-slate-500 transition-transform ${isRtl ? 'rotate-180' : ''}`} />
+              </Link>
+              <Link
+                href="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-base font-semibold text-slate-300 hover:text-white py-2 border-b border-slate-900/50 transition-colors flex items-center justify-between"
+              >
+                <span>{t.signIn}</span>
+                <ArrowRight className={`h-4 w-4 text-slate-500 transition-transform ${isRtl ? 'rotate-180' : ''}`} />
+              </Link>
+              <Link
+                href="/register"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full text-center bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl py-3 text-sm font-bold shadow-md hover:shadow-orange-500/20 active:scale-[0.98] transition-all block mt-2"
+              >
+                {t.getStarted}
+              </Link>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Hero Section */}
