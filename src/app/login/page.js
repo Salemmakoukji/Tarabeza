@@ -23,7 +23,7 @@ function LoginForm() {
     setSuccessMsg('');
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -32,18 +32,7 @@ function LoginForm() {
         throw error;
       }
 
-      // Debug: check what's in cookies and session right after login
-      const session = data?.session;
-      const browserCookies = document.cookie;
-      console.log('Session after login:', !!session, 'access_token length:', session?.access_token?.length);
-      console.log('Browser cookies:', browserCookies);
-
-      // Small delay to ensure cookies are fully written, then go to debug endpoint
-      await new Promise(resolve => setTimeout(resolve, 500));
-      console.log('Browser cookies after delay:', document.cookie);
-      
-      // Temporarily redirect to debug endpoint instead of dashboard
-      window.location.href = '/api/debug-auth';
+      window.location.href = '/dashboard';
     } catch (error) {
       setErrorMsg(error.message || 'An unexpected error occurred.');
     } finally {

@@ -54,12 +54,6 @@ export const updateSession = async (request) => {
       url.pathname.startsWith('/customer/dashboard')
     ) {
       url.pathname = '/login';
-      url.searchParams.set('error', 'middleware_no_user');
-      url.searchParams.set('auth_error', userError?.message || 'no_error');
-      // Show cookie names with value lengths to detect truncation/chunking issues
-      const allCookies = request.cookies.getAll();
-      const cookieDebug = allCookies.map(c => `${c.name}(${c.value?.length || 0})`).join(',');
-      url.searchParams.set('debug_cookies', cookieDebug);
       return redirectWithCookies(url);
     }
   } else {
