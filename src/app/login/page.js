@@ -32,8 +32,7 @@ function LoginForm() {
         throw error;
       }
 
-      router.push('/dashboard');
-      router.refresh();
+      window.location.href = '/dashboard';
     } catch (error) {
       setErrorMsg(error.message || 'An unexpected error occurred.');
     } finally {

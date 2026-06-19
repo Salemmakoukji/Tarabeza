@@ -53,8 +53,7 @@ export default function RegisterPage() {
 
       // If user is immediately logged in
       if (data?.session) {
-        router.push(role === 'customer' ? '/customer/dashboard' : '/onboarding');
-        router.refresh();
+        window.location.href = role === 'customer' ? '/customer/dashboard' : '/onboarding';
       } else {
         setSuccess(true);
       }
