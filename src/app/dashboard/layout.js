@@ -11,7 +11,7 @@ export default async function DashboardLayout({ children }) {
   const { data: { user }, error: userError } = await supabase.auth.getUser();
 
   if (userError || !user) {
-    redirect('/login');
+    redirect(`/login?error=layout_no_user&message=${encodeURIComponent(userError?.message || '')}`);
   }
 
   // Fetch the restaurant profile
@@ -22,7 +22,7 @@ export default async function DashboardLayout({ children }) {
     .single();
 
   if (!profile) {
-    redirect('/login');
+    redirect('/login?error=layout_no_profile');
   }
 
   if (!profile.phone || !profile.address) {

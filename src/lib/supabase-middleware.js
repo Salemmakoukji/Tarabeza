@@ -56,6 +56,7 @@ export const updateSession = async (request) => {
       url.pathname.startsWith('/customer/dashboard')
     ) {
       url.pathname = '/login';
+      url.searchParams.set('error', 'middleware_no_user');
       return redirectWithCookies(url);
     }
   } else {
@@ -69,6 +70,7 @@ export const updateSession = async (request) => {
         url.pathname.startsWith('/register')
       ) {
         url.pathname = '/customer/dashboard';
+        url.searchParams.set('error', 'middleware_customer_role_mismatch');
         return redirectWithCookies(url);
       }
     } else {
