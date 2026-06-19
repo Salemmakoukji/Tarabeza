@@ -13,25 +13,33 @@ export const updateSession = async (request) => {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key',
     {
       cookies: {
-        getAll() {
-          return request.cookies.getAll();
+        get(name) {
+          return request.cookies.get(name)?.value;
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set(name, value);
-          });
+        set(name, value, options) {
+          request.cookies.set({ name, value, ...options });
           response = NextResponse.next({
             request: {
               headers: request.headers,
             },
           });
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options);
+          response.cookies.set({ name, value, ...options });
+        },
+        remove(name, options) {
+          request.cookies.set({ name, value: '', ...options });
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
           });
+          response.cookies.set({ name, value: '', ...options });
         },
       },
       cookieOptions: {
         name: 'lesmenu-auth-token',
+        path: '/',
+        sameSite: 'lax',
+        secure: true,
       },
     }
   );

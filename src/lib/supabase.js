@@ -6,6 +6,9 @@ export const supabase = createBrowserClient(
   {
     cookieOptions: {
       name: 'lesmenu-auth-token',
+      path: '/',
+      sameSite: 'lax',
+      secure: true,
     },
   }
 );

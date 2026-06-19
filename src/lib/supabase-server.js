@@ -26,6 +26,9 @@ export const createClient = async () => {
       },
       cookieOptions: {
         name: 'lesmenu-auth-token',
+        path: '/',
+        sameSite: 'lax',
+        secure: true,
       },
     }
   );
