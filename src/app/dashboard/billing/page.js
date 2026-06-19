@@ -7,9 +7,11 @@ export const dynamic = 'force-dynamic';
 export default async function BillingPage() {
   const supabase = await createClient();
 
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  // Use getSession() — the middleware already validated the user via getUser()
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
 
-  if (userError || !user) {
+  if (!user) {
     redirect('/login');
   }
 

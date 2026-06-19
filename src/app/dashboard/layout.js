@@ -6,12 +6,14 @@ import BillingBlocker from '@/components/dashboard/billing-blocker';
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardLayout({ children }) {
+  // Use getSession() here — the middleware already validated the user via getUser()
+  // and refreshed the token. Calling getUser() again would use stale cookies.
   const supabase = await createClient();
-  
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  const user = session?.user;
 
-  if (userError || !user) {
-    redirect(`/login?error=layout_no_user&message=${encodeURIComponent(userError?.message || '')}`);
+  if (sessionError || !user) {
+    redirect('/login');
   }
 
   // Fetch the restaurant profile
