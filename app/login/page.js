@@ -31,6 +31,8 @@ function LoginForm() {
       if (error) throw error;
 
       if (data.session) {
+        // Wait for session to be fully saved in cookies
+        await new Promise(resolve => setTimeout(resolve, 1500));
         router.push('/dashboard');
         router.refresh();
       }
