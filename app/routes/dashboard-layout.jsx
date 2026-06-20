@@ -94,7 +94,7 @@ export default function DashboardLayout() {
   }
 
   return (
-    <div className="flex h-screen w-screen bg-slate-50 overflow-hidden text-slate-800">
+    <div className="flex h-screen w-screen bg-[#0F1524] overflow-hidden text-[#FEFEFE]">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Navbar 

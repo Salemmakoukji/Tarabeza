@@ -803,15 +803,15 @@ export default function MenuBuilder() {
       />
 
       {/* Page Heading */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-slide-up">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Menu Builder</h1>
-          <p className="text-slate-550 text-sm">Drag and drop categories or items to reorder them in real time.</p>
+          <h1 className="text-2xl font-black text-white">Menu Builder</h1>
+          <p className="text-slate-400 text-sm">Drag and drop categories or items to reorder them in real time.</p>
         </div>
         <div className="flex items-center space-x-3 flex-wrap gap-2">
           <button
             onClick={downloadCSVTemplate}
-            className="inline-flex items-center space-x-1.5 border border-slate-200 hover:border-amber-500 hover:text-amber-600 bg-white text-slate-700 py-2.5 px-4 rounded-xl text-sm font-bold transition-all shadow-sm"
+            className="inline-flex items-center space-x-1.5 border border-slate-800 hover:border-amber-550 hover:text-amber-400 bg-[#0B0F19]/40 hover:bg-[#0B0F19] text-slate-300 py-2.5 px-4 rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer"
           >
             <Download className="h-4 w-4 text-amber-500" />
             <span>Download Template</span>
@@ -819,7 +819,7 @@ export default function MenuBuilder() {
           <button
             onClick={() => document.getElementById('csv-import-input').click()}
             disabled={importingCsv}
-            className="inline-flex items-center space-x-1.5 border border-slate-200 hover:border-emerald-500 hover:text-emerald-600 bg-white text-slate-700 py-2.5 px-4 rounded-xl text-sm font-bold transition-all shadow-sm disabled:opacity-50"
+            className="inline-flex items-center space-x-1.5 border border-slate-800 hover:border-emerald-550 hover:text-emerald-400 bg-[#0B0F19]/40 hover:bg-[#0B0F19] text-slate-300 py-2.5 px-4 rounded-xl text-sm font-bold transition-all shadow-sm disabled:opacity-50 cursor-pointer"
           >
             {importingCsv ? (
               <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
@@ -830,15 +830,15 @@ export default function MenuBuilder() {
           </button>
           <button
             onClick={openAddCategory}
-            className="inline-flex items-center space-x-1.5 border border-slate-200 hover:border-orange-500 hover:text-orange-500 bg-white text-slate-700 py-2.5 px-4 rounded-xl text-sm font-bold transition-all shadow-sm"
+            className="inline-flex items-center space-x-1.5 border border-slate-800 hover:border-orange-500 hover:text-orange-400 bg-[#0B0F19]/40 hover:bg-[#0B0F19] text-slate-300 py-2.5 px-4 rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer"
           >
-            <FolderPlus className="h-4 w-4" />
+            <FolderPlus className="h-4 w-4 text-orange-500" />
             <span>Add Category</span>
           </button>
           <button
             onClick={openAddItem}
             disabled={categories.length === 0}
-            className="inline-flex items-center space-x-1.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white py-2.5 px-4 rounded-xl text-sm font-bold transition-all shadow-md shadow-orange-500/10 hover:shadow-orange-500/20 disabled:opacity-50"
+            className="inline-flex items-center space-x-1.5 bg-orange-500 hover:bg-orange-600 text-slate-950 font-bold py-2.5 px-4 rounded-xl text-sm transition-all shadow-md shadow-orange-500/10 hover:shadow-orange-500/20 disabled:opacity-50 cursor-pointer"
           >
             <Plus className="h-4 w-4" />
             <span>Add Menu Item</span>
@@ -851,27 +851,27 @@ export default function MenuBuilder() {
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className="pointer-events-auto flex items-start justify-between p-4 rounded-xl border bg-white shadow-2xl transition-all duration-300 animate-slide-up text-slate-800"
-            style={{ borderLeftWidth: '5px', borderLeftColor: toast.type === 'error' ? '#ef4444' : '#10b981' }}
+            className="pointer-events-auto flex items-start justify-between p-4 rounded-xl border border-slate-800 bg-[#111A2E] shadow-2xl transition-all duration-300 animate-slide-up text-slate-200"
+            style={{ borderLeftWidth: '5px', borderLeftColor: toast.type === 'error' ? '#f97316' : '#10b981' }}
           >
             <div className="flex items-start space-x-3 gap-3">
               {toast.type === 'error' ? (
-                <AlertCircle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+                <AlertCircle className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" />
               ) : (
                 <Check className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
               )}
               <div>
-                <p className="font-bold text-xs text-slate-900">
+                <p className="font-bold text-xs text-white">
                   {toast.type === 'error' ? 'Error' : 'Success'}
                 </p>
-                <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
                   {toast.text}
                 </p>
               </div>
             </div>
             <button
               onClick={() => removeToast(toast.id)}
-              className="text-slate-400 hover:text-slate-600 transition-colors ml-4 shrink-0"
+              className="text-slate-400 hover:text-white transition-colors ml-4 shrink-0 cursor-pointer"
             >
               <X className="h-4 w-4" />
             </button>
@@ -881,23 +881,23 @@ export default function MenuBuilder() {
 
       {/* Main Grid */}
       {categories.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center flex flex-col items-center">
-          <div className="h-14 w-14 rounded-full bg-orange-50 flex items-center justify-center mb-4 text-orange-500">
+        <div className="bg-[#111A2E]/60 border border-slate-800/80 rounded-2xl p-12 text-center flex flex-col items-center backdrop-blur-md shadow-xl">
+          <div className="h-14 w-14 rounded-full bg-orange-500/10 border border-orange-500/20 flex items-center justify-center mb-4 text-orange-500 shadow-inner animate-pulse">
             <Utensils className="h-6 w-6" />
           </div>
-          <h3 className="text-lg font-bold text-slate-800 mb-1.5">No Menu Categories Yet</h3>
-          <p className="text-slate-450 text-sm max-w-sm mb-6">Create your first category or import your menu from a CSV spreadsheet to get started.</p>
+          <h3 className="text-lg font-bold text-white mb-1.5">No Menu Categories Yet</h3>
+          <p className="text-slate-400 text-sm max-w-sm mb-6">Create your first category or import your menu from a CSV spreadsheet to get started.</p>
           <div className="flex flex-col sm:flex-row items-center gap-3">
             <button
               onClick={openAddCategory}
-              className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 px-5 rounded-xl text-sm shadow-md transition-all active:scale-[0.98]"
+              className="bg-orange-500 hover:bg-orange-600 text-slate-955 font-bold py-2.5 px-5 rounded-xl text-sm shadow-md transition-all active:scale-[0.98] cursor-pointer"
             >
               Create Category
             </button>
             <button
               onClick={() => document.getElementById('csv-import-input').click()}
               disabled={importingCsv}
-              className="bg-white border border-slate-200 hover:border-emerald-500 hover:text-emerald-500 text-slate-700 font-bold py-2.5 px-5 rounded-xl text-sm shadow-sm transition-all active:scale-[0.98] inline-flex items-center space-x-1.5 disabled:opacity-50"
+              className="bg-[#0B0F19]/40 border border-slate-800 hover:border-emerald-500 hover:text-emerald-400 text-slate-300 font-bold py-2.5 px-5 rounded-xl text-sm shadow-sm transition-all active:scale-[0.98] inline-flex items-center space-x-1.5 disabled:opacity-50 cursor-pointer"
             >
               {importingCsv ? (
                 <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
@@ -910,7 +910,7 @@ export default function MenuBuilder() {
           <button 
             type="button"
             onClick={downloadCSVTemplate}
-            className="mt-4 text-xs font-semibold text-slate-400 hover:text-orange-500 underline transition-all"
+            className="mt-4 text-xs font-semibold text-slate-500 hover:text-orange-400 underline transition-all cursor-pointer"
           >
             Download CSV Import Template
           </button>
@@ -918,10 +918,10 @@ export default function MenuBuilder() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Categories Sidebar */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm h-fit">
+          <div className="bg-[#111A2E]/60 border border-slate-800/80 rounded-2xl p-4 shadow-xl backdrop-blur-md h-fit">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 px-2 flex items-center justify-between">
               <span>Categories</span>
-              <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold font-sans">
+              <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full font-bold font-sans">
                 {categories.length}
               </span>
             </h2>
@@ -937,31 +937,31 @@ export default function MenuBuilder() {
                     onDrop={() => handleCategoryDrop(idx)}
                     className={`flex items-center justify-between group rounded-xl p-2 transition-all cursor-grab active:cursor-grabbing border ${
                       isActive 
-                        ? 'bg-orange-50 border-orange-100 text-orange-600' 
-                        : 'border-transparent text-slate-600 hover:bg-slate-50'
+                        ? 'bg-orange-500/10 border-orange-500/30 text-orange-400' 
+                        : 'border-transparent text-slate-400 hover:bg-[#0B0F19]/50 hover:text-white'
                     }`}
                   >
                     <div className="flex items-center space-x-1.5 flex-1 min-w-0">
-                      <Move className="h-3.5 w-3.5 text-slate-300 group-hover:text-slate-400 shrink-0" />
+                      <Move className="h-3.5 w-3.5 text-slate-600 group-hover:text-slate-400 shrink-0" />
                       <button
                         onClick={() => setSelectedCategoryId(cat.id)}
-                        className="flex-1 text-left text-sm font-semibold py-1 px-1 focus:outline-none truncate"
+                        className="flex-1 text-left text-sm font-semibold py-1 px-1 focus:outline-none truncate cursor-pointer"
                       >
-                        {cat.name} {cat.name_ar && <span className="text-slate-450 text-xs font-normal">({cat.name_ar})</span>}
+                        {cat.name} {cat.name_ar && <span className="text-slate-500 text-xs font-normal">({cat.name_ar})</span>}
                       </button>
                     </div>
                     
                     <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                       <button
                         onClick={() => openEditCategory(cat)}
-                        className="p-1 rounded hover:bg-slate-200/50 text-slate-500 hover:text-slate-700"
+                        className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white cursor-pointer"
                         title="Edit Category Name"
                       >
                         <Edit2 className="h-3 w-3" />
                       </button>
                       <button
                         onClick={() => handleDeleteCategory(cat.id)}
-                        className="p-1 rounded hover:bg-rose-50 text-rose-500 hover:text-rose-700"
+                        className="p-1 rounded hover:bg-rose-950/40 text-rose-455 hover:text-rose-300 cursor-pointer"
                         title="Delete Category"
                       >
                         <Trash2 className="h-3 w-3" />
@@ -971,15 +971,15 @@ export default function MenuBuilder() {
                 );
               })}
             </div>
-            <p className="mt-4 px-2 text-[10px] text-slate-400 leading-normal flex items-start space-x-1">
-              <Info className="h-3.5 w-3.5 text-slate-300 shrink-0 mt-0.5" />
+            <p className="mt-4 px-2 text-[10px] text-slate-500 leading-normal flex items-start space-x-1">
+              <Info className="h-3.5 w-3.5 text-slate-600 shrink-0 mt-0.5" />
               <span>Drag categories to reorder them in the customer-facing menu.</span>
             </p>
-            <div className="mt-4 pt-4 border-t border-slate-100 px-2">
+            <div className="mt-4 pt-4 border-t border-slate-800/80 px-2">
               <button
                 type="button"
                 onClick={downloadCSVTemplate}
-                className="w-full inline-flex items-center justify-center space-x-1.5 py-2 px-3 border border-dashed border-slate-200 hover:border-orange-500 hover:text-orange-500 text-slate-500 rounded-xl text-xs font-semibold transition-all bg-slate-50/50 hover:bg-orange-50/30"
+                className="w-full inline-flex items-center justify-center space-x-1.5 py-2 px-3 border border-dashed border-slate-800 hover:border-orange-500 hover:text-orange-400 text-slate-400 rounded-xl text-xs font-semibold transition-all bg-[#0B0F19]/40 hover:bg-[#0B0F19]/80 cursor-pointer"
               >
                 <Download className="h-3.5 w-3.5 text-orange-500" />
                 <span>CSV Import Template</span>
@@ -989,24 +989,24 @@ export default function MenuBuilder() {
 
           {/* Items Display Panel */}
           <div className="lg:col-span-3 space-y-4">
-            <div className="flex items-center justify-between bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+            <div className="flex items-center justify-between bg-[#111A2E]/60 border border-slate-800/80 rounded-2xl p-4 shadow-xl backdrop-blur-md">
               <div>
                 <span className="text-xs font-semibold text-orange-500 uppercase tracking-wider">Active Category</span>
-                <h2 className="text-lg font-bold text-slate-800">{activeCategory?.name || 'Loading...'}</h2>
+                <h2 className="text-lg font-bold text-white">{activeCategory?.name || 'Loading...'}</h2>
               </div>
-              <span className="text-xs font-semibold bg-slate-100 text-slate-600 px-3 py-1.5 rounded-xl">
+              <span className="text-xs font-semibold bg-slate-800 text-slate-300 px-3 py-1.5 rounded-xl">
                 {activeItems.length} {activeItems.length === 1 ? 'item' : 'items'}
               </span>
             </div>
 
             {activeItems.length === 0 ? (
-              <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center flex flex-col items-center">
-                <ImageIcon className="h-10 w-10 text-slate-300 mb-2" />
-                <h3 className="text-sm font-bold text-slate-700 mb-1">No items in this category</h3>
-                <p className="text-slate-455 text-xs max-w-xs mb-4">Start showcasing your dishes by adding a menu item under &quot;{activeCategory?.name}&quot;.</p>
+              <div className="bg-[#111A2E]/60 border border-slate-800/80 rounded-2xl p-12 text-center flex flex-col items-center backdrop-blur-md shadow-xl">
+                <ImageIcon className="h-10 w-10 text-slate-600 mb-2" />
+                <h3 className="text-sm font-bold text-white mb-1">No items in this category</h3>
+                <p className="text-slate-400 text-xs max-w-xs mb-4">Start showcasing your dishes by adding a menu item under &quot;{activeCategory?.name}&quot;.</p>
                 <button
                   onClick={openAddItem}
-                  className="inline-flex items-center space-x-1 text-orange-500 hover:text-orange-600 text-xs font-bold transition-all"
+                  className="inline-flex items-center space-x-1 text-orange-400 hover:text-orange-355 text-xs font-bold transition-all cursor-pointer"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   <span>Add First Item</span>
@@ -1021,33 +1021,33 @@ export default function MenuBuilder() {
                     onDragStart={() => handleItemDragStart(idx)}
                     onDragOver={handleItemDragOver}
                     onDrop={() => handleItemDrop(idx)}
-                    className={`bg-white border rounded-2xl shadow-sm overflow-hidden flex flex-col transition-all cursor-grab active:cursor-grabbing hover:border-orange-200/60 ${
-                      item.available ? 'border-slate-200' : 'border-slate-200/60 opacity-60 bg-slate-50/50'
+                    className={`bg-[#111A2E]/60 border rounded-2xl shadow-xl overflow-hidden flex flex-col transition-all cursor-grab active:cursor-grabbing hover:border-orange-500/40 backdrop-blur-md ${
+                      item.available ? 'border-slate-800/80' : 'border-slate-800/40 opacity-50 bg-[#0B0F19]/20'
                     }`}
                   >
                     {/* Item Image */}
                     {item.image_url ? (
-                      <div className="relative h-40 w-full bg-slate-100 shrink-0 select-none pointer-events-none">
+                      <div className="relative h-40 w-full bg-[#0B0F19] shrink-0 select-none pointer-events-none">
                         <img 
                           src={item.image_url} 
                           alt={item.name} 
                           className="h-full w-full object-cover"
                         />
                         {!item.available && (
-                          <div className="absolute inset-0 bg-slate-950/40 flex items-center justify-center">
-                            <span className="bg-slate-900/90 text-white font-bold text-xs px-3 py-1.5 rounded-full">
+                          <div className="absolute inset-0 bg-slate-950/70 flex items-center justify-center">
+                            <span className="bg-slate-900/90 border border-slate-800 text-slate-200 font-bold text-xs px-3 py-1.5 rounded-full">
                               Sold Out
                             </span>
                           </div>
                         )}
-                        <div className="absolute top-3 right-3 h-8 w-8 bg-slate-900/80 backdrop-blur rounded-lg flex items-center justify-center text-white">
+                        <div className="absolute top-3 right-3 h-8 w-8 bg-slate-900/80 backdrop-blur rounded-lg flex items-center justify-center text-white border border-slate-800/60">
                           <Move className="h-4 w-4" />
                         </div>
                       </div>
                     ) : (
-                      <div className="h-32 w-full bg-slate-55 border-b border-slate-100 flex items-center justify-center text-slate-300 shrink-0 select-none relative">
+                      <div className="h-32 w-full bg-[#0B0F19] border-b border-slate-800/80 flex items-center justify-center text-slate-700 shrink-0 select-none relative">
                         <Utensils className="h-8 w-8" />
-                        <div className="absolute top-3 right-3 h-8 w-8 bg-white border border-slate-200 rounded-lg flex items-center justify-center text-slate-400">
+                        <div className="absolute top-3 right-3 h-8 w-8 bg-slate-900/80 backdrop-blur rounded-lg flex items-center justify-center text-slate-400 border border-slate-800/60">
                           <Move className="h-4 w-4" />
                         </div>
                       </div>
@@ -1056,17 +1056,17 @@ export default function MenuBuilder() {
                     {/* Item Details */}
                     <div className="p-4 flex-1 flex flex-col justify-between">
                       <div>
-                        <div className="flex justify-between items-start mb-1 gap-2">
-                          <h4 className="font-bold text-slate-800 text-sm leading-snug flex items-center flex-wrap gap-1">
+                        <div className="flex justify-between items-start mb-1.5 gap-2">
+                          <h4 className="font-bold text-white text-sm leading-snug flex items-center flex-wrap gap-1">
                             <span>{item.name}</span>
-                            {item.name_ar && <span className="text-slate-450 text-xs font-normal">({item.name_ar})</span>}
+                            {item.name_ar && <span className="text-slate-500 text-xs font-normal">({item.name_ar})</span>}
                             {item.badge && (
                               <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
-                                item.badge === 'chef' ? 'bg-amber-100 text-amber-700' :
-                                item.badge === 'bestseller' ? 'bg-orange-100 text-orange-700' :
-                                item.badge === 'new' ? 'bg-blue-100 text-blue-700' :
-                                item.badge === 'popular' ? 'bg-purple-100 text-purple-700' :
-                                item.badge === 'spicy' ? 'bg-red-100 text-red-700' : ''
+                                item.badge === 'chef' ? 'bg-amber-500/10 border border-amber-500/20 text-amber-400' :
+                                item.badge === 'bestseller' ? 'bg-orange-500/10 border border-orange-500/20 text-orange-400' :
+                                item.badge === 'new' ? 'bg-blue-500/10 border border-blue-500/20 text-blue-400' :
+                                item.badge === 'popular' ? 'bg-purple-500/10 border border-purple-500/20 text-purple-400' :
+                                item.badge === 'spicy' ? 'bg-red-500/10 border border-red-500/20 text-red-400' : ''
                               }`}>
                                 {item.badge === 'chef' ? '⭐ Chef' :
                                  item.badge === 'bestseller' ? '🔥 Seller' :
@@ -1076,13 +1076,13 @@ export default function MenuBuilder() {
                               </span>
                             )}
                           </h4>
-                          <span className="font-bold text-orange-500 text-sm shrink-0">
+                          <span className="font-bold text-orange-400 text-sm shrink-0">
                             {new Intl.NumberFormat('en-US', { style: 'currency', currency: profile?.currency || 'USD' }).format(item.price)}
                           </span>
                         </div>
                         
                         {item.description && (
-                          <p className="text-slate-500 text-xs leading-relaxed line-clamp-2 mb-3">
+                          <p className="text-slate-400 text-xs leading-relaxed line-clamp-2 mb-3">
                             {item.description}
                           </p>
                         )}
@@ -1093,7 +1093,7 @@ export default function MenuBuilder() {
                             {item.allergens.map((alg) => (
                               <span 
                                 key={alg} 
-                                className="text-[10px] font-semibold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-md border border-amber-200/50"
+                                className="text-[10px] font-semibold bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-md border border-amber-500/20"
                               >
                                 {alg}
                               </span>
@@ -1103,36 +1103,34 @@ export default function MenuBuilder() {
                       </div>
 
                       {/* Actions */}
-                      <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-auto">
+                      <div className="flex items-center justify-between pt-3 border-t border-slate-800/80 mt-auto">
                         <label className="flex items-center space-x-2 cursor-pointer select-none">
                           <input
                             type="checkbox"
                             checked={item.available}
                             onChange={() => handleToggleAvailability(item)}
-                            className="h-3.5 w-3.5 rounded text-orange-500 focus:ring-orange-500 border-slate-300"
+                            className="h-3.5 w-3.5 rounded text-orange-500 focus:ring-orange-500 border-slate-700 bg-[#0B0F19]"
                           />
-                          <span className="text-xs text-slate-550 font-semibold">Available</span>
+                          <span className="text-xs text-slate-400 font-semibold">Available</span>
                         </label>
 
                         <div className="flex items-center space-x-1">
                           <button
                             onClick={() => handleDuplicateItem(item)}
-                            className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-500 hover:text-slate-700 transition-all"
+                            className="p-1.5 rounded-lg border border-slate-800 hover:bg-[#0B0F19] hover:border-slate-700 text-slate-400 hover:text-white transition-all cursor-pointer"
                             title="Duplicate Item"
                           >
                             <Copy className="h-3.5 w-3.5" />
                           </button>
                           <button
                             onClick={() => openEditItem(item)}
-                            className="p-1.5 rounded-lg border border-slate-200 hover:border-slate-300 text-slate-500 hover:text-slate-700 transition-all"
-                            title="Edit Item"
+                            className="p-1.5 rounded-lg border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white transition-all cursor-pointer"
                           >
                             <Edit2 className="h-3.5 w-3.5" />
                           </button>
                           <button
                             onClick={() => handleDeleteItem(item.id)}
-                            className="p-1.5 rounded-lg border border-slate-200 hover:bg-rose-50 hover:border-rose-100 text-rose-500 hover:text-rose-700 transition-all"
-                            title="Delete Item"
+                            className="p-1.5 rounded-lg border border-slate-800 hover:bg-rose-950/40 hover:border-rose-900/60 text-rose-450 hover:text-rose-350 transition-all cursor-pointer"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
@@ -1149,17 +1147,24 @@ export default function MenuBuilder() {
 
       {/* CATEGORY MODAL */}
       {showCategoryModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-sm overflow-hidden">
-            <div className="p-5 border-b border-slate-100">
-              <h3 className="font-bold text-slate-800 text-base">
+        <div className="fixed inset-0 z-55 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[#111A2E] rounded-2xl border border-slate-800 shadow-2xl w-full max-w-sm overflow-hidden animate-slide-up">
+            <div className="p-5 border-b border-slate-800/80 flex items-center justify-between">
+              <h3 className="font-bold text-white text-base">
                 {categoryModalMode === 'add' ? 'Add New Category' : 'Edit Category'}
               </h3>
+              <button
+                type="button"
+                onClick={() => setShowCategoryModal(false)}
+                className="text-slate-400 hover:text-white cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
             <form onSubmit={handleSaveCategory}>
               <div className="p-5 space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                     Category Name
                   </label>
                   <input
@@ -1169,12 +1174,12 @@ export default function MenuBuilder() {
                     placeholder="e.g. Pasta, Burgers, Soft Drinks"
                     value={categoryName}
                     onChange={(e) => setCategoryName(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm"
+                    className="w-full bg-[#0B0F19] border border-slate-800/80 rounded-xl px-4 py-2.5 text-white placeholder-slate-550 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                     Category Name (Arabic)
                   </label>
                   <input
@@ -1182,23 +1187,23 @@ export default function MenuBuilder() {
                     placeholder="مثال: المعكرونة، البرغر، المشروبات"
                     value={categoryNameAr}
                     onChange={(e) => setCategoryNameAr(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm text-right"
+                    className="w-full bg-[#0B0F19] border border-slate-800/80 rounded-xl px-4 py-2.5 text-white placeholder-slate-550 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm text-right"
                     dir="rtl"
                   />
                 </div>
               </div>
-              <div className="px-5 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end space-x-2">
+              <div className="px-5 py-4 bg-[#0B0F19]/40 border-t border-slate-800/80 flex items-center justify-end space-x-2">
                 <button
                   type="button"
                   onClick={() => setShowCategoryModal(false)}
-                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl text-xs font-semibold transition-all"
+                  className="px-4 py-2 text-slate-400 hover:text-white rounded-xl text-xs font-semibold transition-all cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingCategory}
-                  className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-xl text-xs shadow-md transition-all active:scale-[0.98] flex items-center space-x-1 disabled:opacity-50"
+                  className="bg-orange-500 hover:bg-orange-600 text-slate-950 font-bold py-2 px-4 rounded-xl text-xs shadow-md transition-all active:scale-[0.98] flex items-center space-x-1 disabled:opacity-50 cursor-pointer"
                 >
                   {submittingCategory && <Loader2 className="h-3 w-3 animate-spin" />}
                   <span>{categoryModalMode === 'add' ? 'Create' : 'Save'}</span>
@@ -1211,19 +1216,26 @@ export default function MenuBuilder() {
 
       {/* MENU ITEM MODAL */}
       {showItemModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden max-h-[90vh] flex flex-col">
-            <div className="p-5 border-b border-slate-100 shrink-0">
-              <h3 className="font-bold text-slate-800 text-base">
+        <div className="fixed inset-0 z-55 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[#111A2E] rounded-2xl border border-slate-800 shadow-2xl w-full max-w-lg overflow-hidden max-h-[90vh] flex flex-col animate-slide-up">
+            <div className="p-5 border-b border-slate-800/80 flex items-center justify-between shrink-0">
+              <h3 className="font-bold text-white text-base">
                 {itemModalMode === 'add' ? 'Add Menu Item' : 'Edit Menu Item'}
               </h3>
+              <button
+                type="button"
+                onClick={() => setShowItemModal(false)}
+                className="text-slate-400 hover:text-white cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
 
             <form onSubmit={handleSaveItem} className="flex-1 overflow-y-auto">
               <div className="p-5 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                       Item Name
                     </label>
                     <input
@@ -1232,12 +1244,12 @@ export default function MenuBuilder() {
                       placeholder="e.g. Truffle Fries"
                       value={itemName}
                       onChange={(e) => setItemName(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm"
+                      className="w-full bg-[#0B0F19] border border-slate-800/80 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                       Price ({profile?.currency || 'USD'})
                     </label>
                     <input
@@ -1247,13 +1259,13 @@ export default function MenuBuilder() {
                       placeholder="9.99"
                       value={itemPrice}
                       onChange={(e) => setItemPrice(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm"
+                      className="w-full bg-[#0B0F19] border border-slate-800/80 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                     Item Name (Arabic)
                   </label>
                   <input
@@ -1261,62 +1273,62 @@ export default function MenuBuilder() {
                     placeholder="مثال: بطاطس بالتروفل"
                     value={itemNameAr}
                     onChange={(e) => setItemNameAr(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm text-right"
+                    className="w-full bg-[#0B0F19] border border-slate-800/80 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm text-right"
                     dir="rtl"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                       Category
                     </label>
                     <select
                       value={itemCategoryId}
                       onChange={(e) => setItemCategoryId(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm appearance-none"
+                      className="w-full bg-[#0B0F19] border border-slate-800/80 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm appearance-none"
                     >
                       {categories.map(c => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
+                        <option key={c.id} value={c.id} className="bg-[#111A2E]">{c.name}</option>
                       ))}
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                       Availability
                     </label>
                     <select
                       value={itemIsAvailable ? 'true' : 'false'}
                       onChange={(e) => setItemIsAvailable(e.target.value === 'true')}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm appearance-none"
+                      className="w-full bg-[#0B0F19] border border-slate-800/80 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm appearance-none"
                     >
-                      <option value="true">In Stock / Available</option>
-                      <option value="false">Sold Out / Unavailable</option>
+                      <option value="true" className="bg-[#111A2E]">In Stock / Available</option>
+                      <option value="false" className="bg-[#111A2E]">Sold Out / Unavailable</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                       Promo Badge
                     </label>
                     <select
                       value={itemBadge}
                       onChange={(e) => setItemBadge(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm appearance-none"
+                      className="w-full bg-[#0B0F19] border border-slate-800/80 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm appearance-none"
                     >
-                      <option value="">None</option>
-                      <option value="chef">⭐ Chef's Special</option>
-                      <option value="bestseller">🔥 Best Seller</option>
-                      <option value="new">✨ New</option>
-                      <option value="popular">📈 Popular</option>
-                      <option value="spicy">🌶️ Spicy</option>
+                      <option value="" className="bg-[#111A2E]">None</option>
+                      <option value="chef" className="bg-[#111A2E]">⭐ Chef's Special</option>
+                      <option value="bestseller" className="bg-[#111A2E]">🔥 Best Seller</option>
+                      <option value="new" className="bg-[#111A2E]">✨ New</option>
+                      <option value="popular" className="bg-[#111A2E]">📈 Popular</option>
+                      <option value="spicy" className="bg-[#111A2E]">🌶️ Spicy</option>
                     </select>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                     Description
                   </label>
                   <textarea
@@ -1324,12 +1336,12 @@ export default function MenuBuilder() {
                     placeholder="Short description of ingredients, flavor profile..."
                     value={itemDescription}
                     onChange={(e) => setItemDescription(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm"
+                    className="w-full bg-[#0B0F19] border border-slate-800/80 rounded-xl px-4 py-2.5 text-white placeholder-slate-550 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                     Description (Arabic)
                   </label>
                   <textarea
@@ -1337,14 +1349,14 @@ export default function MenuBuilder() {
                     placeholder="وصف قصير للمكونات، النكهة، إلخ..."
                     value={itemDescriptionAr}
                     onChange={(e) => setItemDescriptionAr(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm text-right"
+                    className="w-full bg-[#0B0F19] border border-slate-800/80 rounded-xl px-4 py-2.5 text-white placeholder-slate-550 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm text-right"
                     dir="rtl"
                   />
                 </div>
 
                 {/* Allergen Checkboxes */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                     Dietary / Allergen Info
                   </label>
                   <div className="flex flex-wrap gap-2">
@@ -1355,10 +1367,10 @@ export default function MenuBuilder() {
                           key={alg}
                           type="button"
                           onClick={() => handleAllergenToggle(alg)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border cursor-pointer ${
                             isSelected
-                              ? 'bg-amber-500 border-amber-600 text-white shadow-sm'
-                              : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                              ? 'bg-orange-500 border-orange-600 text-slate-950 shadow-sm'
+                              : 'bg-[#0B0F19] border-slate-800 text-slate-400 hover:bg-[#0B0F19]/80'
                           }`}
                         >
                           {alg}
@@ -1370,20 +1382,20 @@ export default function MenuBuilder() {
 
                 {/* Compressed Item Image Uploader */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
                     Item Image
                   </label>
                   <div className="flex items-center space-x-4">
-                    <div className="h-20 w-20 bg-slate-50 rounded-xl border border-slate-200 overflow-hidden flex items-center justify-center shrink-0">
+                    <div className="h-20 w-20 bg-[#0B0F19] rounded-xl border border-slate-800/80 overflow-hidden flex items-center justify-center shrink-0">
                       {itemImageUrl ? (
                         <img src={itemImageUrl} alt="Upload Preview" className="h-full w-full object-cover" />
                       ) : (
-                        <ImageIcon className="h-6 w-6 text-slate-300" />
+                        <ImageIcon className="h-6 w-6 text-slate-700" />
                       )}
                     </div>
 
                     <div className="flex-1">
-                      <label className="cursor-pointer inline-flex items-center space-x-1.5 border border-slate-200 hover:border-orange-500 hover:text-orange-500 bg-white text-slate-700 text-xs font-bold py-2 px-3 rounded-xl transition-all shadow-sm">
+                      <label className="cursor-pointer inline-flex items-center space-x-1.5 border border-slate-800 hover:border-orange-500 hover:text-orange-400 bg-[#0B0F19]/40 hover:bg-[#0B0F19] text-slate-300 text-xs font-bold py-2 px-3 rounded-xl transition-all shadow-sm">
                         {uploadingImage ? (
                           <>
                             <Loader2 className="h-3 w-3 animate-spin" />
@@ -1402,24 +1414,24 @@ export default function MenuBuilder() {
                           </>
                         )}
                       </label>
-                      <p className="text-[10px] text-slate-400 mt-1.5">Max 300KB, max 800px width/height. Web-optimized.</p>
+                      <p className="text-[10px] text-slate-500 mt-1.5">Max 300KB, max 800px width/height. Web-optimized.</p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="px-5 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end space-x-2 shrink-0">
+              <div className="px-5 py-4 bg-[#0B0F19]/40 border-t border-slate-800/80 flex items-center justify-end space-x-2 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowItemModal(false)}
-                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl text-xs font-semibold transition-all"
+                  className="px-4 py-2 text-slate-400 hover:text-white rounded-xl text-xs font-semibold transition-all cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingItem || uploadingImage}
-                  className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-xl text-xs shadow-md transition-all active:scale-[0.98] flex items-center space-x-1 disabled:opacity-50"
+                  className="bg-orange-500 hover:bg-orange-600 text-slate-950 font-bold py-2 px-4 rounded-xl text-xs shadow-md transition-all active:scale-[0.98] flex items-center space-x-1 disabled:opacity-50 cursor-pointer"
                 >
                   {submittingItem && <Loader2 className="h-3 w-3 animate-spin" />}
                   <span>{itemModalMode === 'add' ? 'Create' : 'Save'}</span>

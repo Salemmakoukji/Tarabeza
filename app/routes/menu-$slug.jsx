@@ -1,8 +1,13 @@
 import { useLoaderData, Link } from 'react-router';
 import MenuViewClient from './menu-client';
 
-export async function loader({ params }) {
+export async function loader({ request, params }) {
   const { slug } = params;
+
+  const url = new URL(request.url);
+  const isPreview = url.searchParams.get('preview') === 'true';
+  const previewTemplate = url.searchParams.get('template');
+  const previewAccent = url.searchParams.get('accent');
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL || "";
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || "";
@@ -16,6 +21,13 @@ export async function loader({ params }) {
     .select('*')
     .eq('slug', slug)
     .single();
+
+  if (profile) {
+    if (isPreview) {
+      if (previewTemplate) profile.template_id = previewTemplate;
+      if (previewAccent) profile.accent_color = previewAccent;
+    }
+  }
 
   if (!profile) {
     return {

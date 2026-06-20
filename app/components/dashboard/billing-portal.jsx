@@ -112,14 +112,14 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
   const currentPlanName = subscriptionInfo.plan.toUpperCase();
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 text-white">
       {/* Current Plan Status Summary */}
       <div className={`p-6 rounded-2xl border ${
         subscriptionInfo.hasPaidAccess 
-          ? 'bg-emerald-50/50 border-emerald-200' 
+          ? 'bg-emerald-950/20 border-emerald-800/60 text-emerald-200' 
           : subscriptionInfo.isTrialActive 
-            ? 'bg-orange-50/50 border-orange-200' 
-            : 'bg-rose-50/50 border-rose-200'
+            ? 'bg-orange-950/20 border-orange-850/60 text-orange-200' 
+            : 'bg-rose-950/20 border-rose-850/60 text-rose-200'
       }`}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start space-x-3 gap-3">
@@ -139,7 +139,7 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
               )}
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-800">
+              <h3 className="text-base font-bold text-white">
                 {subscriptionInfo.hasPaidAccess 
                   ? `Active Subscription: ${currentPlanName}` 
                   : subscriptionInfo.isTrialActive 
@@ -147,7 +147,7 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
                     : 'Subscription Expired'
                 }
               </h3>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-400 mt-1">
                 {subscriptionInfo.hasPaidAccess 
                   ? `Your paid subscription is active. Expiration: ${subscriptionInfo.expires_at ? subscriptionInfo.expires_at.split('T')[0] : 'Never'}`
                   : subscriptionInfo.isTrialActive 
@@ -159,7 +159,7 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
           </div>
           
           {subscriptionInfo.isTrialActive && !subscriptionInfo.hasPaidAccess && (
-            <span className="bg-orange-500/10 border border-orange-500/20 text-orange-600 rounded-xl px-3 py-1.5 text-xs font-bold self-start sm:self-center">
+            <span className="bg-orange-550/10 border border-orange-550/20 text-orange-400 rounded-xl px-3 py-1.5 text-xs font-bold self-start sm:self-center">
               14-Day Free Trial
             </span>
           )}
@@ -169,39 +169,39 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
       {/* Pricing Grid */}
       <div>
         <div className="text-center max-w-xl mx-auto space-y-2 mb-8">
-          <h2 className="text-2xl font-bold text-slate-800">Select Subscription Plan</h2>
-          <p className="text-slate-500 text-sm">Choose the tier that matches your restaurant requirements.</p>
+          <h2 className="text-2xl font-bold text-white">Select Subscription Plan</h2>
+          <p className="text-slate-400 text-sm">Choose the tier that matches your restaurant requirements.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto items-stretch">
           {/* Plan 1: Basic */}
-          <div className={`bg-white border rounded-2xl p-6 flex flex-col justify-between space-y-6 shadow-sm hover:shadow-md transition-shadow relative ${
-            subscriptionInfo.plan === 'basic' && subscriptionInfo.hasPaidAccess ? 'ring-2 ring-emerald-500 border-transparent' : 'border-slate-200'
+          <div className={`bg-[#162035]/65 border rounded-2xl p-6 flex flex-col justify-between space-y-6 shadow-sm hover:shadow-md transition-shadow relative ${
+            subscriptionInfo.plan === 'basic' && subscriptionInfo.hasPaidAccess ? 'ring-2 ring-emerald-500 border-transparent shadow-lg shadow-emerald-500/5' : 'border-slate-800'
           }`}>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-md font-bold text-slate-800">Basic</h3>
+                <h3 className="text-md font-bold text-white">Basic</h3>
                 {subscriptionInfo.plan === 'basic' && subscriptionInfo.hasPaidAccess && (
-                  <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">Current</span>
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/35 font-bold px-2 py-0.5 rounded-full">Current</span>
                 )}
               </div>
               <div className="flex items-baseline space-x-1 gap-1">
-                <span className="text-3xl font-black text-slate-800">$15</span>
+                <span className="text-3xl font-black text-white">$15</span>
                 <span className="text-slate-400 text-xs">/month</span>
               </div>
-              <p className="text-xs text-slate-500">Perfect for single coffee shops or diners.</p>
-              <div className="h-px bg-slate-100 w-full"></div>
+              <p className="text-xs text-slate-400">Perfect for single coffee shops or diners.</p>
+              <div className="h-px bg-slate-800 w-full"></div>
               <ul className="space-y-2.5">
-                <li className="flex items-center space-x-2 gap-2 text-xs text-slate-600">
-                  <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                <li className="flex items-center space-x-2 gap-2 text-xs text-slate-300">
+                  <Check className="h-3.5 w-3.5 text-emerald-550 shrink-0" />
                   <span>1 Restaurant profile</span>
                 </li>
-                <li className="flex items-center space-x-2 gap-2 text-xs text-slate-600">
-                  <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                <li className="flex items-center space-x-2 gap-2 text-xs text-slate-300">
+                  <Check className="h-3.5 w-3.5 text-emerald-550 shrink-0" />
                   <span>Up to 50 menu items</span>
                 </li>
-                <li className="flex items-center space-x-2 gap-2 text-xs text-slate-600">
-                  <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                <li className="flex items-center space-x-2 gap-2 text-xs text-slate-300">
+                  <Check className="h-3.5 w-3.5 text-emerald-550 shrink-0" />
                   <span>Standard QR flyer downloads</span>
                 </li>
               </ul>
@@ -212,8 +212,8 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
               disabled={loadingPlan !== null || (subscriptionInfo.plan === 'basic' && subscriptionInfo.hasPaidAccess)}
               className={`w-full font-bold text-xs py-3 px-4 rounded-xl transition-all shadow-sm flex items-center justify-center space-x-1.5 ${
                 subscriptionInfo.plan === 'basic' && subscriptionInfo.hasPaidAccess
-                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                  : 'bg-white border border-slate-200 hover:border-orange-500 hover:text-orange-500 text-slate-700 active:scale-98'
+                  ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/50'
+                  : 'bg-[#1e293b] border border-slate-800 hover:border-orange-500 hover:text-orange-500 text-slate-200 active:scale-98 hover:bg-[#25324c]'
               }`}
             >
               {loadingPlan === 'Basic' ? (
@@ -228,46 +228,46 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
           </div>
 
           {/* Plan 2: Pro */}
-          <div className={`bg-white border p-6 rounded-2xl flex flex-col justify-between space-y-6 shadow-sm hover:shadow-md transition-shadow relative ${
+          <div className={`bg-[#1C273E]/75 border p-6 rounded-2xl flex flex-col justify-between space-y-6 shadow-lg transition-all relative ${
             subscriptionInfo.plan === 'pro' && subscriptionInfo.hasPaidAccess 
               ? 'ring-2 ring-emerald-500 border-transparent shadow-lg shadow-emerald-500/5' 
-              : 'border-orange-200 ring-2 ring-orange-500/10'
+              : 'border-orange-500/40 ring-4 ring-orange-500/5'
           }`}>
             {/* Best Value Tag */}
-            <span className="absolute -top-3 right-6 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold uppercase tracking-wider text-[8px] px-3 py-1 rounded-full shadow-lg shadow-orange-500/10">
+            <span className="absolute -top-3 right-6 bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 font-bold uppercase tracking-wider text-[8px] px-3 py-1 rounded-full shadow-lg shadow-orange-500/10">
               Popular
             </span>
 
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-md font-bold text-slate-800 flex items-center space-x-1 gap-1">
+                <h3 className="text-md font-bold text-white flex items-center space-x-1 gap-1">
                   <span>Pro</span>
                   <Star className="h-4 w-4 text-orange-500 fill-orange-500" />
                 </h3>
                 {subscriptionInfo.plan === 'pro' && subscriptionInfo.hasPaidAccess && (
-                  <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">Current</span>
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/35 font-bold px-2 py-0.5 rounded-full">Current</span>
                 )}
               </div>
               <div className="flex items-baseline space-x-1 gap-1">
-                <span className="text-3xl font-black text-slate-800">$29</span>
+                <span className="text-3xl font-black text-white">$29</span>
                 <span className="text-slate-400 text-xs">/month</span>
               </div>
-              <p className="text-xs text-slate-500">Perfect for growing bistros and bars.</p>
-              <div className="h-px bg-slate-100 w-full"></div>
+              <p className="text-xs text-slate-350">Perfect for growing bistros and bars.</p>
+              <div className="h-px bg-slate-800/80 w-full"></div>
               <ul className="space-y-2.5">
-                <li className="flex items-center space-x-2 gap-2 text-xs text-slate-600">
+                <li className="flex items-center space-x-2 gap-2 text-xs text-slate-200">
                   <Check className="h-3.5 w-3.5 text-orange-500 shrink-0" />
                   <span>3 Restaurant profiles</span>
                 </li>
-                <li className="flex items-center space-x-2 gap-2 text-xs text-slate-600">
+                <li className="flex items-center space-x-2 gap-2 text-xs text-slate-200">
                   <Check className="h-3.5 w-3.5 text-orange-500 shrink-0" />
                   <span>Unlimited menu items</span>
                 </li>
-                <li className="flex items-center space-x-2 gap-2 text-xs text-slate-600">
+                <li className="flex items-center space-x-2 gap-2 text-xs text-slate-200">
                   <Check className="h-3.5 w-3.5 text-orange-500 shrink-0" />
                   <span>Custom QR colors & styled flyers</span>
                 </li>
-                <li className="flex items-center space-x-2 gap-2 text-xs text-slate-600">
+                <li className="flex items-center space-x-2 gap-2 text-xs text-slate-200">
                   <Check className="h-3.5 w-3.5 text-orange-500 shrink-0" />
                   <span>Basic scan metrics</span>
                 </li>
@@ -279,8 +279,8 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
               disabled={loadingPlan !== null || (subscriptionInfo.plan === 'pro' && subscriptionInfo.hasPaidAccess)}
               className={`w-full font-bold text-xs py-3 px-4 rounded-xl transition-all shadow-md flex items-center justify-center space-x-1.5 ${
                 subscriptionInfo.plan === 'pro' && subscriptionInfo.hasPaidAccess
-                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-orange-500/10 active:scale-98'
+                  ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/50'
+                  : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-650 hover:to-amber-600 text-slate-950 shadow-orange-500/10 active:scale-98'
               }`}
             >
               {loadingPlan === 'Pro' ? (
@@ -295,37 +295,37 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
           </div>
 
           {/* Plan 3: Premium */}
-          <div className={`bg-white border rounded-2xl p-6 flex flex-col justify-between space-y-6 shadow-sm hover:shadow-md transition-shadow relative ${
-            subscriptionInfo.plan === 'premium' && subscriptionInfo.hasPaidAccess ? 'ring-2 ring-emerald-500 border-transparent' : 'border-slate-200'
+          <div className={`bg-[#162035]/65 border rounded-2xl p-6 flex flex-col justify-between space-y-6 shadow-sm hover:shadow-md transition-shadow relative ${
+            subscriptionInfo.plan === 'premium' && subscriptionInfo.hasPaidAccess ? 'ring-2 ring-emerald-500 border-transparent shadow-lg shadow-emerald-500/5' : 'border-slate-800'
           }`}>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-md font-bold text-slate-800">Premium</h3>
+                <h3 className="text-md font-bold text-white">Premium</h3>
                 {subscriptionInfo.plan === 'premium' && subscriptionInfo.hasPaidAccess && (
-                  <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">Current</span>
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/35 font-bold px-2 py-0.5 rounded-full">Current</span>
                 )}
               </div>
               <div className="flex items-baseline space-x-1 gap-1">
-                <span className="text-3xl font-black text-slate-800">$49</span>
+                <span className="text-3xl font-black text-white">$49</span>
                 <span className="text-slate-400 text-xs">/month</span>
               </div>
-              <p className="text-xs text-slate-500">For multi-location dining groups.</p>
-              <div className="h-px bg-slate-100 w-full"></div>
+              <p className="text-xs text-slate-400">For multi-location dining groups.</p>
+              <div className="h-px bg-slate-800 w-full"></div>
               <ul className="space-y-2.5">
-                <li className="flex items-center space-x-2 gap-2 text-xs text-slate-600">
-                  <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                <li className="flex items-center space-x-2 gap-2 text-xs text-slate-300">
+                  <Check className="h-3.5 w-3.5 text-emerald-550 shrink-0" />
                   <span>Unlimited restaurant profiles</span>
                 </li>
-                <li className="flex items-center space-x-2 gap-2 text-xs text-slate-600">
-                  <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                <li className="flex items-center space-x-2 gap-2 text-xs text-slate-300">
+                  <Check className="h-3.5 w-3.5 text-emerald-550 shrink-0" />
                   <span>Unlimited items & custom templates</span>
                 </li>
-                <li className="flex items-center space-x-2 gap-2 text-xs text-slate-600">
-                  <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                <li className="flex items-center space-x-2 gap-2 text-xs text-slate-300">
+                  <Check className="h-3.5 w-3.5 text-emerald-550 shrink-0" />
                   <span>Full database analytics console</span>
                 </li>
-                <li className="flex items-center space-x-2 gap-2 text-xs text-slate-600">
-                  <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                <li className="flex items-center space-x-2 gap-2 text-xs text-slate-300">
+                  <Check className="h-3.5 w-3.5 text-emerald-550 shrink-0" />
                   <span>24/7 Premium technical support</span>
                 </li>
               </ul>
@@ -336,8 +336,8 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
               disabled={loadingPlan !== null || (subscriptionInfo.plan === 'premium' && subscriptionInfo.hasPaidAccess)}
               className={`w-full font-bold text-xs py-3 px-4 rounded-xl transition-all shadow-sm flex items-center justify-center space-x-1.5 ${
                 subscriptionInfo.plan === 'premium' && subscriptionInfo.hasPaidAccess
-                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                  : 'bg-white border border-slate-200 hover:border-orange-500 hover:text-orange-500 text-slate-700 active:scale-98'
+                  ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/50'
+                  : 'bg-[#1e293b] border border-slate-800 hover:border-orange-500 hover:text-orange-500 text-slate-200 active:scale-98 hover:bg-[#25324c]'
               }`}
             >
               {loadingPlan === 'Premium' ? (
@@ -358,7 +358,7 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`pointer-events-auto flex items-start justify-between p-4 rounded-xl border bg-white shadow-2xl transition-all duration-300 animate-slide-up text-slate-800`}
+            className="pointer-events-auto flex items-start justify-between p-4 rounded-xl border bg-[#111A2E]/95 border-slate-800 shadow-2xl transition-all duration-300 animate-slide-up text-white"
             style={{ borderLeftWidth: '5px', borderLeftColor: toast.type === 'error' ? '#ef4444' : '#10b981' }}
           >
             <div className="flex items-start space-x-3 gap-3">
@@ -368,17 +368,17 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
                 <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
               )}
               <div>
-                <p className="font-bold text-xs text-slate-900">
+                <p className="font-bold text-xs text-white">
                   {toast.type === 'error' ? 'Error' : 'Success'}
                 </p>
-                <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
                   {toast.text}
                 </p>
               </div>
             </div>
             <button
               onClick={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}
-              className="text-slate-400 hover:text-slate-600 transition-colors ml-4 shrink-0"
+              className="text-slate-400 hover:text-slate-200 transition-colors ml-4 shrink-0"
             >
               <X className="h-4 w-4" />
             </button>

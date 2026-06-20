@@ -602,35 +602,35 @@ export default function DashboardQRPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-white font-sans">
       <div>
-        <h1 className="text-2xl font-bold text-slate-800 font-sans">QR Code Studio</h1>
-        <p className="text-slate-500 text-sm">Design visual QR menus and generate printable table tent cards.</p>
+        <h1 className="text-2xl font-bold text-white font-sans">QR Code Studio</h1>
+        <p className="text-slate-400 text-sm">Design visual QR menus and generate printable table tent cards.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Card: Customizer Panel */}
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 lg:col-span-1 space-y-6 flex flex-col justify-between">
+        <div className="bg-[#111A2E]/60 border border-slate-800 rounded-2xl shadow-sm p-6 lg:col-span-1 space-y-6 flex flex-col justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-slate-800 flex items-center space-x-2 pb-3 border-b border-slate-100 font-sans">
+            <h2 className="text-lg font-semibold text-white flex items-center space-x-2 pb-3 border-b border-slate-800/80 font-sans">
               <Palette className="h-5 w-5 text-slate-400" />
               <span>Customize QR Style</span>
             </h2>
 
             <div className="space-y-5 mt-4 max-h-[60vh] overflow-y-auto pr-1 no-scrollbar font-sans">
               <div className="space-y-3">
-                <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Style & Colors</h3>
+                <h3 className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Style & Colors</h3>
                 
                 <div>
-                  <label className="block text-[11px] text-slate-500 mb-1 font-medium">Pattern Type</label>
+                  <label className="block text-[11px] text-slate-450 mb-1 font-medium">Pattern Type</label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
                       onClick={() => setQrStyleType('solid')}
                       className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all ${
                         qrStyleType === 'solid'
-                          ? 'border-orange-500 bg-orange-50/50 text-orange-600'
-                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                          ? 'border-orange-500 bg-orange-500/10 text-orange-400'
+                          : 'border-slate-800 text-slate-300 hover:bg-[#1C273E] hover:text-white'
                       }`}
                     >
                       Solid Color
@@ -640,8 +640,8 @@ export default function DashboardQRPage() {
                       onClick={() => setQrStyleType('gradient')}
                       className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all ${
                         qrStyleType === 'gradient'
-                          ? 'border-orange-500 bg-orange-50/50 text-orange-600'
-                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                          ? 'border-orange-500 bg-orange-500/10 text-orange-400'
+                          : 'border-slate-800 text-slate-300 hover:bg-[#1C273E] hover:text-white'
                       }`}
                     >
                       Gradient
@@ -651,7 +651,7 @@ export default function DashboardQRPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[11px] text-slate-500 mb-1 font-medium font-sans">
+                    <label className="block text-[11px] text-slate-450 mb-1 font-medium font-sans">
                       {qrStyleType === 'gradient' ? 'Start Color' : 'QR Color'}
                     </label>
                     <div className="flex items-center space-x-2">
@@ -659,23 +659,23 @@ export default function DashboardQRPage() {
                         type="color"
                         value={fgColor}
                         onChange={(e) => setFgColor(e.target.value)}
-                        className="h-8 w-12 border border-slate-200 rounded cursor-pointer bg-slate-50"
+                        className="h-8 w-12 border border-slate-800 rounded cursor-pointer bg-slate-900"
                       />
-                      <span className="text-[10px] font-mono text-slate-400">{fgColor.toUpperCase()}</span>
+                      <span className="text-[10px] font-mono text-slate-450">{fgColor.toUpperCase()}</span>
                     </div>
                   </div>
 
                   {qrStyleType === 'gradient' && (
                     <div>
-                      <label className="block text-[11px] text-slate-500 mb-1 font-medium font-sans">End Color</label>
+                      <label className="block text-[11px] text-slate-455 mb-1 font-medium font-sans">End Color</label>
                       <div className="flex items-center space-x-2">
                         <input
                           type="color"
                           value={fgColor2}
                           onChange={(e) => setFgColor2(e.target.value)}
-                          className="h-8 w-12 border border-slate-200 rounded cursor-pointer bg-slate-50"
+                          className="h-8 w-12 border border-slate-800 rounded cursor-pointer bg-slate-900"
                         />
-                        <span className="text-[10px] font-mono text-slate-400">{fgColor2.toUpperCase()}</span>
+                        <span className="text-[10px] font-mono text-slate-455">{fgColor2.toUpperCase()}</span>
                       </div>
                     </div>
                   )}
@@ -683,11 +683,11 @@ export default function DashboardQRPage() {
 
                 {qrStyleType === 'gradient' && (
                   <div>
-                    <label className="block text-[11px] text-slate-500 mb-1 font-medium">Gradient Flow</label>
+                    <label className="block text-[11px] text-slate-455 mb-1 font-medium">Gradient Flow</label>
                     <select
                       value={gradientDirection}
                       onChange={(e) => setGradientDirection(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-600 focus:outline-none"
+                      className="w-full bg-[#0D1321] border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none"
                     >
                       <option value="diagonal">Diagonal</option>
                       <option value="horizontal">Horizontal</option>
@@ -698,32 +698,32 @@ export default function DashboardQRPage() {
                 )}
 
                 <div>
-                  <label className="block text-[11px] text-slate-505 mb-1 font-medium font-sans">Background Color</label>
+                  <label className="block text-[11px] text-slate-455 mb-1 font-medium font-sans">Background Color</label>
                   <div className="flex items-center space-x-2">
                     <input
                       type="color"
                       value={bgColor}
                       onChange={(e) => setBgColor(e.target.value)}
-                      className="h-8 w-12 border border-slate-200 rounded cursor-pointer bg-slate-50"
+                      className="h-8 w-12 border border-slate-800 rounded cursor-pointer bg-slate-900"
                     />
-                    <span className="text-[10px] font-mono text-slate-400">{bgColor.toUpperCase()}</span>
+                    <span className="text-[10px] font-mono text-slate-455">{bgColor.toUpperCase()}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-3 pt-3 border-t border-slate-100">
-                <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Pattern Shape</h3>
+              <div className="space-y-3 pt-3 border-t border-slate-800">
+                <h3 className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Pattern Shape</h3>
                 
                 <div>
-                  <label className="block text-[11px] text-slate-505 mb-1.5 font-medium">Dot Style</label>
+                  <label className="block text-[11px] text-slate-455 mb-1.5 font-medium">Dot Style</label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
                       onClick={() => setDotStyle('square')}
                       className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all ${
                         dotStyle === 'square'
-                          ? 'border-orange-500 bg-orange-50/50 text-orange-600'
-                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                          ? 'border-orange-500 bg-orange-500/10 text-orange-400'
+                          : 'border-slate-800 text-slate-300 hover:bg-[#1C273E] hover:text-white'
                       }`}
                     >
                       Classic Squares
@@ -733,8 +733,8 @@ export default function DashboardQRPage() {
                       onClick={() => setDotStyle('circle')}
                       className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all ${
                         dotStyle === 'circle'
-                          ? 'border-orange-500 bg-orange-50/50 text-orange-600'
-                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                          ? 'border-orange-500 bg-orange-500/10 text-orange-400'
+                          : 'border-slate-800 text-slate-300 hover:bg-[#1C273E] hover:text-white'
                       }`}
                     >
                       Round Dots
@@ -743,19 +743,19 @@ export default function DashboardQRPage() {
                 </div>
               </div>
 
-              <div className="space-y-3 pt-3 border-t border-slate-100">
-                <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Finder Eyes</h3>
+              <div className="space-y-3 pt-3 border-t border-slate-800">
+                <h3 className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Finder Eyes</h3>
                 
                 <div>
-                  <label className="block text-[11px] text-slate-505 mb-1.5 font-medium">Eye Style</label>
+                  <label className="block text-[11px] text-slate-455 mb-1.5 font-medium">Eye Style</label>
                   <div className="grid grid-cols-3 gap-2">
                     <button
                       type="button"
                       onClick={() => setEyeStyle('square')}
                       className={`py-1.5 px-2 rounded-lg text-[11px] font-semibold border transition-all ${
                         eyeStyle === 'square'
-                          ? 'border-orange-500 bg-orange-50/50 text-orange-600'
-                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                          ? 'border-orange-500 bg-orange-500/10 text-orange-400'
+                          : 'border-slate-800 text-slate-300 hover:bg-[#1C273E] hover:text-white'
                       }`}
                     >
                       Square
@@ -765,8 +765,8 @@ export default function DashboardQRPage() {
                       onClick={() => setEyeStyle('rounded')}
                       className={`py-1.5 px-2 rounded-lg text-[11px] font-semibold border transition-all ${
                         eyeStyle === 'rounded'
-                          ? 'border-orange-500 bg-orange-50/50 text-orange-600'
-                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                          ? 'border-orange-500 bg-orange-500/10 text-orange-400'
+                          : 'border-slate-800 text-slate-300 hover:bg-[#1C273E] hover:text-white'
                       }`}
                     >
                       Rounded
@@ -776,8 +776,8 @@ export default function DashboardQRPage() {
                       onClick={() => setEyeStyle('circle')}
                       className={`py-1.5 px-2 rounded-lg text-[11px] font-semibold border transition-all ${
                         eyeStyle === 'circle'
-                          ? 'border-orange-500 bg-orange-50/50 text-orange-600'
-                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                          ? 'border-orange-500 bg-orange-500/10 text-orange-400'
+                          : 'border-slate-800 text-slate-300 hover:bg-[#1C273E] hover:text-white'
                       }`}
                     >
                       Circle
@@ -786,19 +786,19 @@ export default function DashboardQRPage() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] text-slate-505 mb-1 font-medium font-sans">Eye Frame Color</label>
+                  <label className="block text-[11px] text-slate-455 mb-1 font-medium font-sans">Eye Frame Color</label>
                   <div className="flex items-center space-x-3">
                     <input
                       type="color"
                       value={eyeColor}
                       onChange={(e) => setEyeColor(e.target.value)}
-                      className="h-8 w-12 border border-slate-200 rounded cursor-pointer bg-slate-50"
+                      className="h-8 w-12 border border-slate-800 rounded cursor-pointer bg-slate-900"
                     />
-                    <span className="text-[10px] font-mono text-slate-400">{eyeColor.toUpperCase()}</span>
+                    <span className="text-[10px] font-mono text-slate-455">{eyeColor.toUpperCase()}</span>
                     <button
                       type="button"
                       onClick={() => setEyeColor(fgColor)}
-                      className="text-[10px] font-bold text-slate-400 hover:text-orange-500 underline transition-all"
+                      className="text-[10px] font-bold text-slate-400 hover:text-orange-455 underline transition-all bg-transparent border-0 cursor-pointer"
                     >
                       Match QR
                     </button>
@@ -806,28 +806,28 @@ export default function DashboardQRPage() {
                 </div>
               </div>
 
-              <div className="space-y-3 pt-3 border-t border-slate-100">
+              <div className="space-y-3 pt-3 border-t border-slate-800">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Logo Overlay</h3>
+                  <h3 className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Logo Overlay</h3>
                   <input
                     type="checkbox"
                     checked={showLogo}
                     onChange={(e) => setShowLogo(e.target.checked)}
-                    className="rounded text-orange-500 focus:ring-orange-500 cursor-pointer h-4 w-4"
+                    className="rounded text-orange-500 focus:ring-orange-500 cursor-pointer h-4 w-4 bg-[#0D1321] border-slate-800"
                   />
                 </div>
                 
                 {showLogo && (
                   <div>
-                    <label className="block text-[11px] text-slate-505 mb-1.5 font-medium">Logo Shield Style</label>
+                    <label className="block text-[11px] text-slate-455 mb-1.5 font-medium">Logo Shield Style</label>
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
                         onClick={() => setLogoStyle('square')}
                         className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all ${
                           logoStyle === 'square'
-                            ? 'border-orange-500 bg-orange-50/50 text-orange-600'
-                            : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                            ? 'border-orange-500 bg-orange-500/10 text-orange-400'
+                            : 'border-slate-800 text-slate-300 hover:bg-[#1C273E] hover:text-white'
                         }`}
                       >
                         Rounded Rect
@@ -837,8 +837,8 @@ export default function DashboardQRPage() {
                         onClick={() => setLogoStyle('circle')}
                         className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all ${
                           logoStyle === 'circle'
-                            ? 'border-orange-500 bg-orange-50/50 text-orange-600'
-                            : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                            ? 'border-orange-500 bg-orange-500/10 text-orange-400'
+                            : 'border-slate-800 text-slate-300 hover:bg-[#1C273E] hover:text-white'
                         }`}
                       >
                         Circular Badge
@@ -848,22 +848,22 @@ export default function DashboardQRPage() {
                 )}
               </div>
 
-              <div className="space-y-3 pt-3 border-t border-slate-100 font-sans">
-                <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Typography</h3>
+              <div className="space-y-3 pt-3 border-t border-slate-800 font-sans">
+                <h3 className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Typography</h3>
                 
                 <div>
-                  <label className="block text-[11px] text-slate-55 mb-1.5 font-medium">Text Font Style</label>
+                  <label className="block text-[11px] text-slate-455 mb-1.5 font-medium">Text Font Style</label>
                   <select
                     value={qrFontFamily}
                     onChange={(e) => setQrFontFamily(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-600 focus:outline-none"
+                    className="w-full bg-[#0D1321] border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none"
                   >
-                    <optgroup label="Standard System Fonts">
+                    <optgroup label="Standard System Fonts" className="bg-[#111A2E] text-white">
                       <option value="helvetica">Modern Sans (Helvetica)</option>
                       <option value="times">Classic Serif (Times)</option>
                       <option value="courier">Retro Mono (Courier)</option>
                     </optgroup>
-                    <optgroup label="Google Web Fonts">
+                    <optgroup label="Google Web Fonts" className="bg-[#111A2E] text-white">
                       <option value="poppins">Poppins (Modern Clean)</option>
                       <option value="playfair">Playfair Display (Elegant Serif)</option>
                       <option value="cinzel">Cinzel (Classical Luxury)</option>
@@ -875,25 +875,25 @@ export default function DashboardQRPage() {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-slate-100 space-y-3">
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider font-sans">
+              <div className="pt-4 border-t border-slate-800 space-y-3">
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider font-sans">
                   Direct Public Menu URL
                 </label>
-                <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden pr-2">
+                <div className="flex items-center bg-[#0D1321] border border-slate-800 rounded-xl overflow-hidden pr-2">
                   <input
                     type="text"
                     readOnly
                     value={menuUrl}
-                    className="flex-1 bg-transparent border-0 px-4 py-2.5 text-sm text-slate-600 focus:ring-0 focus:outline-none font-sans"
+                    className="flex-1 bg-transparent border-0 px-4 py-2.5 text-sm text-slate-200 focus:ring-0 focus:outline-none font-sans"
                   />
                   <button
                     onClick={handleCopyLink}
-                    className="inline-flex items-center space-x-1 hover:bg-slate-200/60 text-slate-700 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all border border-slate-200 font-sans"
+                    className="inline-flex items-center space-x-1 hover:bg-slate-850 text-slate-300 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all border border-slate-800 font-sans cursor-pointer"
                   >
                     {copied ? (
                       <>
-                        <Check className="h-3.5 w-3.5 text-emerald-600" />
-                        <span className="text-emerald-600">Copied</span>
+                        <Check className="h-3.5 w-3.5 text-emerald-500" />
+                        <span className="text-emerald-500">Copied</span>
                       </>
                     ) : (
                       <>
@@ -907,14 +907,14 @@ export default function DashboardQRPage() {
             </div>
           </div>
 
-          <div className="pt-4 border-t border-slate-100 w-full space-y-2">
+          <div className="pt-4 border-t border-slate-800 w-full space-y-2">
             {saveSuccess && (
-              <p className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 p-2 rounded-lg text-center animate-fade-in font-sans">
+              <p className="text-xs font-bold text-emerald-450 bg-emerald-950/20 border border-emerald-800/30 p-2 rounded-lg text-center animate-fade-in font-sans">
                 Settings Saved Successfully!
               </p>
             )}
             {saveError && (
-              <p className="text-xs font-bold text-red-600 bg-red-50 border border-red-100 p-2 rounded-lg text-center animate-fade-in font-sans">
+              <p className="text-xs font-bold text-red-450 bg-red-950/20 border border-red-800/30 p-2 rounded-lg text-center animate-fade-in font-sans">
                 {saveError}
               </p>
             )}
@@ -922,7 +922,7 @@ export default function DashboardQRPage() {
             <button
               onClick={handleSaveQRSettings}
               disabled={saving}
-              className="w-full py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-orange-500/10 hover:shadow-orange-500/20 transition-all active:scale-[0.98] disabled:opacity-50 font-sans"
+              className="w-full py-2.5 bg-orange-500 hover:bg-orange-655 text-slate-950 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-orange-500/10 hover:shadow-orange-500/20 transition-all active:scale-[0.98] disabled:opacity-50 font-sans cursor-pointer"
             >
               {saving ? (
                 <>
@@ -943,14 +943,14 @@ export default function DashboardQRPage() {
         <div className="lg:col-span-2 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Menu QR Code Preview Card */}
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 flex flex-col items-center">
-              <h2 className="text-md font-semibold text-slate-800 self-start mb-4 flex items-center space-x-2 w-full pb-3 border-b border-slate-100 font-sans">
+            <div className="bg-[#111A2E]/60 border border-slate-800 rounded-2xl shadow-sm p-6 flex flex-col items-center">
+              <h2 className="text-md font-semibold text-white self-start mb-4 flex items-center space-x-2 w-full pb-3 border-b border-slate-800/80 font-sans">
                 <QrCode className="h-4 w-4 text-orange-500" />
                 <span>Menu QR Code</span>
               </h2>
 
               <div
-                className="p-6 rounded-2xl border border-slate-100 shadow-sm relative flex flex-col items-center justify-center transition-all duration-300"
+                className="p-6 rounded-2xl border border-slate-800 shadow-sm relative flex flex-col items-center justify-center transition-all duration-300"
                 style={{ backgroundColor: bgColor }}
               >
                 {qrUrl ? (
@@ -961,14 +961,14 @@ export default function DashboardQRPage() {
                       className="h-44 w-44 object-contain"
                     />
                     <span 
-                      className="text-xs font-extrabold text-slate-800 mt-2 select-none tracking-tight text-center"
+                      className="text-xs font-extrabold text-white mt-2 select-none tracking-tight text-center"
                       style={{ fontFamily: getSelectedFontFamily() }}
                     >
                       {profile?.name} Menu
                     </span>
                   </>
                 ) : (
-                  <div className="h-44 w-44 bg-slate-50 rounded-xl flex items-center justify-center">
+                  <div className="h-44 w-44 bg-[#0D1321] rounded-xl flex items-center justify-center border border-slate-800">
                     <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
                   </div>
                 )}
@@ -977,16 +977,16 @@ export default function DashboardQRPage() {
               <button
                 onClick={handleDownload}
                 disabled={!qrUrl}
-                className="mt-6 inline-flex items-center justify-center space-x-2 w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold py-2.5 px-4 rounded-xl transition-all shadow-md shadow-orange-500/10 hover:shadow-orange-500/20 active:scale-[0.98] disabled:opacity-50 text-sm font-sans"
+                className="mt-6 inline-flex items-center justify-center space-x-2 w-full bg-[#1C273E] hover:bg-[#25324c] border border-slate-800 text-slate-200 font-bold py-2.5 px-4 rounded-xl transition-all shadow-sm active:scale-[0.98] disabled:opacity-50 text-sm font-sans cursor-pointer"
               >
-                <Download className="h-4 w-4" />
+                <Download className="h-4 w-4 text-orange-500" />
                 <span>Download PNG</span>
               </button>
             </div>
 
             {/* Wi-Fi Connection QR Preview Card */}
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 flex flex-col items-center justify-between">
-              <h2 className="text-md font-semibold text-slate-800 self-start mb-4 flex items-center space-x-2 w-full pb-3 border-b border-slate-100 font-sans">
+            <div className="bg-[#111A2E]/60 border border-slate-800 rounded-2xl shadow-sm p-6 flex flex-col items-center justify-between">
+              <h2 className="text-md font-semibold text-white self-start mb-4 flex items-center space-x-2 w-full pb-3 border-b border-slate-800/80 font-sans">
                 <Sparkles className="h-4 w-4 text-orange-500" />
                 <span>Wi-Fi Connection QR</span>
               </h2>
@@ -994,7 +994,7 @@ export default function DashboardQRPage() {
               {profile?.wifi_ssid ? (
                 <>
                   <div
-                    className="p-6 rounded-2xl border border-slate-100 shadow-sm relative flex flex-col items-center justify-center transition-all duration-300"
+                    className="p-6 rounded-2xl border border-slate-800 shadow-sm relative flex flex-col items-center justify-center transition-all duration-300"
                     style={{ backgroundColor: bgColor }}
                   >
                     {wifiQrUrl ? (
@@ -1005,14 +1005,14 @@ export default function DashboardQRPage() {
                           className="h-44 w-44 object-contain"
                         />
                         <span 
-                          className="text-xs font-extrabold text-slate-800 mt-2 select-none tracking-tight text-center"
+                          className="text-xs font-extrabold text-white mt-2 select-none tracking-tight text-center"
                           style={{ fontFamily: getSelectedFontFamily() }}
                         >
                           SSID: {profile.wifi_ssid}
                         </span>
                       </>
                     ) : (
-                      <div className="h-44 w-44 bg-slate-50 rounded-xl flex items-center justify-center">
+                      <div className="h-44 w-44 bg-[#0D1321] rounded-xl flex items-center justify-center border border-slate-800">
                         <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
                       </div>
                     )}
@@ -1021,22 +1021,22 @@ export default function DashboardQRPage() {
                   <button
                     onClick={handleDownloadWifi}
                     disabled={!wifiQrUrl}
-                    className="mt-6 inline-flex items-center justify-center space-x-2 w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold py-2.5 px-4 rounded-xl transition-all shadow-md shadow-orange-500/10 hover:shadow-orange-500/20 active:scale-[0.98] disabled:opacity-50 text-sm font-sans"
+                    className="mt-6 inline-flex items-center justify-center space-x-2 w-full bg-[#1C273E] hover:bg-[#25324c] border border-slate-800 text-slate-200 font-bold py-2.5 px-4 rounded-xl transition-all shadow-sm active:scale-[0.98] disabled:opacity-50 text-sm font-sans cursor-pointer"
                   >
-                    <Download className="h-4 w-4" />
+                    <Download className="h-4 w-4 text-orange-500" />
                     <span>Download PNG</span>
                   </button>
                 </>
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center py-6 text-center w-full font-sans">
-                  <div className="h-20 w-20 rounded-full bg-slate-50 flex items-center justify-center border border-dashed border-slate-200 mb-3 text-slate-450">
-                    <Sparkles className="h-6 w-6 text-slate-350" />
+                  <div className="h-20 w-20 rounded-full bg-[#0D1321] flex items-center justify-center border border-dashed border-slate-800 mb-3 text-slate-450">
+                    <Sparkles className="h-6 w-6 text-slate-500" />
                   </div>
-                  <p className="text-sm font-semibold text-slate-705">Wi-Fi QR not set up</p>
-                  <p className="text-xs text-slate-400 max-w-[200px] mt-1 mb-4">Set up Wi-Fi details in settings to get a scan-to-connect QR code.</p>
+                  <p className="text-sm font-semibold text-slate-300">Wi-Fi QR not set up</p>
+                  <p className="text-xs text-slate-500 max-w-[200px] mt-1 mb-4 leading-relaxed">Set up Wi-Fi details in settings to get a scan-to-connect QR code.</p>
                   <a
                     href="/dashboard/settings"
-                    className="text-xs font-bold text-orange-655 hover:text-orange-750 border border-orange-200 bg-orange-55/50 px-3 py-1.5 rounded-lg transition-all"
+                    className="text-xs font-bold text-orange-400 hover:text-orange-300 border border-orange-500/20 bg-orange-500/10 px-3 py-1.5 rounded-lg transition-all"
                   >
                     Configure in Settings
                   </a>
@@ -1046,14 +1046,14 @@ export default function DashboardQRPage() {
           </div>
 
           {/* Table Tent Card Action Card */}
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 flex flex-col md:flex-row items-center justify-between gap-6 w-full font-sans">
+          <div className="bg-[#111A2E]/60 border border-slate-800 rounded-2xl shadow-sm p-6 flex flex-col md:flex-row items-center justify-between gap-6 w-full font-sans">
             <div className="flex items-start space-x-4">
-              <div className="p-3 bg-orange-50 border border-orange-100 text-orange-500 rounded-xl mt-1 shrink-0">
+              <div className="p-3 bg-orange-500/10 border border-orange-500/20 text-orange-400 rounded-xl mt-1 shrink-0">
                 <Printer className="h-6 w-6" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-md font-bold text-slate-800">Printable Foldable A4 Tent Card</h3>
-                <p className="text-xs text-slate-505 max-w-xl">
+                <h3 className="text-md font-bold text-white">Printable Foldable A4 Tent Card</h3>
+                <p className="text-xs text-slate-450 max-w-xl leading-relaxed">
                   Generates a double-sided tent card. Cut it out, fold it in the middle, and place it on tables. One side will show your Menu QR code, and the other will show the Wi-Fi QR code (or Menu QR on both sides if Wi-Fi isn't configured).
                 </p>
               </div>
@@ -1062,7 +1062,7 @@ export default function DashboardQRPage() {
             <button
               onClick={handleDownloadPDF}
               disabled={!qrUrl || downloadingPDF}
-              className="inline-flex items-center justify-center space-x-2 bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-sm active:scale-[0.98] disabled:opacity-50 text-sm whitespace-nowrap cursor-pointer"
+              className="inline-flex items-center justify-center space-x-2 bg-orange-500 hover:bg-orange-600 text-slate-950 font-bold py-3 px-6 rounded-xl transition-all shadow-sm active:scale-[0.98] disabled:opacity-50 text-sm whitespace-nowrap cursor-pointer border-0"
             >
               {downloadingPDF ? (
                 <>

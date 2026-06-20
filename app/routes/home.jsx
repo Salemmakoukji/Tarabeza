@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link } from 'react-router';
+import { useState, useRef, useEffect } from 'react';
+import { Link, useLoaderData } from 'react-router';
 import { 
   UtensilsCrossed, 
   QrCode, 
@@ -17,6 +17,25 @@ import {
   X
 } from 'lucide-react';
 import Logo from '../components/logo';
+import UserAvatar from '../components/user-avatar';
+
+export async function loader({ request }) {
+  const { createClient } = await import('../lib/supabase/server');
+  const supabase = await createClient(request);
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (user) {
+    const { data: profile } = await supabase
+      .from('restaurants')
+      .select('name, logo_url')
+      .eq('owner_id', user.id)
+      .maybeSingle();
+      
+    return { user, profile };
+  }
+  
+  return { user: null, profile: null };
+}
 
 const content = {
   en: {
@@ -170,14 +189,39 @@ const content = {
 };
 
 export default function Home() {
+  const { user, profile } = useLoaderData();
   const [lang, setLang] = useState('en');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  
   const t = content[lang];
   const isRtl = lang === 'ar';
 
   const toggleLanguage = () => {
     setLang(lang === 'en' ? 'ar' : 'en');
   };
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setDropdownOpen(false);
+      }
+    };
+    if (dropdownOpen) {
+      document.addEventListener('mousedown', handleOutsideClick);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [dropdownOpen]);
 
   const planFeatures = {
     basic: [t.feature1, t.feature2, t.feature3],
@@ -225,18 +269,86 @@ export default function Home() {
             >
               {t.exploreDirectory}
             </Link>
-            <Link
-              to="/login"
-              className="text-sm font-semibold text-slate-400 hover:text-white transition-colors"
-            >
-              {t.signIn}
-            </Link>
-            <Link
-              to="/register"
-              className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl py-2.5 px-5 text-xs font-bold shadow-md hover:shadow-orange-500/10 active:scale-[0.98] transition-all"
-            >
-              {t.getStarted}
-            </Link>
+            {user ? (
+              <>
+                <Link
+                  to="/dashboard"
+                  className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-slate-950 rounded-xl py-2 px-4 text-xs font-extrabold shadow-md hover:shadow-orange-500/10 active:scale-[0.98] transition-all"
+                >
+                  Dashboard
+                </Link>
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                    className="flex items-center focus:outline-none hover:scale-105 active:scale-95 transition-all"
+                    aria-haspopup="true"
+                    aria-expanded={dropdownOpen}
+                  >
+                    <UserAvatar user={user} profile={profile} className="h-9 w-9 cursor-pointer" />
+                  </button>
+
+                  {dropdownOpen && (
+                    <div className="absolute right-0 mt-3 w-56 rounded-xl border border-slate-800 bg-[#0F1524]/95 backdrop-blur-md text-white shadow-2xl p-1.5 z-50 animate-slide-up origin-top-right">
+                      {/* User Metadata */}
+                      <div className="px-3.5 py-3 border-b border-slate-800/80">
+                        <div className="text-xs font-bold truncate flex items-center gap-1.5 text-slate-200">
+                          <span>👤</span>
+                          <span>{user?.user_metadata?.full_name || profile?.name || 'Restaurant Owner'}</span>
+                        </div>
+                        <div className="text-[10px] text-slate-400 truncate mt-0.5 ml-5">
+                          {user?.email}
+                        </div>
+                      </div>
+                      {/* Quick Links */}
+                      <div className="py-1">
+                        <Link
+                          to="/dashboard"
+                          className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800/60 rounded-lg transition-colors"
+                          onClick={() => setDropdownOpen(false)}
+                        >
+                          <span>🏠</span>
+                          <span>Dashboard</span>
+                        </Link>
+                        <Link
+                          to="/dashboard/settings"
+                          className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-350 hover:text-white hover:bg-slate-800/60 rounded-lg transition-colors"
+                          onClick={() => setDropdownOpen(false)}
+                        >
+                          <span>⚙️</span>
+                          <span>Settings</span>
+                        </Link>
+                      </div>
+                      {/* Action Link */}
+                      <div className="border-t border-slate-800/80 pt-1 mt-1">
+                        <Link
+                          to="/auth/logout"
+                          className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-rose-450 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                          onClick={() => setDropdownOpen(false)}
+                        >
+                          <span>🚪</span>
+                          <span>Sign Out</span>
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="text-sm font-semibold text-slate-300 hover:text-white transition-colors border border-slate-800 hover:border-slate-700 bg-slate-900/40 rounded-xl py-2 px-4"
+                >
+                  {t.signIn}
+                </Link>
+                <Link
+                  to="/register"
+                  className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-slate-950 rounded-xl py-2.5 px-5 text-xs font-bold shadow-md hover:shadow-orange-500/10 active:scale-[0.98] transition-all"
+                >
+                  {t.getStarted}
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Actions Header */}
@@ -274,21 +386,63 @@ export default function Home() {
                 <span>{t.exploreDirectory}</span>
                 <ArrowRight className={`h-4 w-4 text-slate-500 transition-transform ${isRtl ? 'rotate-180' : ''}`} />
               </Link>
-              <Link
-                to="/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="text-base font-semibold text-slate-300 hover:text-white py-2 border-b border-slate-900/50 transition-colors flex items-center justify-between"
-              >
-                <span>{t.signIn}</span>
-                <ArrowRight className={`h-4 w-4 text-slate-500 transition-transform ${isRtl ? 'rotate-180' : ''}`} />
-              </Link>
-              <Link
-                to="/register"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full text-center bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl py-3 text-sm font-bold shadow-md hover:shadow-orange-500/20 active:scale-[0.98] transition-all block mt-2"
-              >
-                {t.getStarted}
-              </Link>
+              {user ? (
+                <>
+                  <div className="py-2 border-b border-slate-900/50 flex items-center gap-3">
+                    <UserAvatar user={user} profile={profile} className="h-10 w-10" />
+                    <div className="overflow-hidden">
+                      <div className="text-sm font-bold text-white truncate">
+                        {user?.user_metadata?.full_name || profile?.name || 'Restaurant Owner'}
+                      </div>
+                      <div className="text-xs text-slate-400 truncate">{user?.email}</div>
+                    </div>
+                  </div>
+                  
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-base font-semibold text-slate-350 hover:text-white py-2 border-b border-slate-900/50 transition-colors flex items-center justify-between"
+                  >
+                    <span>🏠 Dashboard</span>
+                    <ArrowRight className={`h-4 w-4 text-slate-500 transition-transform ${isRtl ? 'rotate-180' : ''}`} />
+                  </Link>
+
+                  <Link
+                    to="/dashboard/settings"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-base font-semibold text-slate-350 hover:text-white py-2 border-b border-slate-900/50 transition-colors flex items-center justify-between"
+                  >
+                    <span>⚙️ Settings</span>
+                    <ArrowRight className={`h-4 w-4 text-slate-500 transition-transform ${isRtl ? 'rotate-180' : ''}`} />
+                  </Link>
+
+                  <Link
+                    to="/auth/logout"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full text-center bg-rose-600/10 hover:bg-rose-600/20 text-rose-400 border border-rose-500/20 rounded-xl py-3 text-sm font-bold active:scale-[0.98] transition-all block mt-2"
+                  >
+                    🚪 Sign Out
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-base font-semibold text-slate-300 hover:text-white py-2 border-b border-slate-900/50 transition-colors flex items-center justify-between"
+                  >
+                    <span>{t.signIn}</span>
+                    <ArrowRight className={`h-4 w-4 text-slate-500 transition-transform ${isRtl ? 'rotate-180' : ''}`} />
+                  </Link>
+                  <Link
+                    to="/register"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full text-center bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl py-3 text-sm font-bold shadow-md hover:shadow-orange-500/20 active:scale-[0.98] transition-all block mt-2"
+                  >
+                    {t.getStarted}
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         )}

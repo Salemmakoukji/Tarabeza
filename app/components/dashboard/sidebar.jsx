@@ -1,5 +1,5 @@
 import { useLocation, Link } from 'react-router';
-import { LayoutGrid, UtensilsCrossed, QrCode, Settings, LogOut, X, CreditCard } from 'lucide-react';
+import { LayoutGrid, UtensilsCrossed, QrCode, Settings, LogOut, X, CreditCard, Palette } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Logo from '../logo';
 
@@ -10,6 +10,7 @@ export default function Sidebar({ isOpen, onClose }) {
   const menuItems = [
     { name: 'Overview', href: '/dashboard', icon: LayoutGrid },
     { name: 'Menu Builder', href: '/dashboard/menu', icon: UtensilsCrossed },
+    { name: 'Customize Menu', href: '/dashboard/customize', icon: Palette },
     { name: 'QR Code', href: '/dashboard/qr', icon: QrCode },
     { name: 'Billing', href: '/dashboard/billing', icon: CreditCard },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
@@ -28,7 +29,7 @@ export default function Sidebar({ isOpen, onClose }) {
       {/* Sidebar Container */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-slate-900 border-r border-slate-800 text-white transition-transform duration-300 ease-in-out lg:static lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-[#0B0F19] border-r border-slate-800/80 text-white transition-transform duration-300 ease-in-out lg:static lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-0 -translate-x-full lg:translate-x-0"
         )}
       >

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Search, MapPin, Phone, Sparkles, Globe, Star, X, Loader2, Share2, Check, Heart } from 'lucide-react';
+import { getTemplateDefaults, generateCssStyles } from '../lib/templates';
 const Image = ({ src, alt, fill, className, width, height, ...props }) => {
   const styles = fill ? { position: 'absolute', height: '100%', width: '100%', left: 0, top: 0, right: 0, bottom: 0, objectFit: 'cover' } : {};
   return (
@@ -38,13 +39,75 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
   const [ratingError, setRatingError] = useState('');
   const [ratingSuccess, setRatingSuccess] = useState(false);
 
+  // Custom styling states
+  const getInitialTheme = () => {
+    const activeTemplateId = profile.template_id || 'classic';
+    const defaults = getTemplateDefaults(activeTemplateId);
+    
+    // Inject the custom brand accent color
+    const customAccent = profile.accent_color || '#f97316';
+    defaults.colors.accent = customAccent;
+    defaults.colors.tabActive = customAccent;
+    defaults.colors.button = customAccent;
+
+    return {
+      templateId: activeTemplateId,
+      colors: defaults.colors,
+      fonts: defaults.fonts,
+      layout: defaults.layout,
+      icons: defaults.icons,
+      customCss: '',
+      advanced: defaults.advanced
+    };
+  };
+
+  const [theme, setTheme] = useState(getInitialTheme);
+  const [themeId, setThemeId] = useState('tarapeza-custom');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.parent !== window) {
+      window.parent.postMessage({ type: 'PREVIEW_READY' }, '*');
+    }
+
+    const handleMessage = (e) => {
+      if (e.data && e.data.type === 'UPDATE_THEME') {
+        const received = e.data.data;
+        const defaults = getTemplateDefaults(received.templateId || 'classic');
+        
+        const customAccent = received.accentColor || '#f97316';
+        defaults.colors.accent = customAccent;
+        defaults.colors.tabActive = customAccent;
+        defaults.colors.button = customAccent;
+
+        setTheme({
+          templateId: received.templateId || 'classic',
+          colors: defaults.colors,
+          fonts: defaults.fonts,
+          layout: defaults.layout,
+          icons: defaults.icons,
+          customCss: '',
+          advanced: defaults.advanced
+        });
+        setThemeId('tarapeza-custom');
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
   const totalReviews = ratings.length;
   const averageRating = totalReviews > 0
     ? (ratings.reduce((sum, r) => sum + r.stars, 0) / totalReviews).toFixed(1)
     : null;
 
   // Dynamic Theme Highlight Color
-  const primaryColor = profile.theme_color || '#f97316';
+  const primaryColor = themeId === 'tarapeza-custom' ? theme.colors.accent : (profile.theme_color || '#f97316');
+  
+  const fontUrl = themeId === 'tarapeza-custom' 
+    ? `https://fonts.googleapis.com/css2?family=${encodeURIComponent(theme.fonts.heading)}:wght@300;400;500;600;700;800;900&family=${encodeURIComponent(theme.fonts.body)}:wght@300;400;500;600;700;800;900&display=swap` 
+    : '';
+  const cssOverrides = themeId === 'tarapeza-custom' ? generateCssStyles(theme) : '';
 
   // Translations
   const t = {
@@ -280,10 +343,9 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
     return acc;
   }, []);
 
-  const templateId = profile.template_id || 'classic-dark';
-  const themeId = profile.theme_id || 'obsidian-dark';
+  const templateId = themeId === 'tarapeza-custom' ? theme.templateId : (profile.template_id || 'classic-dark');
   const styleId = profile.style_id || 'modern-minimalist';
-  const headerStyle = profile.header_style || 'centered-overlap';
+  const headerStyle = themeId === 'tarapeza-custom' ? theme.icons.headerStyle : (profile.header_style || 'centered-overlap');
 
   const getStyleClasses = () => {
     switch (styleId) {
@@ -418,6 +480,51 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
   };
 
   const colorThemes = {
+    'tarapeza-custom': {
+      wrapper: "tarapeza-public-menu min-h-screen pb-24 relative overflow-hidden",
+      bgDecorations: null,
+      header: "relative w-full overflow-hidden shrink-0 flex flex-col items-center justify-center py-8 border-b border-[var(--menu-border)] bg-[var(--menu-sec-bg)]",
+      logoBorder: "border-4 border-[var(--menu-border)] bg-[var(--menu-card-bg)] shadow-lg rounded-2xl",
+      logoFallback: "bg-gradient-to-tr from-slate-500 to-slate-700 border-4 border-[var(--menu-border)] shadow-lg rounded-2xl",
+      restaurantName: "text-2xl font-black tracking-tight mb-1 text-[var(--menu-text-primary)]",
+      description: "text-[var(--menu-text-sec)] text-xs leading-relaxed max-w-sm mb-3.5 text-center px-2",
+      metadata: "text-[var(--menu-text-sec)] text-xs transition-colors hover:text-[var(--menu-text-primary)]",
+      metaIcon: "opacity-75",
+      stickyContainer: "sticky top-0 z-40 shrink-0",
+      searchInput: "w-full border border-[var(--menu-border)] bg-[var(--menu-card-bg)] rounded-2xl py-2.5 px-4 focus:outline-none transition-all text-sm text-[var(--menu-text-primary)] placeholder-[var(--menu-text-sec)]/50",
+      searchIcon: "opacity-60 text-[var(--menu-text-sec)]",
+      categoryTab: (isActive) => isActive 
+        ? "custom-category-tab-active font-bold" 
+        : "custom-category-tab-inactive",
+      sectionHeader: "text-md font-bold tracking-tight text-[var(--menu-text-primary)]",
+      itemCard: "custom-menu-card overflow-hidden flex p-3 gap-3 transition-all duration-300",
+      itemName: "font-bold text-sm leading-snug truncate text-[var(--menu-text-primary)]",
+      itemDesc: "text-[var(--menu-text-sec)] text-[11px] leading-relaxed line-clamp-2 mb-2 text-start",
+      itemPrice: "font-bold text-sm shrink-0 text-[var(--menu-accent)]",
+      itemImageBg: "bg-[var(--menu-sec-bg)]",
+      itemSoldOutOverlay: "absolute inset-0 bg-black/60 flex items-center justify-center",
+      itemSoldOutBadge: "text-[8px] font-bold text-white uppercase tracking-wider bg-slate-900 px-1.5 py-0.5 rounded",
+      emptyState: "text-center py-16 px-4 border border-[var(--menu-border)] bg-[var(--menu-card-bg)] rounded-3xl mt-4",
+      emptyStateIcon: "opacity-40 text-[var(--menu-text-sec)]",
+      emptyStateTitle: "text-base font-bold text-[var(--menu-text-primary)]",
+      emptyStateDesc: "text-xs mt-1 text-[var(--menu-text-sec)]",
+      footer: "fixed bottom-0 inset-x-0 border-t border-[var(--menu-border)] bg-[var(--menu-bg)] py-2.5 z-40 shrink-0 text-[var(--menu-text-sec)] text-center text-xs",
+      footerScanText: "opacity-50",
+      rateUsBtn: "text-[10px] font-extrabold px-2.5 py-1 rounded-full transition-all uppercase tracking-wider shadow-sm font-sans bg-[var(--menu-btn)] text-white hover:opacity-90",
+      ratingBadge: "flex items-center space-x-1 gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold font-sans",
+      ratingBadgeEmpty: "text-[10px] font-bold tracking-wide uppercase px-2 py-0.5 rounded font-sans border border-[var(--menu-border)] bg-[var(--menu-card-bg)] text-[var(--menu-text-sec)]",
+      itemDivider: "opacity-40 border-[var(--menu-border)]",
+      dashesColor: "opacity-30 border-[var(--menu-border)]",
+      chefSpotlightBg: "opacity-10 bg-[var(--menu-accent)]/10",
+      spotlightCard: "border border-[var(--menu-border)] bg-[var(--menu-card-bg)] rounded-3xl shadow-sm overflow-hidden flex flex-col p-0 transition-all duration-300",
+      spotlightTag: "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--menu-accent)] text-white",
+      modalBg: "border border-[var(--menu-border)] bg-[var(--menu-card-bg)] rounded-3xl shadow-2xl p-6 w-full max-w-sm relative text-[var(--menu-text-primary)]",
+      modalTitle: "text-sm font-extrabold tracking-tight text-center mb-4 mt-2 font-sans text-[var(--menu-text-primary)]",
+      modalInput: "w-full border border-[var(--menu-border)] bg-[var(--menu-bg)] rounded-xl px-4 py-2.5 placeholder-slate-500 focus:outline-none transition-all text-xs resize-none font-sans text-[var(--menu-text-primary)]",
+      modalCloseBtn: "absolute top-4 right-4 opacity-75 hover:opacity-100 transition-colors text-[var(--menu-text-sec)]",
+      modalText: "text-xs font-bold uppercase tracking-wider font-sans text-center mb-1.5 text-[var(--menu-text-sec)]",
+      modalSubmitBtn: "w-full font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all bg-[var(--menu-btn)] text-white"
+    },
     'custom': {
       wrapper: "min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] font-sans pb-24 relative overflow-hidden selection:bg-[var(--primary-theme)] selection:text-white",
       bgDecorations: null,
@@ -917,13 +1024,51 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
   const renderBadge = (badge) => {
     if (!badge) return null;
     
-    const badgeStyles = {
-      chef: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
-      bestseller: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
-      new: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-      popular: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
-      spicy: 'bg-red-500/10 text-red-500 border-red-500/20',
-    };
+    let styleClass = 'bg-slate-500/10 text-slate-500 border-slate-500/20';
+    let inlineStyles = {};
+    
+    if (themeId === 'tarapeza-custom') {
+      const getBadgeColor = () => {
+        switch (badge) {
+          case 'new': return theme.icons.newBadgeColor;
+          case 'popular': return theme.icons.popularBadgeColor;
+          case 'spicy': return theme.icons.spicyBadgeColor;
+          case 'vegan': return theme.icons.veganBadgeColor;
+          case 'halal': return theme.icons.halalBadgeColor;
+          default: return 'var(--menu-accent)';
+        }
+      };
+      
+      const isBadgeShown = () => {
+        switch (badge) {
+          case 'new': return theme.icons.showNewBadge;
+          case 'popular': return theme.icons.showPopularBadge;
+          case 'spicy': return theme.icons.showSpicyBadge;
+          case 'vegan': return theme.icons.showVeganBadge;
+          case 'halal': return theme.icons.showHalalBadge;
+          default: return true;
+        }
+      };
+      
+      if (!isBadgeShown()) return null;
+      
+      const badgeColor = getBadgeColor();
+      inlineStyles = {
+        color: badgeColor,
+        borderColor: `${badgeColor}30`,
+        backgroundColor: `${badgeColor}10`
+      };
+      styleClass = '';
+    } else {
+      const badgeStyles = {
+        chef: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+        bestseller: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
+        new: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+        popular: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
+        spicy: 'bg-red-500/10 text-red-500 border-red-500/20',
+      };
+      styleClass = badgeStyles[badge] || 'bg-slate-500/10 text-slate-500 border-slate-500/20';
+    }
     
     const badgeIcons = {
       chef: '⭐',
@@ -932,20 +1077,23 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
       popular: '📈',
       spicy: '🌶️',
     };
-
-    const styleClass = badgeStyles[badge] || 'bg-slate-500/10 text-slate-500 border-slate-500/20';
+    
     const icon = badgeIcons[badge] || '';
     const text = currentT[badge] || badge;
 
     return (
-      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold border tracking-wide uppercase font-sans shrink-0 ${styleClass} ${badge === 'chef' ? 'animate-pulse' : ''}`}>
-        <span>{icon}</span>
+      <span 
+        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold border tracking-wide uppercase font-sans shrink-0 ${styleClass} ${badge === 'chef' ? 'animate-pulse' : ''}`}
+        style={inlineStyles}
+      >
+        {theme.icons.style === 'Emoji' && <span>{icon}</span>}
         <span>{text}</span>
       </span>
     );
   };
 
   const getCardStyle = () => {
+    if (themeId === 'tarapeza-custom') return 'custom-menu-card';
     if (themeId === 'custom') return 'bg-[var(--color-card-bg)] border border-[var(--color-text)]/10 text-[var(--color-text)]';
     if (themeId === 'obsidian-dark') return 'bg-slate-900/30 border border-slate-900 text-slate-100';
     if (themeId === 'pearl-light') return 'bg-slate-50 border border-slate-200/80 text-slate-800';
@@ -955,6 +1103,7 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
   };
 
   const getDividerStyle = () => {
+    if (themeId === 'tarapeza-custom') return 'border-t border-[var(--menu-border)]/60';
     if (themeId === 'custom') return 'border-t border-[var(--color-text)]/15';
     if (themeId === 'pearl-light') return 'border-t border-slate-200';
     if (themeId === 'warm-bistro') return 'border-t border-[#e8d5be]';
@@ -974,6 +1123,13 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
       }}
       dir={isRtl ? 'rtl' : 'ltr'}
     >
+
+      {themeId === 'tarapeza-custom' && (
+        <>
+          <link rel="stylesheet" href={fontUrl} />
+          <style dangerouslySetInnerHTML={{ __html: cssOverrides }} />
+        </>
+      )}
 
       <style>{`
         @keyframes marquee {
@@ -1703,7 +1859,98 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
                 </div>
 
                 {/* Items Layout */}
-                {templateId === 'modern-light' ? (
+                {themeId === 'tarapeza-custom' ? (
+                  // Custom customizable layout mapping (covers grid-2col, grid-3col, list, compact-list, magazine, masonry)
+                  <div className={
+                    theme.layout.cardStyle === 'grid-3col' ? 'grid grid-cols-3 gap-2' :
+                    theme.layout.cardStyle === 'grid-2col' ? 'grid grid-cols-2 gap-3.5' :
+                    'space-y-4'
+                  }>
+                    {catGroup.items.map((item, itemIdx) => {
+                      const displayName = isRtl && item.name_ar ? item.name_ar : item.name;
+                      const displayDesc = isRtl && item.description_ar ? item.description_ar : item.description;
+                      
+                      const showImage = theme.layout.showImage && item.image_url;
+                      const imgPos = theme.layout.imagePosition;
+                      const isAlternatingMagazine = theme.layout.cardStyle === 'magazine';
+                      const isImageRight = isAlternatingMagazine ? (itemIdx % 2 === 1) : (imgPos === 'right');
+                      const isCompact = theme.layout.cardStyle === 'compact-list';
+
+                      return (
+                        <div 
+                          key={item.id} 
+                          onClick={() => setSelectedItem(item)}
+                          className={`custom-menu-card overflow-hidden flex cursor-pointer transition-all duration-300 ${
+                            item.available ? 'opacity-100' : 'opacity-65'
+                          } ${
+                            isCompact ? 'py-2.5 px-3 border-b items-center justify-between' :
+                            (theme.layout.cardStyle.startsWith('grid') || imgPos === 'top') ? 'flex-col p-0' :
+                            isImageRight ? 'flex-row-reverse p-3 gap-3' : 'flex-row p-3 gap-3'
+                          }`}
+                          style={{
+                            backgroundImage: imgPos === 'background' && showImage ? `linear-gradient(to top, rgba(0,0,0,0.85) 45%, rgba(0,0,0,0.15) 100%), url(${item.image_url})` : 'none',
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            color: imgPos === 'background' && showImage ? '#FFFFFF' : 'var(--menu-text-primary)'
+                          }}
+                        >
+                          {showImage && imgPos !== 'background' && (
+                            <div 
+                              className={`relative shrink-0 bg-black/10 overflow-hidden`}
+                              style={{
+                                width: (theme.layout.cardStyle.startsWith('grid') || imgPos === 'top') ? '100%' : isCompact ? '40px' : '80px',
+                                height: (theme.layout.cardStyle.startsWith('grid') || imgPos === 'top') ? '110px' : isCompact ? '40px' : '80px',
+                                borderRadius: 'var(--menu-img-radius)'
+                              }}
+                            >
+                              <Image 
+                                src={item.image_url} 
+                                alt={displayName} 
+                                fill
+                                loading="lazy"
+                                className="object-cover animate-fade-in"
+                              />
+                              {!item.available && (
+                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                  <span className="text-[7px] font-bold text-white bg-slate-900 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                    {currentT.soldOut}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          <div className={`flex-1 flex flex-col justify-between ${isCompact ? '' : 'p-3 gap-2'}`}>
+                            <div className="space-y-1">
+                              <div className="flex justify-between items-start gap-2">
+                                <h4 className="font-bold text-sm leading-snug truncate flex items-center gap-1.5 flex-wrap" style={{ color: imgPos === 'background' && showImage ? '#FFFFFF' : 'var(--menu-text-primary)' }}>
+                                  <span>{displayName}</span>
+                                  {item.badge && renderBadge(item.badge)}
+                                </h4>
+                                {!isCompact && theme.layout.showCurrency && (
+                                  <span className="font-extrabold text-sm shrink-0" style={{ color: 'var(--menu-accent)' }}>
+                                    {theme.layout.currencySymbol}{item.price}
+                                  </span>
+                                )}
+                              </div>
+                              {!isCompact && theme.layout.showDescription && displayDesc && (
+                                <p className="text-[11px] leading-relaxed line-clamp-2" style={{ color: imgPos === 'background' && showImage ? '#D1D5DB' : 'var(--menu-text-sec)' }}>
+                                  {displayDesc}
+                                </p>
+                              )}
+                            </div>
+
+                            {isCompact && theme.layout.showCurrency && (
+                              <span className="font-bold text-sm shrink-0" style={{ color: 'var(--menu-accent)' }}>
+                                {theme.layout.currencySymbol}{item.price}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : templateId === 'modern-light' ? (
                   // 2-Column Grid Layout (modern-light)
                   <div className="grid grid-cols-2 gap-3.5 md:grid-cols-3">
                     {catGroup.items.map((item) => {
