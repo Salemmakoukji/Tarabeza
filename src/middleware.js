@@ -29,11 +29,11 @@ export async function middleware(request) {
     }
   )
 
-  // Use getSession instead of getUser in middleware only
-  // getUser is too slow on edge network and causes timeouts
   const { data: { session } } = await supabase.auth.getSession()
 
-  if (!session && request.nextUrl.pathname.startsWith('/dashboard')) {
+  const isDashboard = request.nextUrl.pathname.startsWith('/dashboard')
+
+  if (!session && isDashboard) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
@@ -44,46 +44,7 @@ export async function middleware(request) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/dashboard',
+    '/dashboard/(.*)',
   ],
-}
-export async function middleware(request) {
-  console.log('=== MIDDLEWARE ===')
-  console.log('Path:', request.nextUrl.pathname)
-  console.log('Cookies:', request.cookies.getAll())
-
-  let supabaseResponse = NextResponse.next({ request })
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          )
-          supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
-
-  const { data: { session } } = await supabase.auth.getSession()
-  console.log('Session found:', !!session)
-  console.log('=================')
-
-  if (!session && request.nextUrl.pathname.startsWith('/dashboard')) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
-  }
-
-  return supabaseResponse
 }
