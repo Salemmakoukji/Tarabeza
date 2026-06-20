@@ -32,6 +32,7 @@ CREATE TABLE public.restaurants (
     wifi_ssid TEXT,
     wifi_password TEXT,
     template_id TEXT DEFAULT 'classic' NOT NULL,
+    customization JSONB DEFAULT '{}'::jsonb NOT NULL,
     custom_colors JSONB DEFAULT '{}'::jsonb NOT NULL,
     custom_fonts JSONB DEFAULT '{}'::jsonb NOT NULL,
     custom_layout JSONB DEFAULT '{}'::jsonb NOT NULL,

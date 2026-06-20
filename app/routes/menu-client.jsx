@@ -43,20 +43,29 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
   const getInitialTheme = () => {
     const activeTemplateId = profile.template_id || 'classic';
     const defaults = getTemplateDefaults(activeTemplateId);
+    const dbValue = profile.customization || {};
     
-    // Inject the custom brand accent color
-    const customAccent = profile.accent_color || '#f97316';
-    defaults.colors.accent = customAccent;
-    defaults.colors.tabActive = customAccent;
-    defaults.colors.button = customAccent;
+    const mergedColors = { 
+      ...defaults.colors, 
+      ...dbValue.colors 
+    };
+    
+    // Inject the custom brand accent color from profile if customization accent isn't set yet
+    if (!dbValue.colors?.accent && profile.accent_color) {
+      mergedColors.accent = profile.accent_color;
+      mergedColors.tabActive = profile.accent_color;
+      mergedColors.price = profile.accent_color;
+      mergedColors.badge = profile.accent_color;
+    }
 
     return {
       templateId: activeTemplateId,
-      colors: defaults.colors,
-      fonts: defaults.fonts,
-      layout: defaults.layout,
-      icons: defaults.icons,
-      customCss: '',
+      colors: mergedColors,
+      fonts: { ...defaults.fonts, ...dbValue.fonts },
+      layout: { ...defaults.layout, ...dbValue.layout },
+      badges: { ...defaults.badges, ...dbValue.badges },
+      customCss: dbValue.customCss || '',
+      icons: { ...defaults.icons, ...dbValue.icons },
       advanced: defaults.advanced
     };
   };
@@ -72,22 +81,36 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
     const handleMessage = (e) => {
       if (e.data && e.data.type === 'UPDATE_THEME') {
         const received = e.data.data;
-        const defaults = getTemplateDefaults(received.templateId || 'classic');
         
-        const customAccent = received.accentColor || '#f97316';
-        defaults.colors.accent = customAccent;
-        defaults.colors.tabActive = customAccent;
-        defaults.colors.button = customAccent;
+        if (received.customization) {
+          setTheme({
+            templateId: received.templateId || 'classic',
+            colors: received.customization.colors || {},
+            fonts: received.customization.fonts || {},
+            layout: received.customization.layout || {},
+            badges: received.customization.badges || {},
+            customCss: received.customization.customCss || '',
+            icons: received.customization.icons || {},
+            advanced: received.customization.advanced || {}
+          });
+        } else {
+          const defaults = getTemplateDefaults(received.templateId || 'classic');
+          const customAccent = received.accentColor || '#f97316';
+          defaults.colors.accent = customAccent;
+          defaults.colors.tabActive = customAccent;
+          defaults.colors.button = customAccent;
 
-        setTheme({
-          templateId: received.templateId || 'classic',
-          colors: defaults.colors,
-          fonts: defaults.fonts,
-          layout: defaults.layout,
-          icons: defaults.icons,
-          customCss: '',
-          advanced: defaults.advanced
-        });
+          setTheme({
+            templateId: received.templateId || 'classic',
+            colors: defaults.colors,
+            fonts: defaults.fonts,
+            layout: defaults.layout,
+            badges: defaults.badges || {},
+            customCss: '',
+            icons: defaults.icons,
+            advanced: defaults.advanced
+          });
+        }
         setThemeId('tarapeza-custom');
       }
     };
@@ -345,7 +368,9 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
 
   const templateId = themeId === 'tarapeza-custom' ? theme.templateId : (profile.template_id || 'classic-dark');
   const styleId = profile.style_id || 'modern-minimalist';
-  const headerStyle = themeId === 'tarapeza-custom' ? theme.icons.headerStyle : (profile.header_style || 'centered-overlap');
+  const headerStyle = themeId === 'tarapeza-custom' 
+    ? (theme.layout.headerStyle || theme.icons?.headerStyle || 'centered-overlap') 
+    : (profile.header_style || 'centered-overlap');
 
   const getStyleClasses = () => {
     switch (styleId) {
@@ -1029,23 +1054,32 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
     
     if (themeId === 'tarapeza-custom') {
       const getBadgeColor = () => {
+        const badgeKey = badge.toLowerCase();
+        if (theme.badges && theme.badges[`${badgeKey}Color`]) {
+          return theme.badges[`${badgeKey}Color`];
+        }
         switch (badge) {
-          case 'new': return theme.icons.newBadgeColor;
-          case 'popular': return theme.icons.popularBadgeColor;
-          case 'spicy': return theme.icons.spicyBadgeColor;
-          case 'vegan': return theme.icons.veganBadgeColor;
-          case 'halal': return theme.icons.halalBadgeColor;
+          case 'new': return theme.icons?.newBadgeColor || '#22c55e';
+          case 'popular': return theme.icons?.popularBadgeColor || '#f97316';
+          case 'spicy': return theme.icons?.spicyBadgeColor || '#ef4444';
+          case 'vegan': return theme.icons?.veganBadgeColor || '#22c55e';
+          case 'halal': return theme.icons?.halalBadgeColor || '#16a34a';
           default: return 'var(--menu-accent)';
         }
       };
       
       const isBadgeShown = () => {
+        const badgeKey = badge.toLowerCase();
+        const capKey = badgeKey.charAt(0).toUpperCase() + badgeKey.slice(1);
+        if (theme.badges && typeof theme.badges[`show${capKey}`] !== 'undefined') {
+          return theme.badges[`show${capKey}`];
+        }
         switch (badge) {
-          case 'new': return theme.icons.showNewBadge;
-          case 'popular': return theme.icons.showPopularBadge;
-          case 'spicy': return theme.icons.showSpicyBadge;
-          case 'vegan': return theme.icons.showVeganBadge;
-          case 'halal': return theme.icons.showHalalBadge;
+          case 'new': return theme.icons?.showNewBadge ?? true;
+          case 'popular': return theme.icons?.showPopularBadge ?? true;
+          case 'spicy': return theme.icons?.showSpicyBadge ?? true;
+          case 'vegan': return theme.icons?.showVeganBadge ?? true;
+          case 'halal': return theme.icons?.showHalalBadge ?? true;
           default: return true;
         }
       };
@@ -1079,14 +1113,23 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
     };
     
     const icon = badgeIcons[badge] || '';
-    const text = currentT[badge] || badge;
+    
+    const getBadgeLabel = () => {
+      const badgeKey = badge.toLowerCase();
+      if (theme.badges && theme.badges[`${badgeKey}Label`]) {
+        return theme.badges[`${badgeKey}Label`];
+      }
+      return currentT[badge] || badge;
+    };
+    
+    const text = getBadgeLabel();
 
     return (
       <span 
         className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold border tracking-wide uppercase font-sans shrink-0 ${styleClass} ${badge === 'chef' ? 'animate-pulse' : ''}`}
         style={inlineStyles}
       >
-        {theme.icons.style === 'Emoji' && <span>{icon}</span>}
+        {theme.icons?.style === 'Emoji' && <span>{icon}</span>}
         <span>{text}</span>
       </span>
     );
@@ -1203,23 +1246,28 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
           // 2. Inline Left-Aligned Header Style
           <div className="w-full flex flex-col">
             {/* Thin Cover Banner */}
-            <div className="relative h-28 w-full bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 overflow-hidden shrink-0">
-              {profile.cover_url ? (
-                <>
-                  <Image 
-                    src={profile.cover_url} 
-                    alt={`${profile.name} Cover`} 
-                    fill
-                    priority
-                    sizes="100vw"
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                </>
-              ) : (
-                <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#f97316_1px,transparent_1px)] [background-size:16px_16px]"></div>
-              )}
-            </div>
+            {theme.layout?.headerStyle !== 'logo-only' && (
+              <div 
+                style={themeId === 'tarapeza-custom' && theme.layout?.bannerHeight ? { height: `${theme.layout.bannerHeight - 60}px` } : {}}
+                className="relative h-28 w-full bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 overflow-hidden shrink-0"
+              >
+                {profile.cover_url ? (
+                  <>
+                    <Image 
+                      src={profile.cover_url} 
+                      alt={`${profile.name} Cover`} 
+                      fill
+                      priority
+                      sizes="100vw"
+                      className="object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                  </>
+                ) : (
+                  <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#f97316_1px,transparent_1px)] [background-size:16px_16px]"></div>
+                )}
+              </div>
+            )}
             {/* Inline Left-Aligned Logo & Info */}
             <div className="relative max-w-lg mx-auto w-full px-6 py-5 flex items-center gap-4 text-start justify-start flex-wrap sm:flex-nowrap">
               {profile.logo_url ? (
@@ -1717,26 +1765,31 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
           // 1. Centered Overlap Header Style (Default)
           <div className="w-full">
             {/* Cover Photo */}
-            <div className="relative h-44 w-full bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 overflow-hidden shrink-0">
-              {profile.cover_url ? (
-                <>
-                  <Image 
-                    src={profile.cover_url} 
-                    alt={`${profile.name} Cover`} 
-                    fill
-                    priority
-                    sizes="100vw"
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-black/20" />
-                </>
-              ) : (
-                <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#f97316_1px,transparent_1px)] [background-size:16px_16px]"></div>
-              )}
-            </div>
+            {headerStyle !== 'logo-only' && (
+              <div 
+                style={themeId === 'tarapeza-custom' && theme.layout?.bannerHeight ? { height: `${theme.layout.bannerHeight}px` } : {}}
+                className="relative h-44 w-full bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 overflow-hidden shrink-0"
+              >
+                {profile.cover_url ? (
+                  <>
+                    <Image 
+                      src={profile.cover_url} 
+                      alt={`${profile.name} Cover`} 
+                      fill
+                      priority
+                      sizes="100vw"
+                      className="object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-black/20" />
+                  </>
+                ) : (
+                  <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#f97316_1px,transparent_1px)] [background-size:16px_16px]"></div>
+                )}
+              </div>
+            )}
             {/* Restaurant Info (Centered) */}
             <div className="relative max-w-lg mx-auto w-full px-6 pb-6 flex flex-col items-center text-center">
-              <div className="relative -mt-16 mb-3.5 z-10 shrink-0">
+              <div className={`relative ${headerStyle === 'logo-only' ? 'mt-6' : '-mt-16'} mb-3.5 z-10 shrink-0`}>
                 {profile.logo_url ? (
                   <Image 
                     src={profile.logo_url} 
@@ -1860,10 +1913,10 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
 
                 {/* Items Layout */}
                 {themeId === 'tarapeza-custom' ? (
-                  // Custom customizable layout mapping (covers grid-2col, grid-3col, list, compact-list, magazine, masonry)
+                  // Custom customizable layout mapping (covers grid-2, grid-3, list, compact, magazine, full)
                   <div className={
-                    theme.layout.cardStyle === 'grid-3col' ? 'grid grid-cols-3 gap-2' :
-                    theme.layout.cardStyle === 'grid-2col' ? 'grid grid-cols-2 gap-3.5' :
+                    (theme.layout.cardStyle === 'grid-3' || theme.layout.cardStyle === 'grid-3col') ? 'grid grid-cols-3 gap-2' :
+                    (theme.layout.cardStyle === 'grid-2' || theme.layout.cardStyle === 'grid-2col') ? 'grid grid-cols-2 gap-3.5' :
                     'space-y-4'
                   }>
                     {catGroup.items.map((item, itemIdx) => {
@@ -1874,32 +1927,32 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
                       const imgPos = theme.layout.imagePosition;
                       const isAlternatingMagazine = theme.layout.cardStyle === 'magazine';
                       const isImageRight = isAlternatingMagazine ? (itemIdx % 2 === 1) : (imgPos === 'right');
-                      const isCompact = theme.layout.cardStyle === 'compact-list';
+                      const isCompact = theme.layout.cardStyle === 'compact' || theme.layout.cardStyle === 'compact-list';
 
                       return (
                         <div 
-                          key={item.id} 
-                          onClick={() => setSelectedItem(item)}
-                          className={`custom-menu-card overflow-hidden flex cursor-pointer transition-all duration-300 ${
-                            item.available ? 'opacity-100' : 'opacity-65'
-                          } ${
-                            isCompact ? 'py-2.5 px-3 border-b items-center justify-between' :
-                            (theme.layout.cardStyle.startsWith('grid') || imgPos === 'top') ? 'flex-col p-0' :
-                            isImageRight ? 'flex-row-reverse p-3 gap-3' : 'flex-row p-3 gap-3'
-                          }`}
-                          style={{
-                            backgroundImage: imgPos === 'background' && showImage ? `linear-gradient(to top, rgba(0,0,0,0.85) 45%, rgba(0,0,0,0.15) 100%), url(${item.image_url})` : 'none',
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                            color: imgPos === 'background' && showImage ? '#FFFFFF' : 'var(--menu-text-primary)'
-                          }}
+                           key={item.id} 
+                           onClick={() => setSelectedItem(item)}
+                           className={`custom-menu-card overflow-hidden flex cursor-pointer transition-all duration-300 ${
+                             item.available ? 'opacity-100' : 'opacity-65'
+                           } ${
+                             isCompact ? 'py-2.5 px-3 border-b items-center justify-between' :
+                             ((theme.layout.cardStyle && theme.layout.cardStyle.startsWith('grid')) || imgPos === 'top') ? 'flex-col p-0' :
+                             isImageRight ? 'flex-row-reverse p-3 gap-3' : 'flex-row p-3 gap-3'
+                           }`}
+                           style={{
+                             backgroundImage: imgPos === 'background' && showImage ? `linear-gradient(to top, rgba(0,0,0,0.85) 45%, rgba(0,0,0,0.15) 100%), url(${item.image_url})` : 'none',
+                             backgroundSize: 'cover',
+                             backgroundPosition: 'center',
+                             color: imgPos === 'background' && showImage ? '#FFFFFF' : 'var(--menu-text-primary)'
+                           }}
                         >
                           {showImage && imgPos !== 'background' && (
                             <div 
                               className={`relative shrink-0 bg-black/10 overflow-hidden`}
                               style={{
-                                width: (theme.layout.cardStyle.startsWith('grid') || imgPos === 'top') ? '100%' : isCompact ? '40px' : '80px',
-                                height: (theme.layout.cardStyle.startsWith('grid') || imgPos === 'top') ? '110px' : isCompact ? '40px' : '80px',
+                                width: ((theme.layout.cardStyle && theme.layout.cardStyle.startsWith('grid')) || imgPos === 'top') ? '100%' : isCompact ? '40px' : '80px',
+                                height: ((theme.layout.cardStyle && theme.layout.cardStyle.startsWith('grid')) || imgPos === 'top') ? '110px' : isCompact ? '40px' : '80px',
                                 borderRadius: 'var(--menu-img-radius)'
                               }}
                             >
@@ -1925,12 +1978,20 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
                               <div className="flex justify-between items-start gap-2">
                                 <h4 className="font-bold text-sm leading-snug truncate flex items-center gap-1.5 flex-wrap" style={{ color: imgPos === 'background' && showImage ? '#FFFFFF' : 'var(--menu-text-primary)' }}>
                                   <span>{displayName}</span>
-                                  {item.badge && renderBadge(item.badge)}
+                                  {theme.layout.showBadges && item.badge && renderBadge(item.badge)}
                                 </h4>
                                 {!isCompact && theme.layout.showCurrency && (
-                                  <span className="font-extrabold text-sm shrink-0" style={{ color: 'var(--menu-accent)' }}>
-                                    {theme.layout.currencySymbol}{item.price}
-                                  </span>
+                                  <div className="flex flex-col items-end shrink-0">
+                                    <span className="font-extrabold text-sm" style={{ color: 'var(--menu-accent)' }}>
+                                      {theme.layout.currency || theme.layout.currencySymbol || '$'}{item.price}
+                                    </span>
+                                    {theme.layout.showCalories && (item.calories || item.cal) && (
+                                      <span className="text-[9px] text-slate-400">{(item.calories || item.cal)}</span>
+                                    )}
+                                    {theme.layout.showCalories && !(item.calories || item.cal) && (
+                                      <span className="text-[9px] text-slate-400">350 kcal</span>
+                                    )}
+                                  </div>
                                 )}
                               </div>
                               {!isCompact && theme.layout.showDescription && displayDesc && (
@@ -1941,9 +2002,17 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
                             </div>
 
                             {isCompact && theme.layout.showCurrency && (
-                              <span className="font-bold text-sm shrink-0" style={{ color: 'var(--menu-accent)' }}>
-                                {theme.layout.currencySymbol}{item.price}
-                              </span>
+                              <div className="flex items-center gap-2 shrink-0">
+                                {theme.layout.showCalories && (item.calories || item.cal) && (
+                                  <span className="text-[9px] text-slate-400">{(item.calories || item.cal)}</span>
+                                )}
+                                {theme.layout.showCalories && !(item.calories || item.cal) && (
+                                  <span className="text-[9px] text-slate-400">350 kcal</span>
+                                )}
+                                <span className="font-bold text-sm" style={{ color: 'var(--menu-accent)' }}>
+                                  {theme.layout.currency || theme.layout.currencySymbol || '$'}{item.price}
+                                </span>
+                              </div>
                             )}
                           </div>
                         </div>

@@ -1,345 +1,611 @@
+export const baseConfig = {
+  colors: {
+    background: '#ffffff',
+    cardBackground: '#f9fafb',
+    primaryText: '#111827',
+    secondaryText: '#6b7280',
+    accent: '#f97316',
+    border: '#e5e7eb',
+    tabActive: '#f97316',
+    tabActiveText: '#ffffff',
+    tabInactive: '#f3f4f6',
+    tabInactiveText: '#6b7280',
+    price: '#f97316',
+    badge: '#f97316',
+    header: '#ffffff',
+  },
+  fonts: {
+    heading: 'Inter',
+    body: 'Inter',
+    headingSize: 24,
+    bodySize: 14,
+    headingWeight: '700',
+    bodyWeight: '400',
+    letterSpacing: 0,
+    lineHeight: 1.6,
+  },
+  layout: {
+    cardStyle: 'grid-2',
+    showImage: true,
+    imagePosition: 'top',
+    imageRadius: 8,
+    cardRadius: 12,
+    cardPadding: 16,
+    cardShadow: 'md',
+    tabStyle: 'pills',
+    tabPosition: 'top',
+    showDescription: true,
+    showCalories: false,
+    showBadges: true,
+    currency: '$',
+    showCurrency: true,
+    headerStyle: 'logo-banner',
+    bannerHeight: 180,
+  },
+  badges: {
+    showNew: true,
+    newLabel: 'New',
+    newColor: '#22c55e',
+    showPopular: true,
+    popularLabel: 'Popular',
+    popularColor: '#f97316',
+    showSpicy: true,
+    spicyLabel: '🌶️ Spicy',
+    spicyColor: '#ef4444',
+    showVegan: true,
+    veganLabel: '🌱 Vegan',
+    veganColor: '#22c55e',
+    showHalal: true,
+    halalLabel: '✓ Halal',
+    halalColor: '#16a34a',
+  }
+};
+
 export const templates = [
   {
     id: 'classic',
     name: 'Classic',
     emoji: '🍽️',
-    bg: '#ffffff',
-    cardBg: '#f9fafb',
-    text: '#111827',
-    secondaryText: '#6b7280',
-    border: '#e5e7eb',
-    font: 'Inter',
-    cardRadius: '12px',
-    cardShadow: '0 1px 3px rgba(0,0,0,0.1)',
-    tabStyle: 'pills',
+    colors: { ...baseConfig.colors },
+    fonts: { ...baseConfig.fonts },
+    layout: { ...baseConfig.layout },
+    badges: { ...baseConfig.badges }
   },
   {
     id: 'dark-luxury',
     name: 'Dark Luxury',
     emoji: '🖤',
-    bg: '#0a0a0a',
-    cardBg: '#1a1a1a',
-    text: '#ffffff',
-    secondaryText: '#9ca3af',
-    border: '#2a2a2a',
-    font: 'Playfair Display',
-    cardRadius: '16px',
-    cardShadow: '0 4px 20px rgba(0,0,0,0.5)',
-    tabStyle: 'underline',
+    colors: {
+      ...baseConfig.colors,
+      background: '#0a0a0a',
+      cardBackground: '#1a1a1a',
+      primaryText: '#ffffff',
+      secondaryText: '#9ca3af',
+      accent: '#d4af37',
+      border: '#2a2a2a',
+      tabActive: '#d4af37',
+      tabActiveText: '#0a0a0a',
+      tabInactive: '#1f1f1f',
+      tabInactiveText: '#9ca3af',
+      price: '#d4af37',
+      badge: '#d4af37',
+      header: '#1a1a1a'
+    },
+    fonts: {
+      ...baseConfig.fonts,
+      heading: 'Playfair Display',
+      body: 'Inter'
+    },
+    layout: {
+      ...baseConfig.layout,
+      cardRadius: 16,
+      cardShadow: 'lg',
+      tabStyle: 'underline'
+    },
+    badges: { ...baseConfig.badges }
   },
   {
     id: 'minimal',
     name: 'Minimal',
     emoji: '⬜',
-    bg: '#fafafa',
-    cardBg: '#ffffff',
-    text: '#000000',
-    secondaryText: '#737373',
-    border: '#f0f0f0',
-    font: 'DM Sans',
-    cardRadius: '4px',
-    cardShadow: 'none',
-    tabStyle: 'minimal',
+    colors: {
+      ...baseConfig.colors,
+      background: '#fafafa',
+      cardBackground: '#ffffff',
+      primaryText: '#000000',
+      secondaryText: '#737373',
+      accent: '#000000',
+      border: '#f0f0f0',
+      tabActive: '#000000',
+      tabActiveText: '#ffffff',
+      tabInactive: '#f5f5f5',
+      tabInactiveText: '#737373',
+      price: '#000000',
+      badge: '#000000',
+      header: '#ffffff'
+    },
+    fonts: {
+      ...baseConfig.fonts,
+      heading: 'DM Sans',
+      body: 'DM Sans'
+    },
+    layout: {
+      ...baseConfig.layout,
+      cardRadius: 4,
+      cardShadow: 'none',
+      tabStyle: 'minimal'
+    },
+    badges: { ...baseConfig.badges }
   },
   {
     id: 'cafe',
     name: 'Café',
     emoji: '☕',
-    bg: '#fdf6e3',
-    cardBg: '#fffbf0',
-    text: '#3d2b1f',
-    secondaryText: '#7c5c4a',
-    border: '#e8d5b7',
-    font: 'Lora',
-    cardRadius: '8px',
-    cardShadow: '0 2px 8px rgba(61,43,31,0.1)',
-    tabStyle: 'pills',
+    colors: {
+      ...baseConfig.colors,
+      background: '#fdf6e3',
+      cardBackground: '#fffbf0',
+      primaryText: '#3d2b1f',
+      secondaryText: '#7c5c4a',
+      accent: '#a26b43',
+      border: '#e8d5b7',
+      tabActive: '#a26b43',
+      tabActiveText: '#ffffff',
+      tabInactive: '#f0e6d2',
+      tabInactiveText: '#7c5c4a',
+      price: '#a26b43',
+      badge: '#a26b43',
+      header: '#fffbf0'
+    },
+    fonts: {
+      ...baseConfig.fonts,
+      heading: 'Lora',
+      body: 'Lora'
+    },
+    layout: {
+      ...baseConfig.layout,
+      cardRadius: 8,
+      tabStyle: 'pills',
+      imagePosition: 'left'
+    },
+    badges: { ...baseConfig.badges }
   },
   {
     id: 'modern-dark',
     name: 'Modern Dark',
     emoji: '🌙',
-    bg: '#0f172a',
-    cardBg: '#1e293b',
-    text: '#f1f5f9',
-    secondaryText: '#94a3b8',
-    border: '#334155',
-    font: 'Poppins',
-    cardRadius: '16px',
-    cardShadow: '0 4px 24px rgba(0,0,0,0.4)',
-    tabStyle: 'pills',
+    colors: {
+      ...baseConfig.colors,
+      background: '#0f172a',
+      cardBackground: '#1e293b',
+      primaryText: '#f1f5f9',
+      secondaryText: '#94a3b8',
+      accent: '#f97316',
+      border: '#334155',
+      tabActive: '#f97316',
+      tabActiveText: '#ffffff',
+      tabInactive: '#1e293b',
+      tabInactiveText: '#94a3b8',
+      price: '#f97316',
+      badge: '#f97316',
+      header: '#1e293b'
+    },
+    fonts: {
+      ...baseConfig.fonts,
+      heading: 'Poppins',
+      body: 'Poppins'
+    },
+    layout: {
+      ...baseConfig.layout,
+      cardRadius: 16,
+      cardShadow: 'lg',
+      tabStyle: 'pills'
+    },
+    badges: { ...baseConfig.badges }
   },
   {
     id: 'vibrant',
     name: 'Vibrant',
     emoji: '🌈',
-    bg: '#fafafa',
-    cardBg: '#ffffff',
-    text: '#1a1a1a',
-    secondaryText: '#555555',
-    border: '#e5e5e5',
-    font: 'Nunito',
-    cardRadius: '20px',
-    cardShadow: '0 4px 16px rgba(0,0,0,0.08)',
-    tabStyle: 'pills',
+    colors: {
+      ...baseConfig.colors,
+      background: '#fafafa',
+      cardBackground: '#ffffff',
+      primaryText: '#1a1a1a',
+      secondaryText: '#555555',
+      accent: '#ec4899',
+      border: '#e5e5e5',
+      tabActive: '#ec4899',
+      tabActiveText: '#ffffff',
+      tabInactive: '#f0f0f0',
+      tabInactiveText: '#555555',
+      price: '#ec4899',
+      badge: '#ec4899',
+      header: '#ffffff'
+    },
+    fonts: {
+      ...baseConfig.fonts,
+      heading: 'Nunito',
+      body: 'Nunito'
+    },
+    layout: {
+      ...baseConfig.layout,
+      cardRadius: 20,
+      tabStyle: 'pills'
+    },
+    badges: { ...baseConfig.badges }
   },
   {
     id: 'fine-dining',
     name: 'Fine Dining',
     emoji: '🥂',
-    bg: '#1a1a1a',
-    cardBg: '#242424',
-    text: '#f5f0e8',
-    secondaryText: '#c9b99a',
-    border: '#333333',
-    font: 'Cormorant Garamond',
-    cardRadius: '0px',
-    cardShadow: 'none',
-    tabStyle: 'underline',
+    colors: {
+      ...baseConfig.colors,
+      background: '#1a1a1a',
+      cardBackground: '#242424',
+      primaryText: '#f5f0e8',
+      secondaryText: '#c9b99a',
+      accent: '#c9b99a',
+      border: '#333333',
+      tabActive: '#c9b99a',
+      tabActiveText: '#1a1a1a',
+      tabInactive: '#2d2d2d',
+      tabInactiveText: '#c9b99a',
+      price: '#c9b99a',
+      badge: '#c9b99a',
+      header: '#242424'
+    },
+    fonts: {
+      ...baseConfig.fonts,
+      heading: 'Cormorant Garamond',
+      body: 'Cormorant Garamond'
+    },
+    layout: {
+      ...baseConfig.layout,
+      cardRadius: 0,
+      cardShadow: 'none',
+      tabStyle: 'underline'
+    },
+    badges: { ...baseConfig.badges }
   },
   {
     id: 'street-food',
     name: 'Street Food',
     emoji: '🌮',
-    bg: '#1a1a2e',
-    cardBg: '#16213e',
-    text: '#ffffff',
-    secondaryText: '#a0a0b0',
-    border: '#0f3460',
-    font: 'Bebas Neue',
-    cardRadius: '8px',
-    cardShadow: '0 0 20px rgba(0,0,0,0.3)',
-    tabStyle: 'boxed',
+    colors: {
+      ...baseConfig.colors,
+      background: '#1a1a2e',
+      cardBackground: '#16213e',
+      primaryText: '#ffffff',
+      secondaryText: '#a0a0b0',
+      accent: '#ff4757',
+      border: '#0f3460',
+      tabActive: '#ff4757',
+      tabActiveText: '#ffffff',
+      tabInactive: '#0f3460',
+      tabInactiveText: '#a0a0b0',
+      price: '#ff4757',
+      badge: '#ff4757',
+      header: '#16213e'
+    },
+    fonts: {
+      ...baseConfig.fonts,
+      heading: 'Bebas Neue',
+      body: 'Inter'
+    },
+    layout: {
+      ...baseConfig.layout,
+      cardRadius: 8,
+      tabStyle: 'boxed'
+    },
+    badges: { ...baseConfig.badges }
   },
   {
     id: 'mediterranean',
     name: 'Mediterranean',
     emoji: '🌊',
-    bg: '#f0f7ff',
-    cardBg: '#ffffff',
-    text: '#1e3a5f',
-    secondaryText: '#4a6fa5',
-    border: '#bdd7f5',
-    font: 'Raleway',
-    cardRadius: '12px',
-    cardShadow: '0 2px 12px rgba(30,58,95,0.1)',
-    tabStyle: 'pills',
+    colors: {
+      ...baseConfig.colors,
+      background: '#f0f7ff',
+      cardBackground: '#ffffff',
+      primaryText: '#1e3a5f',
+      secondaryText: '#4a6fa5',
+      accent: '#3b82f6',
+      border: '#bdd7f5',
+      tabActive: '#3b82f6',
+      tabActiveText: '#ffffff',
+      tabInactive: '#e0f2fe',
+      tabInactiveText: '#4a6fa5',
+      price: '#3b82f6',
+      badge: '#3b82f6',
+      header: '#ffffff'
+    },
+    fonts: {
+      ...baseConfig.fonts,
+      heading: 'Raleway',
+      body: 'Raleway'
+    },
+    layout: {
+      ...baseConfig.layout,
+      cardRadius: 12,
+      tabStyle: 'pills'
+    },
+    badges: { ...baseConfig.badges }
   },
   {
     id: 'japanese',
     name: 'Japanese',
     emoji: '🍱',
-    bg: '#fafaf8',
-    cardBg: '#ffffff',
-    text: '#1a1a1a',
-    secondaryText: '#666666',
-    border: '#e8e8e0',
-    font: 'Noto Serif',
-    cardRadius: '2px',
-    cardShadow: '0 1px 4px rgba(0,0,0,0.06)',
-    tabStyle: 'minimal',
+    colors: {
+      ...baseConfig.colors,
+      background: '#fafaf8',
+      cardBackground: '#ffffff',
+      primaryText: '#1a1a1a',
+      secondaryText: '#666666',
+      accent: '#b61c1c',
+      border: '#e8e8e0',
+      tabActive: '#b61c1c',
+      tabActiveText: '#ffffff',
+      tabInactive: '#f0f0eb',
+      tabInactiveText: '#666666',
+      price: '#b61c1c',
+      badge: '#b61c1c',
+      header: '#ffffff'
+    },
+    fonts: {
+      ...baseConfig.fonts,
+      heading: 'Noto Serif',
+      body: 'Noto Serif'
+    },
+    layout: {
+      ...baseConfig.layout,
+      cardRadius: 2,
+      cardShadow: 'none',
+      tabStyle: 'minimal'
+    },
+    badges: { ...baseConfig.badges }
   },
+  {
+    id: 'arabic',
+    name: 'Arabic Traditional',
+    emoji: '🕌',
+    colors: {
+      ...baseConfig.colors,
+      background: '#fdfaf2',
+      cardBackground: '#ffffff',
+      primaryText: '#2c1a04',
+      secondaryText: '#6d5438',
+      accent: '#d97706',
+      border: '#f0e6d2',
+      tabActive: '#d97706',
+      tabActiveText: '#ffffff',
+      tabInactive: '#f5ebd6',
+      tabInactiveText: '#6d5438',
+      price: '#d97706',
+      badge: '#d97706',
+      header: '#ffffff'
+    },
+    fonts: {
+      ...baseConfig.fonts,
+      heading: 'Cairo',
+      body: 'Cairo'
+    },
+    layout: {
+      ...baseConfig.layout,
+      cardRadius: 8,
+      tabStyle: 'pills'
+    },
+    badges: { ...baseConfig.badges }
+  },
+  {
+    id: 'neon-night',
+    name: 'Neon Night',
+    emoji: '⚡',
+    colors: {
+      ...baseConfig.colors,
+      background: '#000000',
+      cardBackground: '#0c0c0c',
+      primaryText: '#ffffff',
+      secondaryText: '#888888',
+      accent: '#22c55e',
+      border: '#222222',
+      tabActive: '#22c55e',
+      tabActiveText: '#000000',
+      tabInactive: '#111111',
+      tabInactiveText: '#888888',
+      price: '#22c55e',
+      badge: '#22c55e',
+      header: '#0c0c0c'
+    },
+    fonts: {
+      ...baseConfig.fonts,
+      heading: 'Inter',
+      body: 'Inter'
+    },
+    layout: {
+      ...baseConfig.layout,
+      cardRadius: 12,
+      tabStyle: 'pills'
+    },
+    badges: { ...baseConfig.badges }
+  }
 ];
 
 export const googleFontsList = [
   "Inter",
-  "Playfair Display",
-  "DM Sans",
-  "Lora",
   "Poppins",
-  "Nunito",
-  "Cormorant Garamond",
-  "Bebas Neue",
+  "Montserrat",
   "Raleway",
-  "Noto Serif"
+  "Lato",
+  "Playfair Display",
+  "Cormorant Garamond",
+  "Lora",
+  "DM Sans",
+  "Nunito",
+  "Josefin Sans",
+  "Oswald",
+  "Bebas Neue",
+  "Merriweather",
+  "Cairo",
+  "Tajawal",
+  "Noto Serif",
+  "Source Sans Pro",
+  "Roboto",
+  "Open Sans"
 ];
 
 export function getTemplateDefaults(templateId) {
   const preset = templates.find((t) => t.id === templateId) || templates[0];
-  
-  // Choose standard structural card configurations matching each preset style
-  let cardStyle = 'grid-2col';
-  let showImage = true;
-  let imagePosition = 'top';
-  
-  if (preset.id === 'minimal') {
-    cardStyle = 'list';
-    imagePosition = 'right';
-  } else if (preset.id === 'fine-dining') {
-    cardStyle = 'list';
-    showImage = false;
-  } else if (preset.id === 'japanese') {
-    cardStyle = 'grid-3col';
-  } else if (preset.id === 'cafe') {
-    imagePosition = 'left';
-  }
-
   return {
-    colors: {
-      bg: preset.bg,
-      secondaryBg: preset.bg,
-      cardBg: preset.cardBg,
-      textPrimary: preset.text,
-      textSecondary: preset.secondaryText,
-      accent: '#f97316', // Overridden dynamically by restaurant's accent_color
-      tabActive: '#f97316',
-      tabInactive: preset.secondaryText,
-      button: '#f97316',
-      border: preset.border,
-    },
-    fonts: {
-      heading: preset.font,
-      body: preset.font,
-      headingSize: '32px',
-      bodySize: '16px',
-      weight: '700',
-      letterSpacing: '0px',
-      lineHeight: '1.4',
-    },
-    layout: {
-      cardStyle: cardStyle,
-      showImage: showImage,
-      imagePosition: imagePosition,
-      imageRadius: preset.cardRadius === '0px' ? '0px' : '8px',
-      cardPadding: '16px',
-      cardRadius: preset.cardRadius,
-      shadow: preset.cardShadow === 'none' ? 'none' : 'sm',
-      tabsStyle: preset.tabStyle,
-      tabsPosition: 'top',
-      showDescription: true,
-      showCalories: true,
-      showCurrency: true,
-      currencySymbol: '$',
-    },
-    icons: {
-      style: 'Lucide',
-      showNewBadge: true,
-      newBadgeColor: '#10B981',
-      showPopularBadge: true,
-      popularBadgeColor: '#EF4444',
-      showSpicyBadge: true,
-      spicyBadgeColor: '#F59E0B',
-      showVeganBadge: true,
-      veganBadgeColor: '#10B981',
-      showHalalBadge: true,
-      halalBadgeColor: '#059669',
-      headerStyle: 'logo+banner',
-      bannerHeight: '220px',
-    },
-    advanced: {
-      customCss: '',
-      borderStyle: preset.id === 'minimal' ? 'none' : 'solid',
-      dividerBetweenCategories: true,
-      stickyTabs: true,
-      backToTop: true,
-      socialMedia: true,
-    }
+    colors: { ...preset.colors },
+    fonts: { ...preset.fonts },
+    layout: { ...preset.layout },
+    badges: { ...preset.badges }
   };
 }
 
-export function generateCssStyles(theme) {
-  if (!theme || !theme.colors || !theme.fonts || !theme.layout) {
-    return "";
-  }
+export function generateCssStyles(cust) {
+  if (!cust) return "";
 
-  const { colors, fonts, layout, advanced } = theme;
-  const cardBorderColor = advanced?.borderStyle === "none" ? "transparent" : colors.border;
+  const colors = cust.colors || baseConfig.colors;
+  const fonts = cust.fonts || baseConfig.fonts;
+  const layout = cust.layout || baseConfig.layout;
+  const badges = cust.badges || baseConfig.badges;
+
+  const cardBorderColor = layout.cardShadow === 'none' ? colors.border : 'transparent';
   
-  // Resolve category tab styles
+  // Resolve tab active/inactive selectors
   let tabStyles = "";
-  if (layout.tabsStyle === 'pills') {
+  if (layout.tabStyle === 'pills') {
     tabStyles = `
       .custom-category-tab-active {
-        background-color: var(--menu-accent) !important;
-        color: #ffffff !important;
+        background-color: var(--color-tab-active) !important;
+        color: var(--color-tab-active-text) !important;
         border-radius: 9999px !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
       }
       .custom-category-tab-inactive {
-        background-color: transparent !important;
-        color: var(--menu-text-sec) !important;
-        border: 1px solid var(--menu-border) !important;
+        background-color: var(--color-tab-inactive) !important;
+        color: var(--color-tab-inactive-text) !important;
         border-radius: 9999px !important;
       }
     `;
-  } else if (layout.tabsStyle === 'underline') {
+  } else if (layout.tabStyle === 'underline') {
     tabStyles = `
       .custom-category-tab-active {
         background-color: transparent !important;
-        color: var(--menu-accent) !important;
-        border-bottom: 3px solid var(--menu-accent) !important;
+        color: var(--color-accent) !important;
+        border-bottom: 3px solid var(--color-accent) !important;
         border-radius: 0px !important;
       }
       .custom-category-tab-inactive {
         background-color: transparent !important;
-        color: var(--menu-text-sec) !important;
+        color: var(--color-text-secondary) !important;
         border-bottom: 3px solid transparent !important;
         border-radius: 0px !important;
       }
     `;
-  } else if (layout.tabsStyle === 'boxed') {
+  } else if (layout.tabStyle === 'boxed') {
     tabStyles = `
       .custom-category-tab-active {
-        background-color: var(--menu-accent) !important;
-        color: #ffffff !important;
+        background-color: var(--color-tab-active) !important;
+        color: var(--color-tab-active-text) !important;
         border-radius: 8px !important;
       }
       .custom-category-tab-inactive {
-        background-color: var(--menu-card-bg) !important;
-        color: var(--menu-text-sec) !important;
-        border: 1px solid var(--menu-border) !important;
+        background-color: var(--color-tab-inactive) !important;
+        color: var(--color-tab-inactive-text) !important;
         border-radius: 8px !important;
+        border: 1px solid var(--color-border) !important;
       }
     `;
   } else { // minimal
     tabStyles = `
       .custom-category-tab-active {
         background-color: transparent !important;
-        color: var(--menu-accent) !important;
+        color: var(--color-accent) !important;
         border-radius: 0px !important;
         font-weight: 800 !important;
       }
       .custom-category-tab-inactive {
         background-color: transparent !important;
-        color: var(--menu-text-sec) !important;
+        color: var(--color-text-secondary) !important;
         border-radius: 0px !important;
       }
     `;
   }
 
+  // Resolve shadow selection class
+  let shadowClass = 'none';
+  if (layout.cardShadow === 'sm') shadowClass = '0 1px 2px 0 rgba(0,0,0,0.05)';
+  else if (layout.cardShadow === 'md') shadowClass = '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)';
+  else if (layout.cardShadow === 'lg') shadowClass = '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)';
+  else if (layout.cardShadow === 'xl') shadowClass = '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)';
+
   return `
     :root {
-      --menu-bg: ${colors.bg};
-      --menu-sec-bg: ${colors.secondaryBg};
-      --menu-card-bg: ${colors.cardBg};
-      --menu-text-primary: ${colors.textPrimary};
-      --menu-text-sec: ${colors.textSecondary};
+      /* Advanced Customizer variables */
+      --color-bg: ${colors.background};
+      --color-card-bg: ${colors.cardBackground};
+      --color-text: ${colors.primaryText};
+      --color-text-secondary: ${colors.secondaryText};
+      --color-accent: ${colors.accent};
+      --color-border: ${colors.border};
+      --color-tab-active: ${colors.tabActive};
+      --color-tab-active-text: ${colors.tabActiveText};
+      --color-tab-inactive: ${colors.tabInactive};
+      --color-tab-inactive-text: ${colors.tabInactiveText};
+      --color-price: ${colors.price};
+      --color-badge: ${colors.badge};
+      --color-header: ${colors.header};
+
+      --font-heading: "${fonts.heading}", sans-serif;
+      --font-body: "${fonts.body}", sans-serif;
+      --font-heading-size: ${fonts.headingSize}px;
+      --font-body-size: ${fonts.bodySize}px;
+      --font-heading-weight: ${fonts.headingWeight || "700"};
+      --font-body-weight: ${fonts.bodyWeight || "400"};
+      --letter-spacing: ${fonts.letterSpacing}px;
+      --line-height: ${fonts.lineHeight || "1.6"};
+
+      --card-radius: ${layout.cardRadius}px;
+      --card-padding: ${layout.cardPadding}px;
+      --card-shadow: ${shadowClass};
+      --image-radius: ${layout.imageRadius}px;
+      --banner-height: ${layout.bannerHeight}px;
+
+      /* Backwards compatible menu-client.jsx bindings */
+      --menu-bg: ${colors.background};
+      --menu-sec-bg: ${colors.background};
+      --menu-card-bg: ${colors.cardBackground};
+      --menu-text-primary: ${colors.primaryText};
+      --menu-text-sec: ${colors.secondaryText};
       --menu-accent: ${colors.accent};
       --menu-tab-active: ${colors.tabActive};
       --menu-tab-inactive: ${colors.tabInactive};
-      --menu-btn: ${colors.button};
+      --menu-btn: ${colors.accent};
       --menu-border: ${colors.border};
       --menu-card-border-color: ${cardBorderColor};
 
       --menu-font-heading: "${fonts.heading}", sans-serif;
       --menu-font-body: "${fonts.body}", sans-serif;
-      --menu-heading-size: ${fonts.headingSize || "30px"};
-      --menu-body-size: ${fonts.bodySize || "15px"};
-      --menu-font-weight: ${fonts.weight || "600"};
-      --menu-letter-spacing: ${fonts.letterSpacing || "0px"};
-      --menu-line-height: ${fonts.lineHeight || "1.5"};
+      --menu-heading-size: ${fonts.headingSize}px;
+      --menu-body-size: ${fonts.bodySize}px;
+      --menu-font-weight: ${fonts.headingWeight || "700"};
+      --menu-letter-spacing: ${fonts.letterSpacing}px;
+      --menu-line-height: ${fonts.lineHeight || "1.6"};
 
-      --menu-card-padding: ${layout.cardPadding || "16px"};
-      --menu-card-radius: ${layout.cardRadius || "12px"};
-      --menu-img-radius: ${layout.imageRadius || "8px"};
-      --menu-card-shadow: ${layout.shadow === 'none' ? 'none' : '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)'};
-      --menu-border-style: ${advanced?.borderStyle || "solid"};
+      --menu-card-padding: ${layout.cardPadding}px;
+      --menu-card-radius: ${layout.cardRadius}px;
+      --menu-img-radius: ${layout.imageRadius}px;
+      --menu-card-shadow: ${shadowClass};
+      --menu-border-style: ${layout.cardShadow === 'none' ? 'solid' : 'none'};
     }
 
     .tarapeza-public-menu {
-      background-color: var(--menu-bg) !important;
-      color: var(--menu-text-primary) !important;
-      font-family: var(--menu-font-body), sans-serif !important;
+      background-color: var(--color-bg) !important;
+      color: var(--color-text) !important;
+      font-family: var(--font-body), sans-serif !important;
+      line-height: var(--line-height) !important;
     }
 
     .tarapeza-public-menu h1,
@@ -347,27 +613,30 @@ export function generateCssStyles(theme) {
     .tarapeza-public-menu h3,
     .tarapeza-public-menu h4,
     .tarapeza-public-menu h5 {
-      font-family: var(--menu-font-heading), sans-serif !important;
+      font-family: var(--font-heading), sans-serif !important;
+      font-weight: var(--font-heading-weight) !important;
+      letter-spacing: var(--letter-spacing) !important;
     }
 
     .custom-menu-card {
-      background-color: var(--menu-card-bg) !important;
-      border: 1px var(--menu-border-style) var(--menu-card-border-color) !important;
-      border-radius: var(--menu-card-radius) !important;
-      padding: var(--menu-card-padding) !important;
-      box-shadow: var(--menu-card-shadow) !important;
+      background-color: var(--color-card-bg) !important;
+      border: 1px solid var(--color-border) !important;
+      border-radius: var(--card-radius) !important;
+      padding: var(--card-padding) !important;
+      box-shadow: var(--card-shadow) !important;
       transition: all 0.2s ease-in-out;
     }
 
     .custom-menu-card:hover {
-      border-color: var(--menu-accent) !important;
+      border-color: var(--color-accent) !important;
     }
 
     .custom-menu-btn {
-      background-color: var(--menu-btn) !important;
-      color: #FFFFFF !important;
+      background-color: var(--color-accent) !important;
+      color: var(--color-tab-active-text) !important;
     }
 
     ${tabStyles}
+    ${cust.customCss || ""}
   `;
 }

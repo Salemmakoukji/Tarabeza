@@ -26,6 +26,15 @@ export async function loader({ request, params }) {
     if (isPreview) {
       if (previewTemplate) profile.template_id = previewTemplate;
       if (previewAccent) profile.accent_color = previewAccent;
+      
+      const previewCustomization = url.searchParams.get('customization');
+      if (previewCustomization) {
+        try {
+          profile.customization = JSON.parse(decodeURIComponent(previewCustomization));
+        } catch (e) {
+          console.error("Failed to parse preview customization from URL", e);
+        }
+      }
     }
   }
 
