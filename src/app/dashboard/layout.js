@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase-server';
+import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import DashboardLayoutClient from './layout-client';
 import BillingBlocker from '@/components/dashboard/billing-blocker';

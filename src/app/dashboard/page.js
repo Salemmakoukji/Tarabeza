@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase-server';
+import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import DashboardClient from './dashboard-client';
 
@@ -45,7 +45,7 @@ export default async function DashboardPage() {
   ]);
 
   return (
-    <DashboardClient 
+    <DashboardClient
       profile={profile}
       initialCategories={catRes.data || []}
       initialMenuItems={itemsRes.data || []}
