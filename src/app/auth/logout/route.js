@@ -6,7 +6,12 @@ export async function POST(request) {
   await supabase.auth.signOut();
 
   const url = new URL('/login', request.url);
-  return NextResponse.redirect(url, { status: 303 });
+  const response = NextResponse.redirect(url, { status: 303 });
+  
+  response.cookies.delete('sb-access-token');
+  response.cookies.delete('sb-refresh-token');
+  
+  return response;
 }
 
 export async function GET(request) {
@@ -14,5 +19,10 @@ export async function GET(request) {
   await supabase.auth.signOut();
 
   const url = new URL('/login', request.url);
-  return NextResponse.redirect(url, { status: 303 });
+  const response = NextResponse.redirect(url, { status: 303 });
+  
+  response.cookies.delete('sb-access-token');
+  response.cookies.delete('sb-refresh-token');
+  
+  return response;
 }

@@ -30,8 +30,10 @@ function LoginForm() {
 
       if (error) throw error;
 
-      // Small delay to ensure session is committed
-      await new Promise(resolve => setTimeout(resolve, 500));
+      if (data?.session) {
+        document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=3600; SameSite=Lax; Secure`;
+        document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=86400; SameSite=Lax; Secure`;
+      }
 
       window.location.replace('/dashboard');
       
