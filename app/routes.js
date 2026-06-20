@@ -26,6 +26,7 @@ export default [
   route("auth/logout", "routes/logout.jsx"),
   route("auth/google", "routes/auth-google.jsx"),
   route("auth/callback", "routes/auth-callback.jsx"),
+  route("api/auth/set-session", "routes/api-auth-set-session.jsx"),
 
   // Static marketing / legal pages
   route("about", "routes/about.jsx"),
