@@ -102,27 +102,20 @@ export async function loader({ request, params }) {
 }
 
 export function meta({ data }) {
-  if (!data || !data.profile) {
+  // Check profile exists
+  const profile = data?.profile;
+
+  if (!profile || !profile.name) {
     return [
-      { title: "Menu Not Found | Tarapeza" }
+      { title: "Tarapeza | Digital QR Menu" }
     ];
   }
-  const { profile } = data;
-  const title = `${profile.name} - Interactive Digital Menu | Tarapeza`;
-  const description = profile.description || `Explore our interactive digital QR menu for ${profile.name}. View categories, dishes, ingredients, and prices in English & Arabic.`;
-  const logo = profile.logo_url || '/og-image.png';
 
   return [
-    { title },
-    { name: "description", content: description },
-    { property: "og:title", content: `${profile.name} - Digital Menu | Tarapeza` },
-    { property: "og:description", content: description },
-    { property: "og:url", content: `https://tarapeza.com/menu/${profile.slug}` },
-    { property: "og:image", content: logo },
-    { name: "twitter:card", content: "summary_large_image" },
-    { name: "twitter:title", content: `${profile.name} - Digital Menu | Tarapeza` },
-    { name: "twitter:description", content: description },
-    { name: "twitter:image", content: logo }
+    { title: `${profile.name} | Tarapeza` },
+    { name: "description", content: profile.description || `View ${profile.name} menu` },
+    { property: "og:title", content: `${profile.name} | Tarapeza` },
+    { property: "og:image", content: profile.logo_url || '/og-image.png' },
   ];
 }
 
