@@ -17,16 +17,15 @@ export async function loader({ request, params }) {
   );
 
   // 1. Fetch Profile
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('restaurants')
     .select('*')
     .eq('slug', slug)
     .single();
 
-  console.log('SLUG:', slug);
-  console.log('PROFILE:', profile);
-  console.log('ERROR:', profileError);
-  console.log('SUPABASE_URL:', process.env.SUPABASE_URL);
+  if (profileError) {
+    console.error('Menu loader error:', profileError.message);
+  }
 
   if (profile) {
     if (isPreview) {
