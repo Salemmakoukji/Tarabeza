@@ -18,7 +18,9 @@ export async function middleware(request) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           )
-          supabaseResponse = NextResponse.next({ request })
+          supabaseResponse = NextResponse.next({
+            request,
+          })
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           )
@@ -27,19 +29,21 @@ export async function middleware(request) {
     }
   )
 
-  // CRITICAL: use getUser() not getSession()
-  const { data: { user } } = await supabase.auth.getUser()
+  // Use getSession instead of getUser in middleware only
+  // getUser is too slow on edge network and causes timeouts
+  const { data: { session } } = await supabase.auth.getSession()
 
-  if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
+  if (!session && request.nextUrl.pathname.startsWith('/dashboard')) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
-  // CRITICAL: return supabaseResponse not NextResponse.next()
   return supabaseResponse
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 }
