@@ -1,5 +1,6 @@
 import { redirect } from 'react-router';
-import { createClient } from '../lib/supabase/server';
+import { createServerClient } from '@supabase/ssr';
+import { parse, serialize } from 'cookie';
 
 export async function loader({ request }) {
   const url = new URL(request.url);
@@ -15,36 +16,72 @@ export async function loader({ request }) {
     return redirect('/login?error=Missing+authorization+code');
   }
 
-  const supabase = await createClient(request);
+  const cookies = parse(request.headers.get('Cookie') || '');
+  const responseHeaders = new Headers();
+
+  const supabase = createServerClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        get(key) {
+          return cookies[key];
+        },
+        set(key, value, options) {
+          responseHeaders.append(
+            'Set-Cookie',
+            serialize(key, value, {
+              ...options,
+              httpOnly: true,
+              secure: true,
+              sameSite: 'lax',
+              path: '/',
+            })
+          );
+        },
+        remove(key, options) {
+          responseHeaders.append(
+            'Set-Cookie',
+            serialize(key, '', {
+              ...options,
+              maxAge: 0,
+              path: '/',
+            })
+          );
+        },
+      },
+    }
+  );
+
   const { data, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
 
   if (sessionError || !data?.session) {
-    return redirect(`/login?error=${encodeURIComponent(sessionError?.message || 'Failed to authenticate session')}`);
+    return redirect(
+      `/login?error=${encodeURIComponent(sessionError?.message || 'Authentication failed')}`,
+      { headers: responseHeaders }
+    );
   }
 
-  const session = data.session;
-  const user = session.user;
+  const user = data.session.user;
 
-  // Retrieve restaurant profile to see if they have completed onboarding
   const { data: profile } = await supabase
     .from('restaurants')
     .select('id')
     .eq('owner_id', user.id)
     .maybeSingle();
 
-  // Redirect decision: if restaurant does not exist, onboarding is required.
   const redirectTarget = !profile ? '/onboarding' : '/dashboard';
 
-  // Build redirection headers containing access/refresh tokens in cookies
-  const responseHeaders = new Headers();
-  responseHeaders.append('Set-Cookie', `sb-access-token=${session.access_token}; Path=/; Max-Age=3600; SameSite=Lax; Secure`);
-  responseHeaders.append('Set-Cookie', `sb-refresh-token=${session.refresh_token}; Path=/; Max-Age=86400; SameSite=Lax; Secure`);
-
-  return redirect(redirectTarget, {
-    headers: responseHeaders,
-  });
+  return redirect(redirectTarget, { headers: responseHeaders });
 }
 
 export default function AuthCallback() {
-  return null;
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-950">
+      <div className="text-white text-center">
+        <div className="animate-spin h-8 w-8 border-2 border-orange-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+        <p>Signing you in...</p>
+      </div>
+    </div>
+  );
 }
