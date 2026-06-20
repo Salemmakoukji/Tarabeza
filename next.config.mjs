@@ -3,6 +3,11 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const hostname = supabaseUrl ? new URL(supabaseUrl).hostname : 'placeholder-url.supabase.co';
 
 const nextConfig = {
+  experimental: {
+    serverActions: {
+      allowedOrigins: ['tarapeza.com', 'www.tarapeza.com'],
+    },
+  },
   images: {
     remotePatterns: [
       {

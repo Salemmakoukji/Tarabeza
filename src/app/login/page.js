@@ -30,20 +30,10 @@ function LoginForm() {
 
       if (error) throw error;
 
-      // Force session into server cookies via API route
-      const response = await fetch('/api/auth/set-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token,
-        }),
-      });
+      // Small delay to ensure session is committed
+      await new Promise(resolve => setTimeout(resolve, 500));
 
-      if (response.ok) {
-        router.push('/dashboard');
-        router.refresh();
-      }
+      window.location.replace('/dashboard');
       
     } catch (error) {
       setErrorMsg(error.message || 'An unexpected error occurred.');
