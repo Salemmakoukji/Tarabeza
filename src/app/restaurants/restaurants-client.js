@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase/client';
 import { 
   Search, MapPin, Phone, Star, Building, Image as ImageIcon, 
   Sparkles, Loader2, Globe, ArrowRight, ArrowLeft, Utensils 

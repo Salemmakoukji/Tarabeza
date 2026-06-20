@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Sidebar from '@/components/dashboard/sidebar';
 import Navbar from '@/components/dashboard/navbar';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase/client';
 
 export default function DashboardLayoutClient({ children, profile, user, subscriptionInfo }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);

@@ -3,7 +3,7 @@
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase/client';
 import { LayoutGrid, Loader2, AlertCircle, ArrowRight } from 'lucide-react';
 import Logo from '@/components/logo';
 

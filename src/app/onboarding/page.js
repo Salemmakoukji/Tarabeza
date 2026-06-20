@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase/client';
 import { Loader2, Palette, Building, Phone, MapPin, Image as ImageIcon, Sparkles, Link as LinkIcon, ArrowRight } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 

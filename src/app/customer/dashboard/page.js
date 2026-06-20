@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase/client';
 import { 
   Loader2, User, Heart, Star, Sparkles, LogOut, Check, X,
   AlertCircle, Coffee, Compass, Trash2, Calendar, MessageSquare

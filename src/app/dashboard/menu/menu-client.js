@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase/client';
 import { 
   Plus, Edit2, Trash2, Loader2, Image as ImageIcon, 
   AlertCircle, FolderPlus, Utensils, Tag, Info, Check, Sparkles, Move, X, Copy,

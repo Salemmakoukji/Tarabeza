@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase/client';
 import { Loader2, QrCode, Download, Copy, Check, Palette, Sparkles, Printer, FileText } from 'lucide-react';
 import QRCode from 'qrcode';
 import { jsPDF } from 'jspdf';

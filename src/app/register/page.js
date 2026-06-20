@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase/client';
 import { LayoutGrid, Loader2, AlertCircle, Sparkles, CheckCircle2 } from 'lucide-react';
 import Logo from '@/components/logo';
 

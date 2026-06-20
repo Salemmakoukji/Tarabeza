@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase/client';
 import { ArrowLeft, Mail, Phone, MapPin, Send, Loader2, Sparkles } from 'lucide-react';
 import Logo from '@/components/logo';
 

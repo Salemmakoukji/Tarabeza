@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Search, MapPin, Phone, Sparkles, Globe, Star, X, Loader2, Share2, Check, Heart } from 'lucide-react';
 import Image from 'next/image';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase/client';
 
 export default function MenuViewClient({ profile, categories = [], menuItems = [], initialRatings = [] }) {
   const [searchQuery, setSearchQuery] = useState('');
