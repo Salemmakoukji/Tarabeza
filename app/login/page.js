@@ -30,13 +30,11 @@ function LoginForm() {
 
       if (error) throw error;
 
-      if (data?.session) {
-        document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=3600; SameSite=Lax; Secure`;
-        document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=86400; SameSite=Lax; Secure`;
+      if (data.session) {
+        router.push('/dashboard');
+        router.refresh();
       }
 
-      window.location.replace('/dashboard');
-      
     } catch (error) {
       setErrorMsg(error.message || 'An unexpected error occurred.');
     } finally {
