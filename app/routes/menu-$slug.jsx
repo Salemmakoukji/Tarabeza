@@ -194,14 +194,3 @@ export default function PublicMenuPage() {
     </>
   );
 }
-
-const { data: profile, error: profileError } = await supabase
-  .from('restaurants')
-  .select('*')
-  .eq('slug', slug)
-  .single();
-
-console.log('SLUG:', slug);
-console.log('PROFILE:', profile);
-console.log('ERROR:', profileError);
-console.log('SUPABASE_URL:', process.env.SUPABASE_URL);
