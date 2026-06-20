@@ -30,12 +30,19 @@ function LoginForm() {
 
       if (error) throw error;
 
-      if (data.session) {
-        // Session is confirmed — safe to redirect
+      // Force session into server cookies via API route
+      const response = await fetch('/api/auth/set-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        }),
+      });
+
+      if (response.ok) {
         router.push('/dashboard');
         router.refresh();
-      } else {
-        throw new Error('No session returned');
       }
       
     } catch (error) {

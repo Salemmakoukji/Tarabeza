@@ -1,19 +1,14 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server'
 
 export async function GET(request) {
-  const requestUrl = new URL(request.url);
-  const code = requestUrl.searchParams.get('code');
-  const next = requestUrl.searchParams.get('next') ?? '/dashboard';
+  const { searchParams, origin } = new URL(request.url)
+  const code = searchParams.get('code')
 
   if (code) {
-    const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
-      return NextResponse.redirect(new URL(next, request.url));
-    }
+    const supabase = await createClient()
+    await supabase.auth.exchangeCodeForSession(code)
   }
 
-  // Return the user to login with error
-  return NextResponse.redirect(new URL('/login?error=Could not exchange code for session', request.url));
+  return NextResponse.redirect(`${origin}/dashboard`)
 }
