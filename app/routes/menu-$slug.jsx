@@ -23,6 +23,11 @@ export async function loader({ request, params }) {
     .eq('slug', slug)
     .single();
 
+  console.log('SLUG:', slug);
+  console.log('PROFILE:', profile);
+  console.log('ERROR:', profileError);
+  console.log('SUPABASE_URL:', process.env.SUPABASE_URL);
+
   if (profile) {
     if (isPreview) {
       if (previewTemplate) profile.template_id = previewTemplate;
@@ -38,6 +43,7 @@ export async function loader({ request, params }) {
       }
     }
   }
+
 
   if (!profile) {
     return {
