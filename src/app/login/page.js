@@ -23,23 +23,21 @@ function LoginForm() {
     setSuccessMsg('');
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
-      // Wait for the cookie to be written by the Supabase auth listener (up to 2 seconds)
-      let checks = 0;
-      while (!document.cookie.split(';').some(c => c.trim().startsWith('sb-') && c.includes('-auth-token')) && checks < 20) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        checks++;
+      if (data.session) {
+        // Session is confirmed — safe to redirect
+        router.push('/dashboard');
+        router.refresh();
+      } else {
+        throw new Error('No session returned');
       }
-
-      window.location.href = '/dashboard';
+      
     } catch (error) {
       setErrorMsg(error.message || 'An unexpected error occurred.');
     } finally {
