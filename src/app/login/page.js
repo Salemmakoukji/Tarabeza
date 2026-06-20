@@ -30,13 +30,13 @@ function LoginForm() {
 
       if (error) throw error;
 
-      if (data.session) {
-        // Wait for session to be fully saved in cookies
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        router.push('/dashboard');
-        router.refresh();
+      if (data?.session) {
+        document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=3600; SameSite=Lax; Secure`;
+        document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=86400; SameSite=Lax; Secure`;
       }
 
+      window.location.replace('/dashboard');
+      
     } catch (error) {
       setErrorMsg(error.message || 'An unexpected error occurred.');
     } finally {
