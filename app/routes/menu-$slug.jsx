@@ -1,5 +1,6 @@
 import { useLoaderData, Link } from 'react-router';
 import MenuViewClient from './menu-client';
+import { getTemplateDefaults, generateCssStyles } from '../lib/templates';
 
 export async function loader({ request, params }) {
   const { slug } = params;
@@ -9,8 +10,8 @@ export async function loader({ request, params }) {
   const previewTemplate = url.searchParams.get('template');
   const previewAccent = url.searchParams.get('accent');
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL || "";
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+  const supabaseUrl = process.env.SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL || "";
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || "";
   
   const { createClient } = await import('@supabase/supabase-js');
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -43,9 +44,33 @@ export async function loader({ request, params }) {
       profile: null,
       categories: [],
       menuItems: [],
-      ratings: []
+      ratings: [],
+      mergedCustomization: null,
+      cssStyles: '',
+      fontUrl: ''
     };
   }
+
+  // Get template defaults and merge with saved customization
+  const templateDefaults = getTemplateDefaults(profile.template_id || 'classic');
+  const savedCustomization = profile.customization || {};
+
+  const mergedCustomization = {
+    colors: { ...templateDefaults.colors, ...savedCustomization.colors },
+    fonts: { ...templateDefaults.fonts, ...savedCustomization.fonts },
+    layout: { ...templateDefaults.layout, ...savedCustomization.layout },
+    badges: { ...templateDefaults.badges, ...savedCustomization.badges },
+    customCss: savedCustomization.customCss || '',
+  };
+
+  // Generate CSS styles from merged customization
+  const cssStyles = generateCssStyles(mergedCustomization);
+
+  // Build Google Fonts URL
+  const headingFont = mergedCustomization.fonts.heading || 'Inter';
+  const bodyFont = mergedCustomization.fonts.body || 'Inter';
+  const fontFamilies = [...new Set([headingFont, bodyFont])];
+  const fontUrl = `https://fonts.googleapis.com/css2?${fontFamilies.map(f => `family=${encodeURIComponent(f)}:wght@300;400;500;600;700;800;900`).join('&')}&display=swap`;
 
   // 2. Fetch Categories, Menu Items, and Ratings in parallel
   const [categoriesRes, itemsRes, ratingsRes] = await Promise.all([
@@ -69,7 +94,10 @@ export async function loader({ request, params }) {
     profile,
     categories: categoriesRes.data || [],
     menuItems: itemsRes.data || [],
-    ratings: ratingsRes.data || []
+    ratings: ratingsRes.data || [],
+    mergedCustomization,
+    cssStyles,
+    fontUrl
   };
 }
 
@@ -99,7 +127,7 @@ export function meta({ data }) {
 }
 
 export default function PublicMenuPage() {
-  const { profile, categories, menuItems, ratings } = useLoaderData();
+  const { profile, categories, menuItems, ratings, mergedCustomization, cssStyles, fontUrl } = useLoaderData();
 
   if (!profile) {
     return (
@@ -154,6 +182,14 @@ export default function PublicMenuPage() {
 
   return (
     <>
+      {/* Inject Google Fonts */}
+      {fontUrl && (
+        <link rel="stylesheet" href={fontUrl} />
+      )}
+      {/* Inject customization CSS */}
+      {cssStyles && (
+        <style dangerouslySetInnerHTML={{ __html: cssStyles }} />
+      )}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -163,6 +199,7 @@ export default function PublicMenuPage() {
         categories={categories} 
         menuItems={menuItems} 
         initialRatings={ratings}
+        customization={mergedCustomization}
       />
     </>
   );
