@@ -12,8 +12,8 @@ export async function loader({ request, params }) {
   const previewAccent = url.searchParams.get('accent');
 
   const supabase = createClient(
-    process.env.VITE_SUPABASE_URL,
-    process.env.VITE_SUPABASE_ANON_KEY
+    process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY
   );
 
   // 1. Fetch Profile
@@ -27,7 +27,7 @@ export async function loader({ request, params }) {
     if (isPreview) {
       if (previewTemplate) profile.template_id = previewTemplate;
       if (previewAccent) profile.accent_color = previewAccent;
-      
+
       const previewCustomization = url.searchParams.get('customization');
       if (previewCustomization) {
         try {
@@ -194,10 +194,10 @@ export default function PublicMenuPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <MenuViewClient 
-        profile={profile} 
-        categories={categories} 
-        menuItems={menuItems} 
+      <MenuViewClient
+        profile={profile}
+        categories={categories}
+        menuItems={menuItems}
         initialRatings={ratings}
         customization={mergedCustomization}
       />
