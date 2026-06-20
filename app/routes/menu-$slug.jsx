@@ -1,6 +1,7 @@
 import { useLoaderData, Link } from 'react-router';
 import MenuViewClient from './menu-client';
 import { getTemplateDefaults, generateCssStyles } from '../lib/templates';
+import { createClient } from '@supabase/supabase-js';
 
 export async function loader({ request, params }) {
   const { slug } = params;
@@ -10,11 +11,10 @@ export async function loader({ request, params }) {
   const previewTemplate = url.searchParams.get('template');
   const previewAccent = url.searchParams.get('accent');
 
-  const supabaseUrl = process.env.SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL || "";
-  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || "";
-  
-  const { createClient } = await import('@supabase/supabase-js');
-  const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  const supabase = createClient(
+    process.env.VITE_SUPABASE_URL,
+    process.env.VITE_SUPABASE_ANON_KEY
+  );
 
   // 1. Fetch Profile
   const { data: profile } = await supabase
