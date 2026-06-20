@@ -10,19 +10,7 @@ export async function GET(request) {
     const allCookies = cookieStore.getAll();
 
     const supabase = await createClient();
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-    let user = null;
-    let userError = null;
-    if (session) {
-      try {
-        const { data: { user: u }, error: uErr } = await supabase.auth.getUser();
-        user = u;
-        userError = uErr;
-      } catch (e) {
-        userError = e.message;
-      }
-    }
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     return NextResponse.json({
       totalCookies: allCookies.length,
@@ -31,16 +19,8 @@ export async function GET(request) {
         valueLength: c.value.length,
         valuePreview: c.value.substring(0, 50) + (c.value.length > 50 ? '...' : '')
       })),
-      session: session ? {
-        hasAccessToken: !!session.access_token,
-        tokenLength: session.access_token?.length,
-        expiresAt: session.expires_at,
-        user: {
-          id: session.user?.id,
-          email: session.user?.email
-        }
-      } : null,
-      sessionError: sessionError?.message || null,
+      session: null,
+      sessionError: null,
       user: user ? {
         id: user.id,
         email: user.email
