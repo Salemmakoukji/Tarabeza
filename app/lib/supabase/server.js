@@ -18,8 +18,8 @@ export const createClient = async (request) => {
   const refreshToken = cookies['sb-refresh-token'];
   
   const supabase = createSupabaseClient(
-    process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "",
-    process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || ""
+    process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL || "",
+    process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || ""
   )
   
   if (accessToken && refreshToken) {
