@@ -7,7 +7,9 @@ export const updateSession = async (request) => {
   });
 
   const host = request.headers.get('host') || '';
-  const cookieDomain = host.includes('tarapeza.com') ? '.tarapeza.com' : undefined;
+  const isProdDomain = host.includes('tarapeza.com');
+  const cookieDomain = isProdDomain ? 'tarapeza.com' : undefined;
+  const isHttps = request.nextUrl.protocol === 'https:' || isProdDomain;
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://gijgxturrhglkucpgdnp.supabase.co',
@@ -18,7 +20,6 @@ export const updateSession = async (request) => {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          const isHttps = request.nextUrl.protocol === 'https:';
           cookiesToSet.forEach(({ name, value, options }) =>
             request.cookies.set(name, value)
           );
@@ -28,7 +29,6 @@ export const updateSession = async (request) => {
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, {
               ...options,
-              httpOnly: false,
               secure: isHttps,
               sameSite: 'lax',
               path: '/',
@@ -38,8 +38,7 @@ export const updateSession = async (request) => {
         },
       },
       cookieOptions: {
-        httpOnly: false,
-        secure: request.nextUrl.protocol === 'https:',
+        secure: isHttps,
         sameSite: 'lax',
         path: '/',
         domain: cookieDomain,

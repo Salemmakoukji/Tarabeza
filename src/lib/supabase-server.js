@@ -1,9 +1,13 @@
 import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 
 export const createClient = async () => {
   const cookieStore = await cookies();
-  const isProd = process.env.NODE_ENV === 'production';
+  const headersList = await headers();
+  const host = headersList.get('host') || '';
+  const isProdDomain = host.includes('tarapeza.com');
+  const cookieDomain = isProdDomain ? 'tarapeza.com' : undefined;
+  const isHttps = isProdDomain || process.env.NODE_ENV === 'production';
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://gijgxturrhglkucpgdnp.supabase.co',
@@ -20,10 +24,10 @@ export const createClient = async () => {
                 name,
                 value,
                 ...options,
-                httpOnly: false,
-                secure: isProd,
+                secure: isHttps,
                 sameSite: 'lax',
                 path: '/',
+                domain: cookieDomain,
               });
             });
           } catch (error) {
@@ -34,10 +38,10 @@ export const createClient = async () => {
         },
       },
       cookieOptions: {
-        httpOnly: false,
-        secure: isProd,
+        secure: isHttps,
         sameSite: 'lax',
         path: '/',
+        domain: cookieDomain,
       }
     }
   );
