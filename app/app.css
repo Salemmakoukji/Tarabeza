@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #F97316;
+  --color-brand-orange: #F97316;
+  --color-brand-white: #FEFEFE;
+  --color-brand-dark: #0F1524;
+  
+  --font-sans: "Geist", "Inter", ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-cairo: "Cairo", sans-serif;
+}
+
+/* Apply Cairo Font globally to all elements inside RTL layouts, preserving code and mono elements */
+[dir="rtl"],
+[dir="rtl"] *:not(code):not(pre):not(kbd):not(samp):not(.font-mono) {
+  font-family: var(--font-cairo), sans-serif !important;
+}
+
+/* Glassmorphism utilities */
+.glass-panel {
+  background: rgba(254, 254, 254, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(254, 254, 254, 0.3);
+}
+
+.dark .glass-panel {
+  background: rgba(15, 21, 36, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(254, 254, 254, 0.05);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Animations */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+html {
+  scroll-behavior: smooth;
+}
