@@ -1,7 +1,33 @@
-import { Menu, User, ExternalLink } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Menu, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router';
+import UserAvatar from '../user-avatar';
 
-export default function Navbar({ onMenuToggle, profile, subscriptionInfo }) {
+export default function Navbar({ onMenuToggle, profile, user, subscriptionInfo }) {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setDropdownOpen(false);
+      }
+    };
+    if (dropdownOpen) {
+      document.addEventListener('mousedown', handleOutsideClick);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [dropdownOpen]);
+
   return (
     <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-slate-800/80 bg-[#0F1524]/80 backdrop-blur px-6 shadow-sm">
       {/* Left section: Mobile menu toggle + page heading */}
@@ -26,7 +52,7 @@ export default function Navbar({ onMenuToggle, profile, subscriptionInfo }) {
         </div>
       </div>
 
-      {/* Right section: Link to public menu + User email */}
+      {/* Right section: Link to public menu + User picture and dropdown menu */}
       <div className="flex items-center space-x-4 gap-2">
         {subscriptionInfo?.isTrialActive && !subscriptionInfo?.hasPaidAccess && (
           <Link
@@ -50,14 +76,76 @@ export default function Navbar({ onMenuToggle, profile, subscriptionInfo }) {
           </Link>
         )}
         <div className="h-8 w-px bg-slate-800" />
-        <div className="flex items-center space-x-2.5">
-          <div className="h-9 w-9 rounded-full bg-slate-900 flex items-center justify-center border border-slate-800">
-            <User className="h-4 w-4 text-slate-400" />
-          </div>
-          <div className="hidden md:flex flex-col text-left">
-            <span className="text-xs font-semibold text-slate-205 leading-tight">Owner</span>
-            <span className="text-[10px] text-slate-500 font-medium">Logged In</span>
-          </div>
+
+        {/* User profile picture and dropdown menu */}
+        <div className="relative" ref={dropdownRef}>
+          <button
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            className="flex items-center space-x-2.5 focus:outline-none hover:opacity-90 active:scale-95 transition-all text-left"
+            aria-haspopup="true"
+            aria-expanded={dropdownOpen}
+          >
+            <UserAvatar user={user} profile={profile} className="h-9 w-9 cursor-pointer" />
+            <div className="hidden md:flex flex-col">
+              <span className="text-xs font-semibold text-slate-200 leading-tight">
+                {user?.user_metadata?.full_name || profile?.name || 'Owner'}
+              </span>
+              <span className="text-[10px] text-slate-500 font-medium">Logged In</span>
+            </div>
+          </button>
+
+          {dropdownOpen && (
+            <div className="absolute right-0 mt-3 w-56 rounded-xl border border-slate-800 bg-[#0F1524]/95 backdrop-blur-md text-white shadow-2xl p-1.5 z-50 origin-top-right animate-slide-up">
+              {/* User Metadata */}
+              <div className="px-3.5 py-3 border-b border-slate-800/80">
+                <div className="text-xs font-bold truncate flex items-center gap-1.5 text-slate-200">
+                  <span>👤</span>
+                  <span className="truncate">{user?.user_metadata?.full_name || profile?.name || 'Restaurant Owner'}</span>
+                </div>
+                <div className="text-[10px] text-slate-400 truncate mt-0.5 ml-5">
+                  {user?.email}
+                </div>
+              </div>
+              {/* Quick Links */}
+              <div className="py-1">
+                <Link
+                  to="/"
+                  className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-350 hover:text-white hover:bg-slate-850/60 rounded-lg transition-colors"
+                  onClick={() => setDropdownOpen(false)}
+                >
+                  <span>🏠</span>
+                  <span>Landing Page</span>
+                </Link>
+                <Link
+                  to="/dashboard"
+                  className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-850/60 rounded-lg transition-colors"
+                  onClick={() => setDropdownOpen(false)}
+                >
+                  <span>📊</span>
+                  <span>Dashboard</span>
+                </Link>
+                <Link
+                  to="/dashboard/settings"
+                  className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-350 hover:text-white hover:bg-slate-850/60 rounded-lg transition-colors"
+                  onClick={() => setDropdownOpen(false)}
+                >
+                  <span>⚙️</span>
+                  <span>Settings</span>
+                </Link>
+              </div>
+              {/* Action Link */}
+              <div className="border-t border-slate-800/80 pt-1 mt-1">
+                <Link
+                  to="/auth/logout"
+                  className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-rose-450 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                  onClick={() => setDropdownOpen(false)}
+                >
+                  <span>🚪</span>
+                  <span>Sign Out</span>
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>

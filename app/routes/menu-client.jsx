@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Search, MapPin, Phone, Sparkles, Globe, Star, X, Loader2, Share2, Check, Heart } from 'lucide-react';
+import { Search, MapPin, Phone, Sparkles, Globe, Star, X, Loader2, Share2, Check, Heart, Clock, Wifi, Eye, EyeOff } from 'lucide-react';
 import { getTemplateDefaults, generateCssStyles } from '../lib/templates';
 const Image = ({ src, alt, fill, className, width, height, ...props }) => {
   const styles = fill ? { position: 'absolute', height: '100%', width: '100%', left: 0, top: 0, right: 0, bottom: 0, objectFit: 'cover' } : {};
@@ -19,10 +19,100 @@ const Image = ({ src, alt, fill, className, width, height, ...props }) => {
 };
 import { supabase } from '../lib/supabase/client';
 
+const translateDay = (day) => {
+  const mapping = {
+    Monday: 'الإثنين',
+    Tuesday: 'الثلاثاء',
+    Wednesday: 'الأربعاء',
+    Thursday: 'الخميس',
+    Friday: 'الجمعة',
+    Saturday: 'السبت',
+    Sunday: 'الأحد'
+  };
+  return mapping[day] || day;
+};
+
 export default function MenuViewClient({ profile, categories = [], menuItems = [], initialRatings = [] }) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'chef' | 'bestseller' | 'new' | 'popular' | 'spicy'
   const [selectedCategory, setSelectedCategory] = useState(categories[0]?.id || '');
   const [lang, setLang] = useState('en'); // 'en' | 'ar'
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [showWifiModal, setShowWifiModal] = useState(false);
+  const [copiedWifi, setCopiedWifi] = useState(false);
+  const [showWifiPassword, setShowWifiPassword] = useState(false);
+
+  const getBusinessHours = () => {
+    const defaults = {
+      timezone: 'Asia/Damascus',
+      days: {}
+    };
+    try {
+      return profile.business_hours && typeof profile.business_hours === 'object'
+        ? { ...defaults, ...profile.business_hours }
+        : defaults;
+    } catch (e) {
+      return defaults;
+    }
+  };
+  const businessHours = getBusinessHours();
+
+  const checkIfOpen = () => {
+    if (profile.temporarily_closed) return false;
+    if (!businessHours || !businessHours.days) return false;
+    try {
+      const tz = businessHours.timezone || 'Asia/Damascus';
+      const now = new Date();
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: tz,
+        weekday: 'long',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+      const formattedParts = formatter.formatToParts(now);
+      const parts = {};
+      formattedParts.forEach(p => { parts[p.type] = p.value; });
+      const currentDay = parts.weekday;
+      const currentHour = parseInt(parts.hour, 10);
+      const currentMinute = parseInt(parts.minute, 10);
+      const currentTimeNum = currentHour * 60 + currentMinute;
+      const dayData = businessHours.days[currentDay];
+      if (!dayData || !dayData.isOpen) return false;
+      if (!dayData.periods || dayData.periods.length === 0) return false;
+      return dayData.periods.some(p => {
+        if (!p.from || !p.to) return false;
+        const [fromHour, fromMin] = p.from.split(':').map(Number);
+        const [toHour, toMin] = p.to.split(':').map(Number);
+        const fromTimeNum = fromHour * 60 + fromMin;
+        const toTimeNum = toHour * 60 + toMin;
+        return currentTimeNum >= fromTimeNum && currentTimeNum <= toTimeNum;
+      });
+    } catch (e) {
+      console.error('Error checking open status:', e);
+      return false;
+    }
+  };
+
+  const [isCurrentlyOpen, setIsCurrentlyOpen] = useState(false);
+
+  useEffect(() => {
+    setIsCurrentlyOpen(checkIfOpen());
+    const interval = setInterval(() => {
+      setIsCurrentlyOpen(checkIfOpen());
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [profile.business_hours, profile.temporarily_closed]);
+
+  const hasSocialLinks = !!(
+    profile.instagram ||
+    profile.facebook ||
+    profile.whatsapp ||
+    profile.twitter ||
+    profile.tiktok ||
+    profile.youtube ||
+    profile.tripadvisor
+  );
   const [selectedItem, setSelectedItem] = useState(null);
   const [copiedLink, setCopiedLink] = useState(false);
 
@@ -50,19 +140,31 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
       ...dbValue.colors 
     };
     
-    // Inject the custom brand accent color from profile if customization accent isn't set yet
-    if (!dbValue.colors?.accent && profile.accent_color) {
-      mergedColors.accent = profile.accent_color;
-      mergedColors.tabActive = profile.accent_color;
-      mergedColors.price = profile.accent_color;
-      mergedColors.badge = profile.accent_color;
+    // Inject the custom brand accent color from profile
+    const accentColorVal = profile.main_color || profile.accent_color;
+    if (accentColorVal) {
+      mergedColors.accent = accentColorVal;
+      mergedColors.tabActive = accentColorVal;
+      mergedColors.price = accentColorVal;
+      mergedColors.badge = accentColorVal;
     }
+
+    const layoutStyle = profile.layout_style || 'classic';
+    const showImageVal = profile.display_mode !== 'text';
+    const activeCardStyle = layoutStyle === 'grid' ? 'grid-2' : 'list';
+
+    const mergedLayout = {
+      ...defaults.layout,
+      ...dbValue.layout,
+      showImage: showImageVal,
+      cardStyle: activeCardStyle
+    };
 
     return {
       templateId: activeTemplateId,
       colors: mergedColors,
       fonts: { ...defaults.fonts, ...dbValue.fonts },
-      layout: { ...defaults.layout, ...dbValue.layout },
+      layout: mergedLayout,
       badges: { ...defaults.badges, ...dbValue.badges },
       customCss: dbValue.customCss || '',
       icons: { ...defaults.icons, ...dbValue.icons },
@@ -126,6 +228,19 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
 
   // Dynamic Theme Highlight Color
   const primaryColor = themeId === 'tarapeza-custom' ? theme.colors.accent : (profile.theme_color || '#f97316');
+  
+  const hexToRgb = (hex) => {
+    if (!hex) return '249, 115, 22';
+    let c = hex.replace('#', '');
+    if (c.length === 3) {
+      c = c[0] + c[0] + c[1] + c[1] + c[2] + c[2];
+    }
+    const r = parseInt(c.substring(0, 2), 16);
+    const g = parseInt(c.substring(2, 4), 16);
+    const b = parseInt(c.substring(4, 6), 16);
+    return isNaN(r) || isNaN(g) || isNaN(b) ? '249, 115, 22' : `${r}, ${g}, ${b}`;
+  };
+  const primaryColorRgb = hexToRgb(primaryColor);
   
   const fontUrl = themeId === 'tarapeza-custom' 
     ? `https://fonts.googleapis.com/css2?family=${encodeURIComponent(theme.fonts.heading)}:wght@300;400;500;600;700;800;900&family=${encodeURIComponent(theme.fonts.body)}:wght@300;400;500;600;700;800;900&display=swap` 
@@ -345,14 +460,35 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
     }
   };
 
+  const displayMode = profile.display_mode || 'image-text';
+  const layoutStyle = profile.layout_style || 'classic';
+
+  const processedItems = menuItems.map(item => {
+    let newItem = { ...item };
+    if (displayMode === 'text') {
+      newItem.image_url = null;
+    } else if (displayMode === 'image') {
+      newItem.description = null;
+      newItem.description_ar = null;
+    }
+    return newItem;
+  });
+
+  const specialsItems = processedItems.filter(item => 
+    item.available && 
+    (item.badge?.toLowerCase() === 'chef' || item.badge?.toLowerCase() === 'bestseller' || item.badge?.toLowerCase() === 'popular')
+  );
+
   // Filter items
-  const filteredItems = menuItems.filter((item) => {
-    return (
+  const filteredItems = processedItems.filter((item) => {
+    const matchesSearch = (
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (item.name_ar && item.name_ar.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (item.description_ar && item.description_ar.toLowerCase().includes(searchQuery.toLowerCase()))
     );
+    const matchesFilter = activeFilter === 'all' || item.badge?.toLowerCase() === activeFilter.toLowerCase();
+    return matchesSearch && matchesFilter;
   });
 
   const itemsByCategory = categories.reduce((acc, cat) => {
@@ -1154,18 +1290,133 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
     return 'border-t border-slate-900/50';
   };
 
+  const renderItemCard = (item, itemIdx) => {
+    const displayName = isRtl && item.name_ar ? item.name_ar : item.name;
+    const displayDesc = isRtl && item.description_ar ? item.description_ar : item.description;
+    
+    const showImage = theme.layout.showImage && item.image_url;
+    const imgPos = theme.layout.imagePosition;
+    const isAlternatingMagazine = theme.layout.cardStyle === 'magazine';
+    const isImageRight = isAlternatingMagazine ? (itemIdx % 2 === 1) : (imgPos === 'right');
+    const isCompact = theme.layout.cardStyle === 'compact' || theme.layout.cardStyle === 'compact-list';
+
+    return (
+      <div 
+         key={item.id} 
+         onClick={() => setSelectedItem(item)}
+         className={`group border border-[var(--color-border)]/60 bg-[var(--color-card-bg)] shadow-md hover:shadow-xl hover:shadow-[var(--color-accent)]/5 hover:-translate-y-1.5 hover:scale-[1.01] hover:border-[var(--color-accent)]/40 active:scale-[0.99] rounded-[1.75rem] overflow-hidden flex cursor-pointer transition-all duration-300 ${
+           item.available ? 'opacity-100' : 'opacity-60'
+         } ${
+           isCompact ? 'py-3 px-4 items-center justify-between' :
+           ((theme.layout.cardStyle && theme.layout.cardStyle.startsWith('grid')) || imgPos === 'top') ? 'flex-col p-0' :
+           isImageRight ? 'flex-row-reverse p-3 gap-3.5' : 'flex-row p-3 gap-3.5'
+         }`}
+         style={{
+           backgroundImage: imgPos === 'background' && showImage ? `linear-gradient(to top, rgba(0,0,0,0.85) 45%, rgba(0,0,0,0.15) 100%), url(${item.image_url})` : 'none',
+           backgroundSize: 'cover',
+           backgroundPosition: 'center',
+           color: imgPos === 'background' && showImage ? '#FFFFFF' : 'var(--color-text)'
+         }}
+      >
+        {showImage && imgPos !== 'background' && (
+          <div 
+            className="relative shrink-0 bg-black/5 overflow-hidden border border-[var(--color-border)]/30 shadow-sm"
+            style={{
+              width: ((theme.layout.cardStyle && theme.layout.cardStyle.startsWith('grid')) || imgPos === 'top') ? '100%' : isCompact ? '45px' : '105px',
+              height: ((theme.layout.cardStyle && theme.layout.cardStyle.startsWith('grid')) || imgPos === 'top') ? '135px' : isCompact ? '45px' : '105px',
+              borderRadius: '20px'
+            }}
+          >
+            <Image 
+              src={item.image_url} 
+              alt={displayName} 
+              fill
+              loading="lazy"
+              className="object-cover transition-transform duration-700 group-hover:scale-108"
+            />
+            {!item.available && (
+              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                <span className="text-[7px] font-bold text-white bg-slate-900 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                  {currentT.soldOut}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className={`flex-1 flex flex-col justify-between ${isCompact ? '' : 'p-2 gap-2.5'}`}>
+          <div className="space-y-1.5 text-start">
+            <div className="flex justify-between items-start gap-2">
+              <h4 className="font-black text-sm sm:text-base leading-snug truncate flex items-center gap-1.5 flex-wrap text-[var(--color-text)]" style={{ color: imgPos === 'background' && showImage ? '#FFFFFF' : 'var(--color-text)' }}>
+                <span>{displayName}</span>
+                {theme.layout.showBadges && item.badge && renderBadge(item.badge)}
+              </h4>
+              {!isCompact && theme.layout.showCurrency && (
+                <div className="flex flex-col items-end shrink-0">
+                  <span className="inline-block font-black text-xs sm:text-sm text-[var(--color-accent)] bg-[var(--color-accent)]/10 px-3 py-1 rounded-xl border border-[var(--color-accent)]/10 whitespace-nowrap">
+                    {theme.layout.currency || theme.layout.currencySymbol || '$'}{item.price}
+                  </span>
+                  {theme.layout.showCalories && (item.calories || item.cal) && (
+                    <span className="text-[9px] text-[var(--color-text-secondary)] mt-1">{(item.calories || item.cal)}</span>
+                  )}
+                  {theme.layout.showCalories && !(item.calories || item.cal) && (
+                    <span className="text-[9px] text-[var(--color-text-secondary)] font-medium mt-1">350 kcal</span>
+                  )}
+                </div>
+              )}
+            </div>
+            {!isCompact && theme.layout.showDescription && displayDesc && (
+              <p className="text-[11px] leading-relaxed line-clamp-2 text-[var(--color-text-secondary)]/85" style={{ color: imgPos === 'background' && showImage ? '#D1D5DB' : 'var(--color-text-secondary)' }}>
+                {displayDesc}
+              </p>
+            )}
+          </div>
+
+          {isCompact && theme.layout.showCurrency && (
+            <div className="flex items-center gap-2 shrink-0">
+              {theme.layout.showCalories && (item.calories || item.cal) && (
+                <span className="text-[9px] text-[var(--color-text-secondary)]">{(item.calories || item.cal)}</span>
+              )}
+              {theme.layout.showCalories && !(item.calories || item.cal) && (
+                <span className="text-[9px] text-[var(--color-text-secondary)] font-medium">350 kcal</span>
+              )}
+              <span className="inline-block font-black text-xs text-[var(--color-accent)] bg-[var(--color-accent)]/10 px-3 py-1 rounded-xl border border-[var(--color-accent)]/10 whitespace-nowrap">
+                {theme.layout.currency || theme.layout.currencySymbol || '$'}{item.price}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const themeMode = profile.theme || 'light';
+  const defaultBg = themeMode === 'dark' ? '#0F1524' : '#FFFFFF';
+  const defaultText = themeMode === 'dark' ? '#F8FAFC' : '#0F172A';
+  const defaultCardBg = themeMode === 'dark' ? '#1E293B' : '#F8FAFC';
+  const defaultCardText = themeMode === 'dark' ? '#F8FAFC' : '#0F172A';
+  const defaultBorder = themeMode === 'dark' ? '#334155' : '#E2E8F0';
+
   return (
     <div 
       className={currentTheme.wrapper}
       style={{ 
         '--primary-theme': primaryColor,
-        '--color-bg': profile.color_bg || '#0f172a',
-        '--color-text': profile.color_text || '#f8fafc',
-        '--color-card-bg': profile.color_card_bg || '#1e293b',
-        '--color-card-text': profile.color_card_text || '#f8fafc',
+        '--color-accent': primaryColor,
+        '--color-accent-rgb': primaryColorRgb,
+        '--color-bg': profile.color_bg || defaultBg,
+        '--color-text': profile.color_text || defaultText,
+        '--color-card-bg': profile.color_card_bg || defaultCardBg,
+        '--color-card-text': profile.color_card_text || defaultCardText,
+        '--color-border': profile.color_border || defaultBorder,
       }}
       dir={isRtl ? 'rtl' : 'ltr'}
     >
+      {profile.temporarily_closed && (
+        <div className="w-full bg-rose-600 text-white text-xs font-black py-3 px-4 text-center sticky top-0 z-50 shadow-md flex items-center justify-center gap-2">
+          <span>⚠️ We are temporarily closed / مغلقين مؤقتاً</span>
+        </div>
+      )}
 
       {themeId === 'tarapeza-custom' && (
         <>
@@ -1182,6 +1433,43 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
         .animate-marquee {
           display: inline-flex;
           animation: marquee 25s linear infinite;
+        }
+        @keyframes slideUp {
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
+        }
+        .animate-slide-up {
+          animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes scaleUp {
+          from { transform: scale(0.95); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+        .animate-scale-up {
+          animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes pulseGlow {
+          0%, 100% { 
+            box-shadow: 0 0 12px rgba(var(--color-accent-rgb), 0.15), inset 0 0 0 1px rgba(var(--color-accent-rgb), 0.2); 
+            border-color: rgba(var(--color-accent-rgb), 0.25);
+          }
+          50% { 
+            box-shadow: 0 0 24px rgba(var(--color-accent-rgb), 0.45), inset 0 0 0 1px rgba(var(--color-accent-rgb), 0.4); 
+            border-color: rgba(var(--color-accent-rgb), 0.55);
+          }
+        }
+        .animate-pulse-glow {
+          animation: pulseGlow 3s ease-in-out infinite;
+        }
+        .glass-glow {
+          box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+        }
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
         }
       `}</style>
 
@@ -1221,7 +1509,7 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
       {currentTheme.bgDecorations}
 
       {/* 1. Header Hero Panel */}
-      <header className={`${currentTheme.header} relative`}>
+      <header className="relative w-full">
         {/* Top Header Buttons Overlay */}
         <div className={`absolute top-4 ${isRtl ? 'left-4' : 'right-4'} z-20 flex items-center gap-2`}>
           {/* Favorite Button */}
@@ -1768,7 +2056,7 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
             {headerStyle !== 'logo-only' && (
               <div 
                 style={themeId === 'tarapeza-custom' && theme.layout?.bannerHeight ? { height: `${theme.layout.bannerHeight}px` } : {}}
-                className="relative h-44 w-full bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 overflow-hidden shrink-0"
+                className="relative h-72 sm:h-80 w-full bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 overflow-hidden shrink-0 shadow-inner"
               >
                 {profile.cover_url ? (
                   <>
@@ -1778,72 +2066,262 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
                       fill
                       priority
                       sizes="100vw"
-                      className="object-cover"
+                      className="object-cover transition-transform duration-1000 ease-out hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-black/20" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/10" />
                   </>
                 ) : (
                   <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#f97316_1px,transparent_1px)] [background-size:16px_16px]"></div>
                 )}
               </div>
             )}
-            {/* Restaurant Info (Centered) */}
-            <div className="relative max-w-lg mx-auto w-full px-6 pb-6 flex flex-col items-center text-center">
-              <div className={`relative ${headerStyle === 'logo-only' ? 'mt-6' : '-mt-16'} mb-3.5 z-10 shrink-0`}>
+            
+            {/* Restaurant Info & Actions Glassmorphic Card (Centered Overlap Redesign) */}
+            <div className="relative -mt-24 mx-4 mb-8 max-w-lg md:mx-auto bg-[var(--color-card-bg)]/85 backdrop-blur-3xl border border-[var(--color-border)]/75 rounded-3xl p-5 shadow-2xl z-10 flex flex-col items-center text-center space-y-4">
+              
+              {/* Logo Capsule */}
+              <div className="relative -mt-20 shrink-0">
                 {profile.logo_url ? (
-                  <Image 
-                    src={profile.logo_url} 
-                    alt={profile.name} 
-                    width={96}
-                    height={96}
-                    priority
-                    className={`rounded-3xl object-cover bg-white ${currentTheme.logoBorder}`}
-                  />
+                  <div className="p-1 rounded-[2rem] bg-[var(--color-card-bg)] border border-[var(--color-border)]/65 shadow-lg transition-all hover:scale-105 duration-500 animate-pulse-glow">
+                    <Image 
+                      src={profile.logo_url} 
+                      alt={profile.name} 
+                      width={96}
+                      height={96}
+                      priority
+                      className="rounded-[1.75rem] object-cover bg-white"
+                    />
+                  </div>
                 ) : (
-                  <div className={`h-20 w-20 rounded-3xl flex items-center justify-center ${currentTheme.logoFallback}`}>
-                    <span className="text-2xl font-black text-white uppercase">{profile.name[0]}</span>
+                  <div className="h-24 w-24 rounded-[2rem] flex items-center justify-center bg-gradient-to-tr from-[var(--color-accent)] to-orange-500 shadow-lg animate-pulse-glow">
+                    <span className="text-3xl font-black text-white uppercase">{profile.name[0]}</span>
                   </div>
                 )}
               </div>
-              <h1 className={currentTheme.restaurantName}>{profile.name}</h1>
-              <div className="flex items-center justify-center space-x-2 gap-2 mb-3">
-                {averageRating ? (
-                  <div className={mergeStyle(currentTheme.ratingBadge, 'badge')}>
-                    <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 shrink-0" />
-                    <span>{averageRating}</span>
-                    <span className="opacity-75 font-normal">
-                      ({totalReviews} {currentT.reviews})
+
+              {/* Title & Badges */}
+              <div className="space-y-2 w-full">
+                <h1 className="text-2xl font-black tracking-tight text-[var(--color-text)] drop-shadow-sm">{profile.name}</h1>
+                
+                {/* Badges Row */}
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {averageRating ? (
+                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-500/10 text-amber-500 border border-amber-500/20 shadow-sm shrink-0">
+                      <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 shrink-0" />
+                      <span>{averageRating}</span>
+                      <span className="opacity-75 font-semibold text-[10px]">
+                        ({totalReviews})
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-[10px] font-bold tracking-wide uppercase px-2.5 py-1 rounded-full border border-[var(--color-border)] bg-[var(--color-card-bg)] text-[var(--color-text-secondary)]">
+                      {currentT.beFirstToRate}
                     </span>
-                  </div>
-                ) : (
-                  <span className={mergeStyle(currentTheme.ratingBadgeEmpty, 'badge')}>
-                    {currentT.beFirstToRate}
-                  </span>
-                )}
-                <button
-                  onClick={() => setShowRateModal(true)}
-                  className={mergeStyle(currentTheme.rateUsBtn, 'button')}
-                >
-                  {currentT.rateUs}
-                </button>
+                  )}
+                  
+                  {isCurrentlyOpen ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-sm shrink-0">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span>{isRtl ? 'مفتوح الآن' : 'Open Now'}</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 shadow-sm shrink-0">
+                      <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+                      <span>{isRtl ? 'مغلق الآن' : 'Closed Now'}</span>
+                    </span>
+                  )}
+
+                  <button
+                    onClick={() => setShowRateModal(true)}
+                    className="text-[10px] font-black px-3.5 py-1 rounded-full transition-all uppercase tracking-wider shadow-md font-sans bg-[var(--color-accent)] text-white hover:opacity-90 active:scale-95 shrink-0"
+                  >
+                    {currentT.rateUs}
+                  </button>
+                </div>
               </div>
+
+              {/* Description */}
               {profile.description && (
-                <p className={currentTheme.description}>{profile.description}</p>
+                <p className="text-xs leading-relaxed max-w-sm text-[var(--color-text-secondary)]/85 px-2 font-medium">{profile.description}</p>
               )}
+
+              {/* Contact Chips */}
               {(profile.phone || profile.address) && (
-                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 mt-3.5 text-xs font-semibold">
+                <div className="flex flex-wrap items-center justify-center gap-2 w-full pt-1">
                   {profile.phone && (
-                    <a href={`tel:${profile.phone}`} className={`flex items-center space-x-1 transition-colors gap-1 ${currentTheme.metadata}`}>
-                      <Phone className={`h-3.5 w-3.5 ${currentTheme.metaIcon}`} />
+                    <a
+                      href={`tel:${profile.phone}`}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[var(--color-border)]/70 bg-[var(--color-card-bg)]/60 backdrop-blur-sm hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-all shadow-sm active:scale-95 text-[var(--color-text)] text-xs font-semibold shrink-0"
+                      title={isRtl ? 'اتصل بنا' : 'Call Us'}
+                    >
+                      <Phone className="h-3.5 w-3.5 text-[var(--color-accent)] shrink-0" />
                       <span>{profile.phone}</span>
                     </a>
                   )}
                   {profile.address && (
-                    <span className={`flex items-center space-x-1 gap-1 ${currentTheme.metadata}`}>
-                      <MapPin className={`h-3.5 w-3.5 ${currentTheme.metaIcon}`} />
-                      <span className="line-clamp-1">{profile.address}</span>
-                    </span>
+                    profile.map_link ? (
+                      <a
+                        href={profile.map_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[var(--color-border)]/70 bg-[var(--color-card-bg)]/60 backdrop-blur-sm hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-all shadow-sm active:scale-95 text-[var(--color-text)] text-xs font-semibold max-w-[200px] sm:max-w-xs shrink-0"
+                        title={isRtl ? 'افتح الموقع على الخريطة' : 'Open in Maps'}
+                      >
+                        <MapPin className="h-3.5 w-3.5 text-[var(--color-accent)] shrink-0" />
+                        <span className="truncate">{profile.address}</span>
+                      </a>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[var(--color-border)]/70 bg-[var(--color-card-bg)]/60 backdrop-blur-sm text-[var(--color-text)] text-xs font-semibold max-w-[200px] sm:max-w-xs shrink-0">
+                        <MapPin className="h-3.5 w-3.5 text-[var(--color-accent)] shrink-0" />
+                        <span className="truncate">{profile.address}</span>
+                      </span>
+                    )
                   )}
+                </div>
+              )}
+
+              {/* Futuristic App-style Quick Actions Grid */}
+              {(() => {
+                const actions = [
+                  {
+                    id: 'hours',
+                    show: true,
+                    onClick: () => setShowInfoModal(true),
+                    icon: <Clock className="h-4.5 w-4.5" />,
+                    title: isRtl ? 'معلومات العمل' : 'Hours & Info',
+                    subtitle: isCurrentlyOpen ? (
+                      <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
+                        <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
+                        {isRtl ? 'مفتوح' : 'Open'}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[9px] font-bold text-rose-500">
+                        <span className="h-1 w-1 rounded-full bg-rose-500" />
+                        {isRtl ? 'مغلق' : 'Closed'}
+                      </span>
+                    )
+                  },
+                  (profile.wifi_name || profile.wifi_password) && {
+                    id: 'wifi',
+                    show: true,
+                    onClick: () => setShowWifiModal(true),
+                    icon: <Wifi className="h-4.5 w-4.5" />,
+                    title: isRtl ? 'واي فاي' : 'Free WiFi',
+                    subtitle: profile.wifi_name || (isRtl ? 'متاح' : 'Available')
+                  },
+                  profile.website && {
+                    id: 'website',
+                    show: true,
+                    href: profile.website,
+                    target: '_blank',
+                    rel: 'noopener noreferrer',
+                    icon: <Globe className="h-4.5 w-4.5" />,
+                    title: isRtl ? 'الموقع' : 'Website',
+                    subtitle: profile.website.replace(/^https?:\/\/(www\.)?/, '')
+                  },
+                  profile.map_link && {
+                    id: 'map',
+                    show: true,
+                    href: profile.map_link,
+                    target: '_blank',
+                    rel: 'noopener noreferrer',
+                    icon: <MapPin className="h-4.5 w-4.5" />,
+                    title: isRtl ? 'الموقع الجغرافي' : 'Find Us',
+                    subtitle: isRtl ? 'خرائط جوجل' : 'Google Maps'
+                  }
+                ].filter(Boolean);
+
+                return (
+                  <div className={`grid gap-2.5 w-full pt-1 ${
+                    actions.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
+                  }`}>
+                    {actions.map((act, index) => {
+                      const buttonClass = `flex items-center gap-3 p-2.5 rounded-2xl border border-[var(--color-border)]/70 bg-[var(--color-card-bg)]/45 text-start transition-all hover:border-[var(--color-accent)] hover:shadow-md hover:shadow-[var(--color-accent)]/5 active:scale-98 shadow-sm group/btn ${
+                        actions.length === 3 && index === 2 ? 'col-span-2' : ''
+                      }`;
+
+                      const content = (
+                        <>
+                          <div className="p-2 rounded-xl bg-[var(--color-accent)]/10 text-[var(--color-accent)] group-hover/btn:bg-[var(--color-accent)] group-hover/btn:text-white transition-all shrink-0">
+                            {act.icon}
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-[11px] font-black text-[var(--color-text)] tracking-tight leading-none truncate">
+                              {act.title}
+                            </span>
+                            <span className="text-[9px] font-bold text-[var(--color-text)]/50 mt-1 truncate max-w-[150px] leading-none">
+                              {act.subtitle}
+                            </span>
+                          </div>
+                        </>
+                      );
+
+                      if (act.href) {
+                        return (
+                          <a
+                            key={act.id}
+                            href={act.href}
+                            target={act.target}
+                            rel={act.rel}
+                            className={buttonClass}
+                          >
+                            {content}
+                          </a>
+                        );
+                      }
+
+                      return (
+                        <button
+                          key={act.id}
+                          onClick={act.onClick}
+                          className={buttonClass}
+                        >
+                          {content}
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+
+              {/* Social Channels Row with brand-specific glows */}
+              {hasSocialLinks && (
+                <div className="border-t border-[var(--color-border)]/60 pt-3 flex flex-col items-center justify-center gap-2.5 w-full">
+                  <span className="text-[9px] font-black tracking-wider uppercase text-[var(--color-text)]/40">
+                    {isRtl ? 'تابعنا على وسائل التواصل' : 'Follow Our Channels'}
+                  </span>
+                  <div className="flex flex-wrap items-center justify-center gap-3">
+                    {profile.instagram && (
+                      <a href={profile.instagram.startsWith('http') ? profile.instagram : `https://instagram.com/${profile.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-[var(--color-card-bg)] border border-[var(--color-border)] rounded-full hover:border-pink-500 hover:text-pink-500 hover:shadow-[0_0_12px_rgba(236,72,153,0.4)] hover:-translate-y-0.5 hover:scale-110 active:scale-95 transition-all text-[var(--color-text-secondary)] shadow-sm" title="Instagram">
+                        <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                      </a>
+                    )}
+                    {profile.facebook && (
+                      <a href={profile.facebook.startsWith('http') ? profile.facebook : `https://facebook.com/${profile.facebook}`} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-[var(--color-card-bg)] border border-[var(--color-border)] rounded-full hover:border-blue-600 hover:text-blue-600 hover:shadow-[0_0_12px_rgba(37,99,235,0.4)] hover:-translate-y-0.5 hover:scale-110 active:scale-95 transition-all text-[var(--color-text-secondary)] shadow-sm" title="Facebook">
+                        <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24"><path d="M9 8H7v3h2v9h3v-9h3.3l.7-3H12V6c0-.9.2-1.2 1-1.2h2V2h-3c-2.4 0-4 1.2-4 3.6V8z"/></svg>
+                      </a>
+                    )}
+                    {profile.whatsapp && (
+                      <a href={`https://wa.me/${profile.whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-[var(--color-card-bg)] border border-[var(--color-border)] rounded-full hover:border-emerald-500 hover:text-emerald-500 hover:shadow-[0_0_12px_rgba(16,185,129,0.4)] hover:-translate-y-0.5 hover:scale-110 active:scale-95 transition-all text-[var(--color-text-secondary)] shadow-sm" title="WhatsApp">
+                        <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.504-5.729-1.464L0 24zm6.59-4.846c1.6.95 3.197 1.45 4.817 1.458 5.463 0 9.907-4.441 9.91-9.904.002-2.648-1.02-5.138-2.879-6.997-1.86-1.86-4.347-2.883-6.997-2.885-5.47 0-9.914 4.444-9.917 9.907-.001 2.015.526 3.987 1.528 5.726L1.87 21.92l4.777-1.766z"/></svg>
+                      </a>
+                    )}
+                    {profile.twitter && (
+                      <a href={profile.twitter.startsWith('http') ? profile.twitter : `https://x.com/${profile.twitter.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-[var(--color-card-bg)] border border-[var(--color-border)] rounded-full hover:border-slate-800 hover:text-slate-800 dark:hover:border-white dark:hover:text-white dark:hover:shadow-[0_0_12px_rgba(255,255,255,0.4)] hover:shadow-[0_0_12px_rgba(0,0,0,0.4)] hover:-translate-y-0.5 hover:scale-110 active:scale-95 transition-all text-[var(--color-text-secondary)] shadow-sm" title="X / Twitter">
+                        <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                      </a>
+                    )}
+                    {profile.tiktok && (
+                      <a href={profile.tiktok.startsWith('http') ? profile.tiktok : `https://tiktok.com/${profile.tiktok}`} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-[var(--color-card-bg)] border border-[var(--color-border)] rounded-full hover:border-teal-400 hover:text-teal-400 hover:shadow-[0_0_12px_rgba(45,212,191,0.4)] hover:-translate-y-0.5 hover:scale-110 active:scale-95 transition-all text-[var(--color-text-secondary)] shadow-sm" title="TikTok">
+                        <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.032 2.61.1 3.86.38v4.18c-.85-.14-1.72-.18-2.58-.12-.81.06-1.59.35-2.25.85-.6.48-.96 1.21-1.02 1.98-.08 1.13.01 2.26.27 3.37.16.63.48 1.21.93 1.66.45.45 1.03.77 1.66.93 1.11.26 2.24.35 3.37.27.77-.06 1.5-.42 1.98-1.02.5-.66.79-1.44.85-2.25.06-.86.02-1.73-.12-2.58h4.18c.28 1.25.41 2.55.38 3.86-.09 2.29-.98 4.47-2.51 6.16-1.53 1.69-3.62 2.76-5.89 3.03-2.91.35-5.87-.23-8.32-1.63C1.63 17.43.23 14.47.02 11.56.05 9.27.94 7.09 2.47 5.4c1.53-1.69 3.62-2.76 5.89-3.03.73-.09 1.47-.13 2.21-.12.65-.01 1.3.08 1.93.27.01-.17.02-.34.025-.5z"/></svg>
+                      </a>
+                    )}
+                    {profile.youtube && (
+                      <a href={profile.youtube.startsWith('http') ? profile.youtube : `https://youtube.com/${profile.youtube}`} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-[var(--color-card-bg)] border border-[var(--color-border)] rounded-full hover:border-red-600 hover:text-red-600 hover:shadow-[0_0_12px_rgba(220,38,38,0.4)] hover:-translate-y-0.5 hover:scale-110 active:scale-95 transition-all text-[var(--color-text-secondary)] shadow-sm" title="YouTube">
+                        <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24"><path d="M23.498 6.163a3.003 3.003 0 00-2.11-2.11C19.53 3.545 12 3.545 12 3.545s-7.53 0-9.388.508a3.003 3.003 0 00-2.11 2.11C0 8.017 0 12 0 12s0 3.983.508 5.837a3.003 3.003 0 002.11 2.11c1.858.507 9.388.507 9.388.507s7.53 0 9.388-.507a3.003 3.003 0 002.11-2.11C24 15.983 24 12 24 12s0-3.983-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                      </a>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -1851,34 +2329,225 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
         )}
       </header>
 
-      {/* 2. Sticky Search and Category Tabs */}
-      <div className={currentTheme.stickyContainer}>
-        <div className="max-w-lg mx-auto px-4 py-3 space-y-3">
+      {/* Restaurant Info Actions Card */}
+      {['inline-clean', 'glassy-hero', 'minimalist-flat', 'split-magazine', 'banner-neon', 'newspaper-retro', 'royal-gold'].includes(headerStyle) && (
+        <div className="max-w-lg mx-auto px-4 py-4 border-b border-[var(--color-border)]">
+          <div className="bg-[var(--color-card-bg)] border border-[var(--color-border)] rounded-3xl p-4 shadow-sm space-y-4">
+            {/* Quick Actions Grid */}
+            {(() => {
+              const actions = [
+                {
+                  id: 'hours',
+                  show: true,
+                  onClick: () => setShowInfoModal(true),
+                  icon: <Clock className="h-4.5 w-4.5" />,
+                  title: isRtl ? 'معلومات العمل' : 'Hours & Info',
+                  subtitle: isCurrentlyOpen ? (
+                    <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
+                      <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
+                      {isRtl ? 'مفتوح' : 'Open'}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[9px] font-bold text-rose-500">
+                      <span className="h-1 w-1 rounded-full bg-rose-500" />
+                      {isRtl ? 'مغلق' : 'Closed'}
+                    </span>
+                  )
+                },
+                (profile.wifi_name || profile.wifi_password) && {
+                  id: 'wifi',
+                  show: true,
+                  onClick: () => setShowWifiModal(true),
+                  icon: <Wifi className="h-4.5 w-4.5" />,
+                  title: isRtl ? 'واي فاي' : 'Free WiFi',
+                  subtitle: profile.wifi_name || (isRtl ? 'متاح' : 'Available')
+                },
+                profile.website && {
+                  id: 'website',
+                  show: true,
+                  href: profile.website,
+                  target: '_blank',
+                  rel: 'noopener noreferrer',
+                  icon: <Globe className="h-4.5 w-4.5" />,
+                  title: isRtl ? 'الموقع' : 'Website',
+                  subtitle: profile.website.replace(/^https?:\/\/(www\.)?/, '')
+                },
+                profile.map_link && {
+                  id: 'map',
+                  show: true,
+                  href: profile.map_link,
+                  target: '_blank',
+                  rel: 'noopener noreferrer',
+                  icon: <MapPin className="h-4.5 w-4.5" />,
+                  title: isRtl ? 'الموقع الجغرافي' : 'Find Us',
+                  subtitle: isRtl ? 'خرائط جوجل' : 'Google Maps'
+                }
+              ].filter(Boolean);
+
+              return (
+                <div className={`grid gap-2.5 w-full ${
+                  actions.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
+                }`}>
+                  {actions.map((act, index) => {
+                    const buttonClass = `flex items-center gap-3 p-2.5 rounded-2xl border border-[var(--color-border)]/70 bg-[var(--color-card-bg)]/45 text-start transition-all hover:border-[var(--color-accent)] hover:shadow-md hover:shadow-[var(--color-accent)]/5 active:scale-98 shadow-sm group/btn ${
+                      actions.length === 3 && index === 2 ? 'col-span-2' : ''
+                    }`;
+
+                    const content = (
+                      <>
+                        <div className="p-2 rounded-xl bg-[var(--color-accent)]/10 text-[var(--color-accent)] group-hover/btn:bg-[var(--color-accent)] group-hover/btn:text-white transition-all shrink-0">
+                          {act.icon}
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-[11px] font-black text-[var(--color-text)] tracking-tight leading-none truncate">
+                            {act.title}
+                          </span>
+                          <span className="text-[9px] font-bold text-[var(--color-text)]/50 mt-1 truncate max-w-[150px] leading-none">
+                            {act.subtitle}
+                          </span>
+                        </div>
+                      </>
+                    );
+
+                    if (act.href) {
+                      return (
+                        <a
+                          key={act.id}
+                          href={act.href}
+                          target={act.target}
+                          rel={act.rel}
+                          className={buttonClass}
+                        >
+                          {content}
+                        </a>
+                      );
+                    }
+
+                    return (
+                      <button
+                        key={act.id}
+                        onClick={act.onClick}
+                        className={buttonClass}
+                      >
+                        {content}
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+
+            {/* Social Media Row with smooth styling and dividers */}
+            {hasSocialLinks && (
+              <div className="border-t border-[var(--color-border)] pt-3 flex flex-col items-center justify-center gap-2.5">
+                <span className="text-[9px] font-extrabold tracking-wider uppercase text-[var(--color-text)]/40">
+                  {isRtl ? 'تابعنا على وسائل التواصل' : 'Follow Our Channels'}
+                </span>
+                <div className="flex items-center justify-center gap-2.5 flex-wrap">
+                  {profile.instagram && (
+                    <a href={profile.instagram.startsWith('http') ? profile.instagram : `https://instagram.com/${profile.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-full hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:-translate-y-0.5 hover:scale-110 active:scale-95 transition-all text-[var(--color-text-secondary)] shadow-sm" title="Instagram">
+                      <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                    </a>
+                  )}
+                  {profile.facebook && (
+                    <a href={profile.facebook.startsWith('http') ? profile.facebook : `https://facebook.com/${profile.facebook}`} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-full hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:-translate-y-0.5 hover:scale-110 active:scale-95 transition-all text-[var(--color-text-secondary)] shadow-sm" title="Facebook">
+                      <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24"><path d="M9 8H7v3h2v9h3v-9h3.3l.7-3H12V6c0-.9.2-1.2 1-1.2h2V2h-3c-2.4 0-4 1.2-4 3.6V8z"/></svg>
+                    </a>
+                  )}
+                  {profile.whatsapp && (
+                    <a href={`https://wa.me/${profile.whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-full hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:-translate-y-0.5 hover:scale-110 active:scale-95 transition-all text-[var(--color-text-secondary)] shadow-sm" title="WhatsApp">
+                      <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.504-5.729-1.464L0 24zm6.59-4.846c1.6.95 3.197 1.45 4.817 1.458 5.463 0 9.907-4.441 9.91-9.904.002-2.648-1.02-5.138-2.879-6.997-1.86-1.86-4.347-2.883-6.997-2.885-5.47 0-9.914 4.444-9.917 9.907-.001 2.015.526 3.987 1.528 5.726L1.87 21.92l4.777-1.766z"/></svg>
+                    </a>
+                  )}
+                  {profile.twitter && (
+                    <a href={profile.twitter.startsWith('http') ? profile.twitter : `https://x.com/${profile.twitter.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-full hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:-translate-y-0.5 hover:scale-110 active:scale-95 transition-all text-[var(--color-text-secondary)] shadow-sm" title="X / Twitter">
+                      <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                    </a>
+                  )}
+                  {profile.tiktok && (
+                    <a href={profile.tiktok.startsWith('http') ? profile.tiktok : `https://tiktok.com/${profile.tiktok}`} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-full hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:-translate-y-0.5 hover:scale-110 active:scale-95 transition-all text-[var(--color-text-secondary)] shadow-sm" title="TikTok">
+                      <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.032 2.61.1 3.86.38v4.18c-.85-.14-1.72-.18-2.58-.12-.81.06-1.59.35-2.25.85-.6.48-.96 1.21-1.02 1.98-.08 1.13.01 2.26.27 3.37.16.63.48 1.21.93 1.66.45.45 1.03.77 1.66.93 1.11.26 2.24.35 3.37.27.77-.06 1.5-.42 1.98-1.02.5-.66.79-1.44.85-2.25.06-.86.02-1.73-.12-2.58h4.18c.28 1.25.41 2.55.38 3.86-.09 2.29-.98 4.47-2.51 6.16-1.53 1.69-3.62 2.76-5.89 3.03-2.91.35-5.87-.23-8.32-1.63C1.63 17.43.23 14.47.02 11.56.05 9.27.94 7.09 2.47 5.4c1.53-1.69 3.62-2.76 5.89-3.03.73-.09 1.47-.13 2.21-.12.65-.01 1.3.08 1.93.27.01-.17.02-.34.025-.5z"/></svg>
+                    </a>
+                  )}
+                  {profile.youtube && (
+                    <a href={profile.youtube.startsWith('http') ? profile.youtube : `https://youtube.com/${profile.youtube}`} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-full hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:-translate-y-0.5 hover:scale-110 active:scale-95 transition-all text-[var(--color-text-secondary)] shadow-sm" title="YouTube">
+                      <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24"><path d="M23.498 6.163a3.003 3.003 0 00-2.11-2.11C19.53 3.545 12 3.545 12 3.545s-7.53 0-9.388.508a3.003 3.003 0 00-2.11 2.11C0 8.017 0 12 0 12s0 3.983.508 5.837a3.003 3.003 0 002.11 2.11c1.858.507 9.388.507 9.388.507s7.53 0 9.388-.507a3.003 3.003 0 002.11-2.11C24 15.983 24 12 24 12s0-3.983-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                    </a>
+                  )}
+                  {profile.tripadvisor && (
+                    <a href={profile.tripadvisor} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-[var(--color-bg)] border border-[var(--color-border)] rounded-full hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] hover:-translate-y-0.5 hover:scale-110 active:scale-95 transition-all text-[var(--color-text-secondary)] shadow-sm" title="TripAdvisor">
+                      <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 18.25c-3.447 0-6.25-2.803-6.25-6.25S8.553 5.75 12 5.75s6.25 2.803 6.25 6.25-2.803 6.25-6.25 6.25zM12 7c-2.757 0-5 2.243-5 5s2.243 5 5 5 5-2.243 5-5-2.243-5-5-5zm0 8c-1.654 0-3-1.346-3-3s1.346-3 3-3 3 1.346 3 3-1.346 3-3 3z"/></svg>
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 2. Sticky Search, Dietary Filters and Category Tabs */}
+      <div className="sticky top-0 z-40 bg-[var(--color-bg)]/85 backdrop-blur-3xl border-b border-[var(--color-border)]/55 shadow-md shadow-black/[0.03] shrink-0">
+        <div className="max-w-lg mx-auto px-4 py-3.5 space-y-3.5">
           
           {/* Search bar */}
-          <div className="relative flex items-center">
-            <Search className={`absolute ${isRtl ? 'right-3.5' : 'left-3.5'} h-4 w-4 pointer-events-none ${currentTheme.searchIcon}`} />
+          <div className="relative flex items-center group">
+            <Search className={`absolute ${isRtl ? 'right-4.5' : 'left-4.5'} h-4 w-4 pointer-events-none text-[var(--color-text)]/40 group-focus-within:text-[var(--color-accent)] transition-colors`} />
             <input 
               type="text" 
               placeholder={currentT.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className={`${mergeStyle(currentTheme.searchInput, 'input')} ${
-                isRtl ? 'pr-10 pl-4 text-right' : 'pl-10 pr-4 text-left'
+              className={`w-full bg-[var(--color-card-bg)]/60 backdrop-blur-md border border-[var(--color-border)]/75 rounded-2xl py-3 text-xs text-[var(--color-text)] placeholder-[var(--color-text)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--primary-theme)]/25 focus:border-[var(--primary-theme)] focus:shadow-[0_0_15px_rgba(var(--color-accent-rgb),0.1)] transition-all ${
+                isRtl ? 'pr-11 pl-4 text-right' : 'pl-11 pr-4 text-left'
               }`}
             />
           </div>
 
+          {/* Quick Dietary Filters (2030 Feature Tag Filters) */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 scroll-smooth">
+            {[
+              { id: 'all', labelEn: 'All Dishes', labelAr: 'الكل' },
+              { id: 'chef', labelEn: 'Chef Specials', labelAr: 'مميز الشيف' },
+              { id: 'bestseller', labelEn: 'Bestsellers', labelAr: 'الأكثر مبيعاً' },
+              { id: 'popular', labelEn: 'Popular', labelAr: 'محبوب' },
+              { id: 'new', labelEn: 'New Arrivals', labelAr: 'جديد' },
+              { id: 'spicy', labelEn: 'Spicy', labelAr: 'حار 🌶️' }
+            ].map(filter => {
+              const isActive = activeFilter === filter.id;
+              const hasItems = filter.id === 'all' || menuItems.some(item => item.badge?.toLowerCase() === filter.id);
+              if (!hasItems) return null;
+
+              return (
+                <button
+                  key={filter.id}
+                  onClick={() => setActiveFilter(filter.id)}
+                  className={`shrink-0 px-3.5 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider transition-all duration-300 ${
+                    isActive
+                      ? 'bg-[var(--color-accent)] text-white shadow-md shadow-[var(--color-accent)]/25 border-none scale-102'
+                      : 'bg-[var(--color-card-bg)]/50 border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text)] hover:border-[var(--color-text)]/30 active:scale-95'
+                  }`}
+                >
+                  {isRtl ? filter.labelAr : filter.labelEn}
+                </button>
+              );
+            })}
+          </div>
+
           {/* Scrolling category list */}
-          {!searchQuery && categories.length > 0 && (
-            <div className="flex items-center space-x-2 overflow-x-auto no-scrollbar py-1 scroll-smooth">
+          {!searchQuery && categories.length > 0 && layoutStyle !== 'sidebar' && (
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1.5 px-0.5 border-t border-[var(--color-border)]/45 scroll-smooth">
               {categories.map((cat) => {
                 const isActive = selectedCategory === cat.id;
                 return (
                   <button
                     key={cat.id}
                     onClick={() => handleCategoryClick(cat.id)}
-                    className={mergeStyle(`shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 uppercase tracking-wider mx-1 ${currentTheme.categoryTab(isActive)}`, 'button')}
+                    className={`shrink-0 px-4.5 py-2 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 shadow-sm ${
+                      isActive 
+                        ? 'bg-[var(--primary-theme)] text-white shadow-lg shadow-[var(--primary-theme)]/20 scale-102 border border-[var(--primary-theme)]' 
+                        : 'bg-[var(--color-card-bg)] border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text)] hover:border-[var(--color-text)]/20 active:scale-95'
+                    }`}
                   >
                     {isRtl && cat.name_ar ? cat.name_ar : cat.name}
                   </button>
@@ -1890,7 +2559,86 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
       </div>
 
       {/* 3. Main Menu Content */}
-      <main className="max-w-lg mx-auto w-full px-4 pt-6 flex-1">
+      <main className={`${layoutStyle === 'sidebar' ? 'max-w-4xl' : 'max-w-lg'} mx-auto w-full px-4 pt-6 flex-1`}>
+        {!searchQuery && activeFilter === 'all' && specialsItems.length > 0 && (
+          <div className="mb-8 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black uppercase tracking-wider text-[var(--color-text)] flex items-center gap-1.5">
+                <Sparkles className="h-4 w-4 text-[var(--color-accent)] animate-pulse" />
+                <span>{isRtl ? 'أطباق مميزة خاصة' : 'Chef Spotlight & Specials'}</span>
+              </h3>
+              <span className="text-[10px] font-semibold text-[var(--color-text-secondary)] opacity-60">
+                {isRtl ? 'اسحب للمزيد' : 'Swipe for more'}
+              </span>
+            </div>
+            
+            <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 scroll-smooth snap-x snap-mandatory -mx-4 px-4">
+              {specialsItems.map((item) => {
+                const displayName = isRtl && item.name_ar ? item.name_ar : item.name;
+                const displayDesc = isRtl && item.description_ar ? item.description_ar : item.description;
+                return (
+                  <div
+                    key={`special-${item.id}`}
+                    onClick={() => setSelectedItem(item)}
+                    className="w-[280px] shrink-0 snap-start bg-[var(--color-card-bg)] border border-[var(--color-border)]/65 rounded-[2rem] overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-[var(--color-accent)]/10 hover:-translate-y-1 transition-all duration-300 cursor-pointer group flex flex-col relative"
+                  >
+                    <div className="absolute inset-0 border border-transparent group-hover:border-[var(--color-accent)]/20 rounded-[2rem] pointer-events-none transition-colors duration-300" />
+                    
+                    <div className="relative h-44 w-full overflow-hidden">
+                      {item.image_url ? (
+                        <Image
+                          src={item.image_url}
+                          alt={displayName}
+                          fill
+                          className="object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-tr from-slate-900 to-slate-800 flex items-center justify-center">
+                          <span className="text-3xl">🍽️</span>
+                        </div>
+                      )}
+                      
+                      <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-card-bg)] via-transparent to-black/30" />
+                      
+                      <div className="absolute top-3 left-3 z-10">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest bg-[var(--color-accent)] text-white shadow-sm animate-pulse">
+                          <span className="h-1 w-1 rounded-full bg-white animate-ping" />
+                          {isRtl ? 'مميز' : 'Special'}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 flex-1 flex flex-col justify-between space-y-3 bg-[var(--color-card-bg)]/80 backdrop-blur-sm border-t border-[var(--color-border)]/20">
+                      <div className="space-y-1 text-start">
+                        <h4 className="font-black text-sm text-[var(--color-text)] leading-snug line-clamp-1 group-hover:text-[var(--color-accent)] transition-colors">
+                          {displayName}
+                        </h4>
+                        {displayDesc && (
+                          <p className="text-[10px] leading-relaxed text-[var(--color-text-secondary)] line-clamp-2">
+                            {displayDesc}
+                          </p>
+                        )}
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="inline-block font-black text-xs text-[var(--color-accent)] bg-[var(--color-accent)]/10 px-3 py-1 rounded-xl border border-[var(--color-accent)]/10 whitespace-nowrap shadow-[0_0_10px_rgba(var(--color-accent),0.1)]">
+                          {theme.layout.currency || theme.layout.currencySymbol || '$'}{item.price}
+                        </span>
+                        {item.badge && renderBadge(item.badge)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {profile.custom_text && (
+          <div className="mb-6 p-4 bg-[var(--color-card-bg)] border border-[var(--color-border)] rounded-2xl text-xs leading-relaxed text-[var(--color-text-secondary)] shadow-sm text-center font-medium">
+            {profile.custom_text}
+          </div>
+        )}
         {itemsByCategory.length === 0 ? (
           <div className={currentTheme.emptyState}>
             <Search className={`h-10 w-10 mx-auto mb-2 ${currentTheme.emptyStateIcon}`} />
@@ -1898,128 +2646,85 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
             <p className={currentTheme.emptyStateDesc}>{currentT.refiningText}</p>
           </div>
         ) : (
-          <div className="space-y-8">
-            {itemsByCategory.map((catGroup) => (
-              <section 
-                key={catGroup.id} 
-                id={`category-${catGroup.id}`}
-                className="space-y-4 scroll-mt-28"
-              >
-                {/* Category Header */}
-                <div className="flex items-center space-x-2 gap-2">
-                  {templateId === 'classic-dark' && <div className="h-4 w-1.5 rounded-full" style={{ backgroundColor: primaryColor }} />}
-                  <h3 className={currentTheme.sectionHeader}>{isRtl && catGroup.name_ar ? catGroup.name_ar : catGroup.name}</h3>
-                </div>
+          layoutStyle === 'sidebar' && !searchQuery ? (
+            /* Sidebar layout style */
+            <div className="flex gap-6 items-start">
+              {/* Left category list column */}
+              <div className="w-20 md:w-28 shrink-0 sticky top-24 self-start flex flex-col gap-2 py-1 overflow-y-auto no-scrollbar max-h-[70vh]">
+                {categories.map((cat) => {
+                  const isActive = selectedCategory === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => handleCategoryClick(cat.id)}
+                      className={`px-3 py-3 text-start text-[10px] font-black rounded-2xl border transition-all truncate ${
+                        isActive 
+                          ? 'bg-[var(--color-tab-active)] text-[var(--color-tab-active-text)] border-[var(--color-tab-active)] shadow-sm'
+                          : 'bg-[var(--color-card-bg)] text-[var(--color-tab-inactive-text)] border-[var(--color-border)] hover:border-slate-350 hover:border-slate-400'
+                      }`}
+                    >
+                      {isRtl && cat.name_ar ? cat.name_ar : cat.name}
+                    </button>
+                  );
+                })}
+              </div>
 
-                {/* Items Layout */}
-                {themeId === 'tarapeza-custom' ? (
-                  // Custom customizable layout mapping (covers grid-2, grid-3, list, compact, magazine, full)
-                  <div className={
-                    (theme.layout.cardStyle === 'grid-3' || theme.layout.cardStyle === 'grid-3col') ? 'grid grid-cols-3 gap-2' :
-                    (theme.layout.cardStyle === 'grid-2' || theme.layout.cardStyle === 'grid-2col') ? 'grid grid-cols-2 gap-3.5' :
-                    'space-y-4'
-                  }>
-                    {catGroup.items.map((item, itemIdx) => {
-                      const displayName = isRtl && item.name_ar ? item.name_ar : item.name;
-                      const displayDesc = isRtl && item.description_ar ? item.description_ar : item.description;
+              {/* Right content items column */}
+              <div className="flex-1 space-y-8">
+                {itemsByCategory
+                  .filter((catGroup) => catGroup.id === selectedCategory)
+                  .map((catGroup) => (
+                    <section 
+                      key={catGroup.id} 
+                      id={`category-${catGroup.id}`}
+                      className="space-y-4"
+                    >
+                      {/* Category Header */}
+                      <div className="flex items-center space-x-2 gap-2">
+                        <h3 className={currentTheme.sectionHeader}>{isRtl && catGroup.name_ar ? catGroup.name_ar : catGroup.name}</h3>
+                      </div>
                       
-                      const showImage = theme.layout.showImage && item.image_url;
-                      const imgPos = theme.layout.imagePosition;
-                      const isAlternatingMagazine = theme.layout.cardStyle === 'magazine';
-                      const isImageRight = isAlternatingMagazine ? (itemIdx % 2 === 1) : (imgPos === 'right');
-                      const isCompact = theme.layout.cardStyle === 'compact' || theme.layout.cardStyle === 'compact-list';
+                      {/* Items list */}
+                      <div className="space-y-4">
+                        {catGroup.items.map((item, itemIdx) => renderItemCard(item, itemIdx))}
+                      </div>
+                    </section>
+                  ))}
+              </div>
+            </div>
+          ) : (
+            /* Classic, Tab, Grid layouts */
+            <div className="space-y-8">
+              {itemsByCategory
+                .filter((catGroup) => {
+                  if (layoutStyle === 'tab' && !searchQuery) {
+                    return catGroup.id === selectedCategory;
+                  }
+                  return true;
+                })
+                .map((catGroup) => (
+                  <section 
+                    key={catGroup.id} 
+                    id={`category-${catGroup.id}`}
+                    className="space-y-4 scroll-mt-28"
+                  >
+                    {/* Category Header */}
+                    <div className="flex items-center space-x-2 gap-2">
+                      {templateId === 'classic-dark' && <div className="h-4 w-1.5 rounded-full" style={{ backgroundColor: primaryColor }} />}
+                      <h3 className={currentTheme.sectionHeader}>{isRtl && catGroup.name_ar ? catGroup.name_ar : catGroup.name}</h3>
+                    </div>
 
-                      return (
-                        <div 
-                           key={item.id} 
-                           onClick={() => setSelectedItem(item)}
-                           className={`custom-menu-card overflow-hidden flex cursor-pointer transition-all duration-300 ${
-                             item.available ? 'opacity-100' : 'opacity-65'
-                           } ${
-                             isCompact ? 'py-2.5 px-3 border-b items-center justify-between' :
-                             ((theme.layout.cardStyle && theme.layout.cardStyle.startsWith('grid')) || imgPos === 'top') ? 'flex-col p-0' :
-                             isImageRight ? 'flex-row-reverse p-3 gap-3' : 'flex-row p-3 gap-3'
-                           }`}
-                           style={{
-                             backgroundImage: imgPos === 'background' && showImage ? `linear-gradient(to top, rgba(0,0,0,0.85) 45%, rgba(0,0,0,0.15) 100%), url(${item.image_url})` : 'none',
-                             backgroundSize: 'cover',
-                             backgroundPosition: 'center',
-                             color: imgPos === 'background' && showImage ? '#FFFFFF' : 'var(--menu-text-primary)'
-                           }}
-                        >
-                          {showImage && imgPos !== 'background' && (
-                            <div 
-                              className={`relative shrink-0 bg-black/10 overflow-hidden`}
-                              style={{
-                                width: ((theme.layout.cardStyle && theme.layout.cardStyle.startsWith('grid')) || imgPos === 'top') ? '100%' : isCompact ? '40px' : '80px',
-                                height: ((theme.layout.cardStyle && theme.layout.cardStyle.startsWith('grid')) || imgPos === 'top') ? '110px' : isCompact ? '40px' : '80px',
-                                borderRadius: 'var(--menu-img-radius)'
-                              }}
-                            >
-                              <Image 
-                                src={item.image_url} 
-                                alt={displayName} 
-                                fill
-                                loading="lazy"
-                                className="object-cover animate-fade-in"
-                              />
-                              {!item.available && (
-                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                  <span className="text-[7px] font-bold text-white bg-slate-900 px-1.5 py-0.5 rounded uppercase tracking-wider">
-                                    {currentT.soldOut}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          <div className={`flex-1 flex flex-col justify-between ${isCompact ? '' : 'p-3 gap-2'}`}>
-                            <div className="space-y-1">
-                              <div className="flex justify-between items-start gap-2">
-                                <h4 className="font-bold text-sm leading-snug truncate flex items-center gap-1.5 flex-wrap" style={{ color: imgPos === 'background' && showImage ? '#FFFFFF' : 'var(--menu-text-primary)' }}>
-                                  <span>{displayName}</span>
-                                  {theme.layout.showBadges && item.badge && renderBadge(item.badge)}
-                                </h4>
-                                {!isCompact && theme.layout.showCurrency && (
-                                  <div className="flex flex-col items-end shrink-0">
-                                    <span className="font-extrabold text-sm" style={{ color: 'var(--menu-accent)' }}>
-                                      {theme.layout.currency || theme.layout.currencySymbol || '$'}{item.price}
-                                    </span>
-                                    {theme.layout.showCalories && (item.calories || item.cal) && (
-                                      <span className="text-[9px] text-slate-400">{(item.calories || item.cal)}</span>
-                                    )}
-                                    {theme.layout.showCalories && !(item.calories || item.cal) && (
-                                      <span className="text-[9px] text-slate-400">350 kcal</span>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                              {!isCompact && theme.layout.showDescription && displayDesc && (
-                                <p className="text-[11px] leading-relaxed line-clamp-2" style={{ color: imgPos === 'background' && showImage ? '#D1D5DB' : 'var(--menu-text-sec)' }}>
-                                  {displayDesc}
-                                </p>
-                              )}
-                            </div>
-
-                            {isCompact && theme.layout.showCurrency && (
-                              <div className="flex items-center gap-2 shrink-0">
-                                {theme.layout.showCalories && (item.calories || item.cal) && (
-                                  <span className="text-[9px] text-slate-400">{(item.calories || item.cal)}</span>
-                                )}
-                                {theme.layout.showCalories && !(item.calories || item.cal) && (
-                                  <span className="text-[9px] text-slate-400">350 kcal</span>
-                                )}
-                                <span className="font-bold text-sm" style={{ color: 'var(--menu-accent)' }}>
-                                  {theme.layout.currency || theme.layout.currencySymbol || '$'}{item.price}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : templateId === 'modern-light' ? (
+                    {/* Items Layout */}
+                    {themeId === 'tarapeza-custom' ? (
+                      <div className={
+                        layoutStyle === 'grid' ? 'grid grid-cols-2 gap-3.5' :
+                        (theme.layout.cardStyle === 'grid-3' || theme.layout.cardStyle === 'grid-3col') ? 'grid grid-cols-3 gap-2' :
+                        (theme.layout.cardStyle === 'grid-2' || theme.layout.cardStyle === 'grid-2col') ? 'grid grid-cols-2 gap-3.5' :
+                        'space-y-4'
+                      }>
+                        {catGroup.items.map((item, itemIdx) => renderItemCard(item, itemIdx))}
+                      </div>
+                    ) : templateId === 'modern-light' ? (
                   // 2-Column Grid Layout (modern-light)
                   <div className="grid grid-cols-2 gap-3.5 md:grid-cols-3">
                     {catGroup.items.map((item) => {
@@ -2614,6 +3319,7 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
               </section>
             ))}
           </div>
+          )
         )}
       </main>
 
@@ -2692,58 +3398,232 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
         </div>
       </footer>
 
-      {/* 5. Star Rating Modal overlay */}
-      {showRateModal && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-          <div className={mergeStyle(currentTheme.modalBg, 'card')}>
+      {/* 6. Restaurant Info / Business Hours Modal */}
+      {showInfoModal && (
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[999] flex items-center justify-center p-4 animate-fade-in">
+          <div className="w-full max-w-sm rounded-[2.5rem] bg-[var(--color-card-bg)]/95 backdrop-blur-2xl border border-[var(--color-border)]/80 shadow-2xl p-6 relative text-[var(--color-text)] animate-scale-up">
             <button
-              onClick={() => setShowRateModal(false)}
-              className={currentTheme.modalCloseBtn}
+              onClick={() => setShowInfoModal(false)}
+              className="absolute top-4 right-4 text-[var(--color-text)]/60 hover:text-[var(--color-text)] transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
 
-            <h3 className={currentTheme.modalTitle}>
+            <h3 className="text-sm font-black tracking-widest text-center mb-4 mt-2 font-sans text-[var(--color-text)] uppercase">
+              {isRtl ? 'معلومات وأوقات العمل' : 'Restaurant Information'}
+            </h3>
+
+            <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1 no-scrollbar">
+              {/* Address / Phone / Website / Map Link */}
+              <div className="space-y-2.5 border-b border-[var(--color-border)]/55 pb-4 text-start">
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--color-accent)]">
+                  {isRtl ? 'تفاصيل الاتصال' : 'Contact Details'}
+                </h4>
+                {profile.phone && (
+                  <p className="text-xs">
+                    <strong>{isRtl ? 'الهاتف:' : 'Phone:'}</strong>{' '}
+                    <a href={`tel:${profile.phone}`} className="text-[var(--color-accent)] font-bold hover:underline">
+                      {profile.phone}
+                    </a>
+                  </p>
+                )}
+                {profile.address && (
+                  <p className="text-xs">
+                    <strong>{isRtl ? 'العنوان:' : 'Address:'}</strong> {profile.address}
+                  </p>
+                )}
+                {profile.map_link && (
+                  <p className="text-xs pt-1">
+                    <a href={profile.map_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent)] hover:underline border border-[var(--color-accent)]/30 px-3 py-1.5 rounded-xl bg-[var(--color-accent)]/5">
+                      <MapPin className="h-3.5 w-3.5" />
+                      <span>{isRtl ? 'فتح في الخريطة' : 'Open in Maps'}</span>
+                    </a>
+                  </p>
+                )}
+              </div>
+
+              {/* Business Hours */}
+              <div className="space-y-2.5 text-start">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--color-accent)]">
+                    {isRtl ? 'أوقات العمل' : 'Business Hours'}
+                  </h4>
+                  <span className="text-[9px] font-semibold text-[var(--color-text-secondary)] opacity-60">
+                    {businessHours.timezone?.replace('Asia/', '') || 'Damascus'} Time
+                  </span>
+                </div>
+
+                <div className="space-y-2.5 pt-1.5">
+                  {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => {
+                    const dayData = businessHours.days?.[day] || { isOpen: false, periods: [] };
+                    return (
+                      <div key={day} className="flex items-center justify-between text-xs py-1.5 border-b border-[var(--color-border)]/45 last:border-0">
+                        <span className="font-semibold text-[var(--color-text)]">
+                          {isRtl ? translateDay(day) : day}
+                        </span>
+                        
+                        {dayData.isOpen ? (
+                          <div className="text-right space-y-0.5 font-mono">
+                            {dayData.periods?.map((p, pIdx) => (
+                              <span key={pIdx} className="block text-emerald-600 dark:text-emerald-400 font-bold font-mono">
+                                {p.from} - {p.to}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-rose-500 font-black uppercase text-[10px]">
+                            {isRtl ? 'مغلق' : 'Closed'}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowInfoModal(false)}
+              className="mt-6 w-full font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center bg-[var(--color-text)] text-[var(--color-bg)] hover:opacity-90 active:scale-[0.98] transition-all"
+            >
+              <span>{isRtl ? 'إغلاق' : 'Close'}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 7. WiFi Details Modal */}
+      {showWifiModal && (
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[999] flex items-center justify-center p-4 animate-fade-in">
+          <div className="w-full max-w-sm rounded-[2.5rem] bg-[var(--color-card-bg)]/95 backdrop-blur-2xl border border-[var(--color-border)]/80 shadow-2xl p-6 relative text-[var(--color-text)] animate-scale-up">
+            <button
+              onClick={() => setShowWifiModal(false)}
+              className="absolute top-4 right-4 text-[var(--color-text)]/60 hover:text-[var(--color-text)] transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <h3 className="text-sm font-black tracking-widest text-center mb-4 mt-2 font-sans text-[var(--color-text)] uppercase">
+              {isRtl ? 'تفاصيل الاتصال بالواي فاي' : 'WiFi Connection'}
+            </h3>
+
+            <div className="space-y-4 text-start">
+              <div className="p-4 bg-[var(--color-bg)]/50 border border-[var(--color-border)]/65 rounded-2xl space-y-3.5">
+                <div className="space-y-1">
+                  <span className="text-[9px] font-bold text-[var(--color-text-secondary)]/60 uppercase tracking-wider block">
+                    {isRtl ? 'اسم الشبكة (SSID)' : 'Network Name (SSID)'}
+                  </span>
+                  <span className="text-sm font-black block font-mono">
+                    {profile.wifi_name || 'Guest_WiFi'}
+                  </span>
+                </div>
+
+                {profile.wifi_password && (
+                  <div className="space-y-1.5">
+                    <span className="text-[9px] font-bold text-[var(--color-text-secondary)]/60 uppercase tracking-wider block">
+                      {isRtl ? 'كلمة المرور' : 'Password'}
+                    </span>
+                    <div className="flex items-center justify-between gap-2 bg-[var(--color-card-bg)] border border-[var(--color-border)] px-3 py-2 rounded-xl">
+                      <span className="text-sm font-bold block font-mono">
+                        {showWifiPassword ? profile.wifi_password : '••••••••'}
+                      </span>
+                      <button
+                        onClick={() => setShowWifiPassword(!showWifiPassword)}
+                        className="text-[var(--color-text-secondary)]/80 hover:text-[var(--color-text)] transition-colors"
+                      >
+                        {showWifiPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {profile.wifi_password && (
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(profile.wifi_password);
+                    setCopiedWifi(true);
+                    setTimeout(() => setCopiedWifi(false), 2000);
+                  }}
+                  className="w-full font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white active:scale-[0.98] transition-all shadow-md shadow-emerald-600/10"
+                >
+                  {copiedWifi ? (
+                    <>
+                      <Check className="h-4 w-4" />
+                      <span>{isRtl ? 'تم نسخ كلمة المرور' : 'Password Copied'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Share2 className="h-4 w-4" />
+                      <span>{isRtl ? 'نسخ كلمة المرور' : 'Copy Password'}</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+
+            <button
+              onClick={() => setShowWifiModal(false)}
+              className="mt-6 w-full font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center bg-[var(--color-text)] text-[var(--color-bg)] hover:opacity-90 active:scale-[0.98] transition-all"
+            >
+              <span>{isRtl ? 'إغلاق' : 'Close'}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 5. Star Rating Modal overlay */}
+      {showRateModal && (
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[999] flex items-center justify-center p-4 animate-fade-in">
+          <div className="w-full max-w-sm rounded-[2.5rem] bg-[var(--color-card-bg)]/95 backdrop-blur-2xl border border-[var(--color-border)]/80 shadow-2xl p-6 relative text-[var(--color-text)] animate-scale-up">
+            <button
+              onClick={() => setShowRateModal(false)}
+              className="absolute top-4 right-4 text-[var(--color-text)]/60 hover:text-[var(--color-text)] transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <h3 className="text-sm font-black tracking-widest text-center mb-4 mt-2 font-sans text-[var(--color-text)] uppercase">
               {currentT.rateThisCafe}
             </h3>
 
             {ratingSuccess ? (
               <div className="text-center py-6 space-y-2">
-                <div className="mx-auto h-12 w-12 rounded-full bg-emerald-50 border border-emerald-500/20 flex items-center justify-center mb-3">
+                <div className="mx-auto h-12 w-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-3 animate-bounce">
                   <Star className="h-6 w-6 text-emerald-500 fill-emerald-500" />
                 </div>
-                <h4 className="font-bold text-slate-800 text-sm font-sans">{currentT.ratingSuccessMsg}</h4>
+                <h4 className="font-bold text-[var(--color-text)] text-sm font-sans">{currentT.ratingSuccessMsg}</h4>
               </div>
             ) : (
               <form onSubmit={handleRatingSubmit} className="space-y-4">
                 {!customerUser && (
-                  <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-3 text-[10px] text-indigo-500 dark:text-indigo-400 leading-normal text-center font-sans">
+                  <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl p-3 text-[10px] text-indigo-600 dark:text-indigo-400 leading-normal text-center font-sans font-medium">
                     {isRtl ? (
                       <>
                         <span>سجل الدخول كزبون لكتابة تقييم موثق وكسب طوابع الولاء! </span>
-                        <a href="/login" className="underline font-bold hover:text-indigo-300">سجل الدخول هنا</a>
+                        <a href="/login" className="underline font-bold hover:text-indigo-500">سجل الدخول هنا</a>
                       </>
                     ) : (
                       <>
                         <span>Log in as a Diner to write a verified review and earn loyalty stamps! </span>
-                        <a href="/login" className="underline font-bold hover:text-indigo-450 font-sans">Log in here</a>
+                        <a href="/login" className="underline font-bold hover:text-indigo-500 font-sans">Log in here</a>
                       </>
                     )}
                   </div>
                 )}
 
                 {ratingError && (
-                  <p className="bg-red-50 border border-red-200/55 rounded-xl p-3 text-[11px] text-red-600 font-semibold text-center font-sans">
+                  <p className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-3 text-[11px] text-rose-600 dark:text-rose-455 font-semibold text-center font-sans">
                     {ratingError}
                   </p>
                 )}
 
                 {/* Stars selector widget */}
-                <div className="flex flex-col items-center gap-1.5">
-                  <span className={currentTheme.modalText}>
+                <div className="flex flex-col items-center gap-2">
+                  <span className="text-[10px] font-bold text-[var(--color-text-secondary)]/60 uppercase tracking-widest">
                     {currentT.selectStars}
                   </span>
-                  <div className="flex space-x-1 gap-1">
+                  <div className="flex space-x-1.5 gap-1.5">
                     {[1, 2, 3, 4, 5].map((val) => {
                       const isActive = val <= selectedStars;
                       return (
@@ -2751,13 +3631,13 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
                           key={val}
                           type="button"
                           onClick={() => setSelectedStars(val)}
-                          className="p-1 hover:scale-110 active:scale-95 transition-all focus:outline-none"
+                          className="p-1 hover:scale-125 active:scale-95 transition-all focus:outline-none group/star"
                         >
                           <Star
-                            className={`h-8 w-8 transition-colors ${
+                            className={`h-8 w-8 transition-all ${
                               isActive
-                                ? 'fill-amber-400 text-amber-400'
-                                : 'text-slate-200 hover:text-amber-300'
+                                ? 'fill-amber-400 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]'
+                                : 'text-[var(--color-text)]/20 hover:text-amber-300 hover:drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]'
                             }`}
                           />
                         </button>
@@ -2766,21 +3646,10 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
                   </div>
                 </div>
 
-                {/* Review comment field is disabled as comments are not displayed */}
-                {/* <div>
-                  <textarea
-                    rows={3}
-                    value={reviewComment}
-                    onChange={(e) => setReviewComment(e.target.value)}
-                    placeholder={currentT.writeComment}
-                    className={currentTheme.modalInput}
-                  />
-                </div> */}
-
                 <button
                   type="submit"
                   disabled={submittingRating}
-                  className={mergeStyle(currentTheme.modalSubmitBtn, 'button')}
+                  className="w-full font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 bg-[var(--primary-theme)] text-white shadow-md shadow-[var(--primary-theme)]/15"
                 >
                   {submittingRating ? (
                     <>
@@ -2800,24 +3669,27 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
       {/* 6. Item Detail Modal overlay */}
       {selectedItem && (
         <div 
-          className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[999] flex items-center justify-center p-4 animate-fade-in"
+          className="fixed inset-0 bg-slate-950/60 backdrop-blur-md z-[999] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in"
           onClick={() => setSelectedItem(null)}
         >
           <div 
-            className={`${mergeStyle(currentTheme.modalBg, 'card')} w-full max-w-md overflow-hidden p-0 flex flex-col relative animate-scale-up`}
+            className={`${mergeStyle(currentTheme.modalBg, 'card')} w-full max-w-md overflow-hidden p-0 flex flex-col relative rounded-t-[2.5rem] sm:rounded-[2.5rem] h-[85vh] sm:h-auto sm:max-h-[90vh] bg-[var(--color-card-bg)] border-t sm:border border-[var(--color-border)]/80 shadow-2xl animate-slide-up sm:animate-scale-up`}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Slide indicators on mobile */}
+            <div className="w-12 h-1 bg-[var(--color-text)]/10 rounded-full mx-auto my-3 sm:hidden shrink-0" />
+
             {/* Top Close Button */}
             <button
               onClick={() => setSelectedItem(null)}
-              className="absolute top-4 right-4 z-20 h-8 w-8 rounded-full bg-slate-950/40 backdrop-blur-md border border-white/10 text-white hover:bg-slate-950/60 flex items-center justify-center transition-all"
+              className="absolute top-4 right-4 z-20 h-8 w-8 rounded-full bg-black/40 hover:bg-black/60 border border-white/10 text-white flex items-center justify-center transition-all active:scale-90"
             >
               <X className="h-4 w-4" />
             </button>
 
             {/* Dish Image Banner */}
             {selectedItem.image_url ? (
-              <div className="h-56 w-full relative overflow-hidden shrink-0 select-none">
+              <div className="h-64 sm:h-72 w-full relative overflow-hidden shrink-0 select-none">
                 <Image 
                   src={selectedItem.image_url} 
                   alt={isRtl && selectedItem.name_ar ? selectedItem.name_ar : selectedItem.name} 
@@ -2826,62 +3698,78 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
                   sizes="(max-width: 768px) 100vw, 450px"
                   className="object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-black/10" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-card-bg)] via-[var(--color-card-bg)]/20 to-black/20" />
               </div>
             ) : (
-              <div className="h-32 w-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center shrink-0 text-slate-350 dark:text-slate-700 select-none">
-                <span className="text-4xl">🍽️</span>
+              <div className="h-40 w-full bg-[var(--color-bg)] flex items-center justify-center shrink-0 text-slate-350 dark:text-slate-700 select-none border-b border-[var(--color-border)]/45">
+                <span className="text-5xl">🍽️</span>
               </div>
             )}
 
             {/* Details content */}
-            <div className="p-6 space-y-4 overflow-y-auto">
-              <div className="space-y-2">
+            <div className="p-6 space-y-5 overflow-y-auto flex-1 no-scrollbar text-start">
+              <div className="space-y-3">
                 {/* Badge and Price */}
-                <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex gap-1.5 flex-wrap">
                     {selectedItem.badge && renderBadge(selectedItem.badge)}
                     {!selectedItem.available && (
-                      <span className="bg-red-500/10 text-red-500 border border-red-500/20 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">
+                      <span className="bg-rose-500/10 text-rose-500 border border-rose-500/20 px-2 py-0.5 rounded-xl text-[9px] font-black uppercase tracking-wider">
                         {currentT.soldOut}
                       </span>
                     )}
                   </div>
-                  <span className="font-extrabold text-lg text-[var(--primary-theme)] font-mono">
-                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: profile.currency || 'USD' }).format(selectedItem.price)}
+                  <span className="font-black text-xl text-[var(--color-accent)] bg-[var(--color-accent)]/10 px-4 py-1.5 rounded-2xl border border-[var(--color-accent)]/10 whitespace-nowrap shadow-[0_0_12px_rgba(var(--color-accent),0.1)]">
+                    {theme.layout.currency || theme.layout.currencySymbol || '$'}{selectedItem.price}
                   </span>
                 </div>
 
                 {/* Dish Name */}
-                <h3 className="text-lg font-black leading-snug tracking-tight text-slate-900 dark:text-white text-start">
+                <h3 className="text-xl sm:text-2xl font-black leading-snug tracking-tight text-[var(--color-text)]">
                   {isRtl && selectedItem.name_ar ? selectedItem.name_ar : selectedItem.name}
-                  {!isRtl && selectedItem.name_ar && <span className="block text-slate-450 text-xs font-normal mt-0.5">{selectedItem.name_ar}</span>}
-                  {isRtl && selectedItem.name && <span className="block text-slate-450 text-xs font-normal mt-0.5">{selectedItem.name}</span>}
+                  {!isRtl && selectedItem.name_ar && <span className="block text-[var(--color-text-secondary)] text-xs font-semibold mt-1">{selectedItem.name_ar}</span>}
+                  {isRtl && selectedItem.name && <span className="block text-[var(--color-text-secondary)] text-xs font-semibold mt-1">{selectedItem.name}</span>}
                 </h3>
               </div>
 
               {/* Description */}
               {(selectedItem.description || selectedItem.description_ar) && (
-                <div className="text-slate-500 dark:text-slate-400 text-xs leading-relaxed text-start space-y-1 py-2 border-t border-slate-100 dark:border-slate-800">
+                <div className="text-[var(--color-text-secondary)]/90 text-xs leading-relaxed space-y-1.5 py-3 border-t border-[var(--color-border)]/55">
                   <p className="font-semibold">{isRtl && selectedItem.description_ar ? selectedItem.description_ar : selectedItem.description}</p>
-                  {!isRtl && selectedItem.description_ar && <p className="text-slate-400 text-[10px] leading-normal">{selectedItem.description_ar}</p>}
-                  {isRtl && selectedItem.description && <p className="text-slate-450 text-[10px] leading-normal">{selectedItem.description}</p>}
+                  {!isRtl && selectedItem.description_ar && <p className="text-[var(--color-text-secondary)]/60 text-[10px] leading-normal">{selectedItem.description_ar}</p>}
+                  {isRtl && selectedItem.description && <p className="text-[var(--color-text-secondary)]/60 text-[10px] leading-normal">{selectedItem.description}</p>}
                 </div>
               )}
 
+              {/* Holographic style nutrition facts & calories */}
+              <div className="grid grid-cols-3 gap-2.5 py-3 border-t border-[var(--color-border)]/55">
+                <div className="flex flex-col items-center justify-center p-2.5 rounded-2xl border border-[var(--color-border)]/65 bg-[var(--color-bg)]/40 text-center">
+                  <span className="text-[8px] font-extrabold uppercase tracking-wider text-[var(--color-text-secondary)]/60 mb-0.5">{isRtl ? 'السعرات' : 'Calories'}</span>
+                  <span className="text-xs font-black text-[var(--color-text)]">{selectedItem.calories || selectedItem.cal || '350 kcal'}</span>
+                </div>
+                <div className="flex flex-col items-center justify-center p-2.5 rounded-2xl border border-[var(--color-border)]/65 bg-[var(--color-bg)]/40 text-center">
+                  <span className="text-[8px] font-extrabold uppercase tracking-wider text-[var(--color-text-secondary)]/60 mb-0.5">{isRtl ? 'الوزن' : 'Weight'}</span>
+                  <span className="text-xs font-black text-[var(--color-text)]">{selectedItem.weight || '250g'}</span>
+                </div>
+                <div className="flex flex-col items-center justify-center p-2.5 rounded-2xl border border-[var(--color-border)]/65 bg-[var(--color-bg)]/40 text-center">
+                  <span className="text-[8px] font-extrabold uppercase tracking-wider text-[var(--color-text-secondary)]/60 mb-0.5">{isRtl ? 'وقت التحضير' : 'Prep Time'}</span>
+                  <span className="text-xs font-black text-[var(--color-text)]">{selectedItem.prep_time || '15 mins'}</span>
+                </div>
+              </div>
+
               {/* Allergens & Dietary tags */}
               {selectedItem.allergens && selectedItem.allergens.length > 0 && (
-                <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800 text-start">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                    {isRtl ? 'معلومات الحساسية / النظام الغذائي' : 'Dietary & Allergens'}
+                <div className="space-y-2 pt-3 border-t border-[var(--color-border)]/55">
+                  <span className="text-[9px] font-black text-[var(--color-text-secondary)]/60 uppercase tracking-widest block">
+                    {isRtl ? 'معلومات الحساسية والنظام الغذائي' : 'Dietary & Allergens'}
                   </span>
                   <div className="flex flex-wrap gap-1.5">
                     {selectedItem.allergens.map((alg) => (
                       <span 
                         key={alg}
-                        className="text-[10px] font-bold bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-md"
+                        className="text-[9px] font-extrabold uppercase tracking-wider bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-450 px-2.5 py-1 rounded-lg"
                       >
-                        {alg}
+                        ⚠️ {alg}
                       </span>
                     ))}
                   </div>
@@ -2889,7 +3777,7 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
               )}
 
               {/* Action buttons */}
-              <div className="flex gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex gap-3 pt-4 border-t border-[var(--color-border)]/55 shrink-0">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -2907,7 +3795,7 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
                       setTimeout(() => setCopiedLink(false), 2000);
                     }
                   }}
-                  className="flex-1 inline-flex items-center justify-center space-x-1.5 gap-1.5 border border-slate-200 dark:border-slate-800 hover:border-[var(--primary-theme)] text-slate-700 dark:text-slate-300 py-2.5 px-4 rounded-xl text-xs font-bold transition-all shadow-sm"
+                  className="flex-1 inline-flex items-center justify-center space-x-1.5 gap-1.5 border border-[var(--color-border)] hover:border-[var(--color-accent)] text-[var(--color-text)] bg-[var(--color-card-bg)] hover:bg-[var(--color-accent)]/5 py-3 px-4 rounded-2xl text-xs font-black transition-all shadow-sm active:scale-95"
                 >
                   {copiedLink ? (
                     <>
@@ -2916,14 +3804,14 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
                     </>
                   ) : (
                     <>
-                      <Share2 className="h-4 w-4" />
+                      <Share2 className="h-4 w-4 text-[var(--color-accent)]" />
                       <span>{isRtl ? 'مشاركة الطبق' : 'Share Dish'}</span>
                     </>
                   )}
                 </button>
                 <button
                   onClick={() => setSelectedItem(null)}
-                  className="flex-1 inline-flex items-center justify-center bg-slate-900 hover:bg-slate-850 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-950 py-2.5 px-4 rounded-xl text-xs font-bold transition-all shadow-md"
+                  className="flex-1 inline-flex items-center justify-center bg-[var(--color-text)] hover:opacity-90 text-[var(--color-bg)] py-3 px-4 rounded-2xl text-xs font-black transition-all shadow-md active:scale-95"
                 >
                   <span>{isRtl ? 'إغلاق' : 'Close'}</span>
                 </button>

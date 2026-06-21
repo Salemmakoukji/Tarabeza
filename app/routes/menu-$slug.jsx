@@ -4,122 +4,188 @@ import { getTemplateDefaults, generateCssStyles } from '../lib/templates';
 import { createClient } from '@supabase/supabase-js';
 
 export async function loader({ request, params }) {
-  const { slug } = params;
+  try {
+    const { slug } = params;
 
-  const url = new URL(request.url);
-  const isPreview = url.searchParams.get('preview') === 'true';
-  const previewTemplate = url.searchParams.get('template');
-  const previewAccent = url.searchParams.get('accent');
+    const url = new URL(request.url);
+    const isPreview = url.searchParams.get('preview') === 'true';
+    const previewTemplate = url.searchParams.get('template');
+    const previewAccent = url.searchParams.get('accent');
 
-  const supabase = createClient(
-    process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL,
-    process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY
-  );
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
-  // 1. Fetch Profile
-  const { data: profile, error: profileError } = await supabase
-    .from('restaurants')
-    .select('*')
-    .eq('slug', slug)
-    .single();
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('[menu-loader] Missing Supabase credentials');
+      return {
+        profile: null, categories: [], menuItems: [], ratings: [],
+        mergedCustomization: null, cssStyles: '', fontUrl: ''
+      };
+    }
 
-  if (profileError) {
-    console.error('Menu loader error:', profileError.message);
-  }
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-  if (profile) {
+    // 1. Fetch Restaurant
+    const { data: restaurant, error: fetchError } = await supabase
+      .from('restaurants')
+      .select('*')
+      .eq('slug', slug)
+      .single();
+
+    if (fetchError || !restaurant) {
+      console.error('[menu-loader] Restaurant not found:', slug, fetchError?.message);
+      return {
+        profile: null, categories: [], menuItems: [], ratings: [],
+        mergedCustomization: null, cssStyles: '', fontUrl: ''
+      };
+    }
+
     if (isPreview) {
-      if (previewTemplate) profile.template_id = previewTemplate;
-      if (previewAccent) profile.accent_color = previewAccent;
+      if (previewTemplate) restaurant.template_id = previewTemplate;
+      if (previewAccent) restaurant.accent_color = previewAccent;
+
+      const displayModeParam = url.searchParams.get('display_mode');
+      const imageSizeParam = url.searchParams.get('image_size');
+      const fontSizeParam = url.searchParams.get('font_size');
+      const layoutStyleParam = url.searchParams.get('layout_style');
+      const themeParam = url.searchParams.get('theme');
+      const mainColorParam = url.searchParams.get('main_color');
+      const fontFamilyParam = url.searchParams.get('font_family');
+
+      if (displayModeParam) restaurant.display_mode = displayModeParam;
+      if (imageSizeParam) restaurant.image_size = imageSizeParam;
+      if (fontSizeParam) restaurant.font_size = fontSizeParam;
+      if (layoutStyleParam) restaurant.layout_style = layoutStyleParam;
+      if (themeParam) restaurant.theme = themeParam;
+      if (mainColorParam) restaurant.main_color = mainColorParam;
+      if (fontFamilyParam) restaurant.font_family = fontFamilyParam;
+
+      // New columns preview mapping
+      const coverUrlParam = url.searchParams.get('cover_url');
+      const customTextParam = url.searchParams.get('custom_text');
+      const mapLinkParam = url.searchParams.get('map_link');
+      const websiteParam = url.searchParams.get('website');
+      const instagramParam = url.searchParams.get('instagram');
+      const facebookParam = url.searchParams.get('facebook');
+      const whatsappParam = url.searchParams.get('whatsapp');
+      const twitterParam = url.searchParams.get('twitter');
+      const tiktokParam = url.searchParams.get('tiktok');
+      const youtubeParam = url.searchParams.get('youtube');
+      const tripadvisorParam = url.searchParams.get('tripadvisor');
+      const wifiNameParam = url.searchParams.get('wifi_name');
+      const wifiPasswordParam = url.searchParams.get('wifi_password');
+      const businessHoursParam = url.searchParams.get('business_hours');
+      const temporarilyClosedParam = url.searchParams.get('temporarily_closed');
+
+      if (coverUrlParam) restaurant.cover_url = coverUrlParam;
+      if (customTextParam) restaurant.custom_text = customTextParam;
+      if (mapLinkParam) restaurant.map_link = mapLinkParam;
+      if (websiteParam) restaurant.website = websiteParam;
+      if (instagramParam) restaurant.instagram = instagramParam;
+      if (facebookParam) restaurant.facebook = facebookParam;
+      if (whatsappParam) restaurant.whatsapp = whatsappParam;
+      if (twitterParam) restaurant.twitter = twitterParam;
+      if (tiktokParam) restaurant.tiktok = tiktokParam;
+      if (youtubeParam) restaurant.youtube = youtubeParam;
+      if (tripadvisorParam) restaurant.tripadvisor = tripadvisorParam;
+      if (wifiNameParam) restaurant.wifi_name = wifiNameParam;
+      if (wifiPasswordParam) restaurant.wifi_password = wifiPasswordParam;
+      if (businessHoursParam) {
+        try {
+          restaurant.business_hours = JSON.parse(decodeURIComponent(businessHoursParam));
+        } catch (e) {}
+      }
+      if (temporarilyClosedParam) restaurant.temporarily_closed = temporarilyClosedParam === 'true';
 
       const previewCustomization = url.searchParams.get('customization');
       if (previewCustomization) {
         try {
-          profile.customization = JSON.parse(decodeURIComponent(previewCustomization));
+          restaurant.customization = JSON.parse(decodeURIComponent(previewCustomization));
         } catch (e) {
           console.error("Failed to parse preview customization from URL", e);
         }
       }
     }
-  }
 
+    // Get template defaults and merge with saved customization
+    const templateDefaults = getTemplateDefaults(restaurant.template_id || 'classic');
+    const savedCustomization = restaurant.customization || {};
 
-  if (!profile) {
+    const mergedCustomization = {
+      colors: { ...templateDefaults.colors, ...savedCustomization.colors },
+      fonts: { ...templateDefaults.fonts, ...savedCustomization.fonts },
+      layout: { ...templateDefaults.layout, ...savedCustomization.layout },
+      badges: { ...templateDefaults.badges, ...savedCustomization.badges },
+      customCss: savedCustomization.customCss || '',
+    };
+
+    // Generate CSS styles from merged customization
+    const cssStyles = generateCssStyles(mergedCustomization);
+
+    // Build Google Fonts URL
+    const activeFont = restaurant.font_family || mergedCustomization.fonts.heading || 'Inter';
+    const fontUrl = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(activeFont)}:wght@350;400;500;600;700;800;900&display=swap`;
+
+    // 2. Fetch Categories, Menu Items, and Ratings in parallel
+    const [categoriesRes, itemsRes, ratingsRes] = await Promise.all([
+      supabase
+        .from('categories')
+        .select('*')
+        .eq('restaurant_id', restaurant.id)
+        .order('order_index', { ascending: true }),
+      supabase
+        .from('menu_items')
+        .select('*')
+        .eq('restaurant_id', restaurant.id)
+        .order('order_index', { ascending: true }),
+      supabase
+        .from('ratings')
+        .select('*, customer_profiles(full_name)')
+        .eq('restaurant_id', restaurant.id)
+    ]);
+
     return {
-      profile: null,
-      categories: [],
-      menuItems: [],
-      ratings: [],
-      mergedCustomization: null,
-      cssStyles: '',
-      fontUrl: ''
+      profile: restaurant,
+      categories: categoriesRes.data || [],
+      menuItems: itemsRes.data || [],
+      ratings: ratingsRes.data || [],
+      mergedCustomization,
+      cssStyles,
+      fontUrl
+    };
+  } catch (err) {
+    console.error('[menu-loader] Unexpected error:', err);
+    return {
+      profile: null, categories: [], menuItems: [], ratings: [],
+      mergedCustomization: null, cssStyles: '', fontUrl: ''
     };
   }
-
-  // Get template defaults and merge with saved customization
-  const templateDefaults = getTemplateDefaults(profile.template_id || 'classic');
-  const savedCustomization = profile.customization || {};
-
-  const mergedCustomization = {
-    colors: { ...templateDefaults.colors, ...savedCustomization.colors },
-    fonts: { ...templateDefaults.fonts, ...savedCustomization.fonts },
-    layout: { ...templateDefaults.layout, ...savedCustomization.layout },
-    badges: { ...templateDefaults.badges, ...savedCustomization.badges },
-    customCss: savedCustomization.customCss || '',
-  };
-
-  // Generate CSS styles from merged customization
-  const cssStyles = generateCssStyles(mergedCustomization);
-
-  // Build Google Fonts URL
-  const headingFont = mergedCustomization.fonts.heading || 'Inter';
-  const bodyFont = mergedCustomization.fonts.body || 'Inter';
-  const fontFamilies = [...new Set([headingFont, bodyFont])];
-  const fontUrl = `https://fonts.googleapis.com/css2?${fontFamilies.map(f => `family=${encodeURIComponent(f)}:wght@300;400;500;600;700;800;900`).join('&')}&display=swap`;
-
-  // 2. Fetch Categories, Menu Items, and Ratings in parallel
-  const [categoriesRes, itemsRes, ratingsRes] = await Promise.all([
-    supabase
-      .from('categories')
-      .select('*')
-      .eq('restaurant_id', profile.id)
-      .order('order_index', { ascending: true }),
-    supabase
-      .from('menu_items')
-      .select('*')
-      .eq('restaurant_id', profile.id)
-      .order('order_index', { ascending: true }),
-    supabase
-      .from('ratings')
-      .select('*, customer_profiles(full_name)')
-      .eq('restaurant_id', profile.id)
-  ]);
-
-  return {
-    profile,
-    categories: categoriesRes.data || [],
-    menuItems: itemsRes.data || [],
-    ratings: ratingsRes.data || [],
-    mergedCustomization,
-    cssStyles,
-    fontUrl
-  };
 }
 
-export function meta({ data }) {
-  const profile = data?.profile;
+export function meta({ loaderData }) {
+  const profile = loaderData?.profile;
+  const restaurantName = profile?.name;
 
-  if (!profile || !profile.name) {
+  if (!restaurantName) {
     return [{ title: "Tarapeza | Digital QR Menu" }];
   }
 
+  const description = profile.description || `View ${restaurantName} menu`;
+  const logoUrl = profile.logo_url || '/og-image.png';
+
   return [
-    { title: `${profile.name} | Tarapeza` },
-    { name: "description", content: profile.description || `View ${profile.name} menu` },
-    { property: "og:title", content: `${profile.name} | Tarapeza` },
-    { property: "og:image", content: profile.logo_url || '/og-image.png' },
+    { title: `${restaurantName} | Tarapeza` },
+    { name: "description", content: description },
+    { property: "og:title", content: `${restaurantName} | Tarapeza` },
+    { property: "og:description", content: description },
+    { property: "og:image", content: logoUrl },
+    { name: "twitter:title", content: `${restaurantName} | Tarapeza` },
+    { name: "twitter:description", content: description },
+    { name: "twitter:image", content: logoUrl },
   ];
 }
+
+
 
 export default function PublicMenuPage() {
   const { profile, categories, menuItems, ratings, mergedCustomization, cssStyles, fontUrl } = useLoaderData();
@@ -140,6 +206,69 @@ export default function PublicMenuPage() {
       </div>
     );
   }
+
+  const displayMode = profile.display_mode || 'image-text';
+  const imageSize = profile.image_size || 'M';
+  const fontSize = profile.font_size || 'M';
+  const themeMode = profile.theme || 'light';
+  const mainColor = profile.main_color || '#f97316';
+  const fontFamily = profile.font_family || 'Inter';
+
+  const imageSizeMap = { XS: '90px', S: '120px', M: '160px', L: '200px', XL: '250px' };
+  const resolvedImageSize = imageSizeMap[imageSize] || '160px';
+
+  const fontSizeMap = { S: '14px', M: '16px', L: '18px' };
+  const resolvedFontSize = fontSizeMap[fontSize] || '16px';
+
+  const themeColors = themeMode === 'dark' ? `
+    --color-bg: #0F1524 !important;
+    --color-card-bg: #1E293B !important;
+    --color-text: #F8FAFC !important;
+    --color-text-secondary: #94A3B8 !important;
+    --color-border: #334155 !important;
+    --color-tab-active: ${mainColor} !important;
+    --color-tab-active-text: #ffffff !important;
+    --color-tab-inactive: #1E293B !important;
+    --color-tab-inactive-text: #94A3B8 !important;
+    --color-price: ${mainColor} !important;
+    --color-badge: ${mainColor} !important;
+    --color-header: #1E293B !important;
+  ` : `
+    --color-bg: #FFFFFF !important;
+    --color-card-bg: #F8FAFC !important;
+    --color-text: #0F172A !important;
+    --color-text-secondary: #64748B !important;
+    --color-border: #E2E8F0 !important;
+    --color-tab-active: ${mainColor} !important;
+    --color-tab-active-text: #ffffff !important;
+    --color-tab-inactive: #F1F5F9 !important;
+    --color-tab-inactive-text: #64748B !important;
+    --color-price: ${mainColor} !important;
+    --color-badge: ${mainColor} !important;
+    --color-header: #FFFFFF !important;
+  `;
+
+  const menuStyles = `
+    :root {
+      --color-accent: ${mainColor} !important;
+      --primary-theme: ${mainColor} !important;
+      --menu-accent: ${mainColor} !important;
+      --menu-image-size: ${resolvedImageSize} !important;
+      --menu-font-size: ${resolvedFontSize} !important;
+      --menu-img-radius: 12px !important;
+      ${themeColors}
+    }
+    
+    html {
+      font-size: var(--menu-font-size) !important;
+      background-color: var(--color-bg) !important;
+      color: var(--color-text) !important;
+    }
+
+    body, button, input, select, textarea, span, h1, h2, h3, h4, h5, h6, p, div {
+      font-family: "${fontFamily}", sans-serif !important;
+    }
+  `;
 
   // Generate JSON-LD Structured Data Schema for Restaurant Menus
   const jsonLd = {
@@ -181,6 +310,8 @@ export default function PublicMenuPage() {
       {fontUrl && (
         <link rel="stylesheet" href={fontUrl} />
       )}
+      {/* Inject theme, color, layout custom overrides */}
+      <style dangerouslySetInnerHTML={{ __html: menuStyles }} />
       {/* Inject customization CSS */}
       {cssStyles && (
         <style dangerouslySetInnerHTML={{ __html: cssStyles }} />

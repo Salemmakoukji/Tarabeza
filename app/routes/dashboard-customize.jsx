@@ -1,13 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useOutletContext, useFetcher, Link } from 'react-router';
 import { createClient } from '../lib/supabase/server';
-import { templates, getTemplateDefaults, googleFontsList, generateCssStyles } from '../lib/templates';
-import ColorPicker from '../components/color-picker';
-import { 
-  Palette, Sliders, Type, Layout, Award, Settings, Check, 
-  Save, RotateCcw, Smartphone, Tablet, Monitor, ExternalLink, 
-  Eye, HelpCircle, Code, Plus, Trash2, ArrowRight
-} from 'lucide-react';
+import { Check, ExternalLink, ArrowRight, Eye } from 'lucide-react';
 
 export async function action({ request }) {
   const supabase = await createClient(request);
@@ -16,14 +10,24 @@ export async function action({ request }) {
 
   const formData = await request.formData();
   const profileId = formData.get('profileId');
-  const templateId = formData.get('templateId');
-  const customization = formData.get('customization');
+  const display_mode = formData.get('display_mode');
+  const image_size = formData.get('image_size');
+  const font_size = formData.get('font_size');
+  const layout_style = formData.get('layout_style');
+  const theme = formData.get('theme');
+  const main_color = formData.get('main_color');
+  const font_family = formData.get('font_family');
 
   const { error } = await supabase
     .from('restaurants')
     .update({
-      template_id: templateId,
-      customization: JSON.parse(customization),
+      display_mode,
+      image_size,
+      font_size,
+      layout_style,
+      theme,
+      main_color,
+      font_family,
       updated_at: new Date().toISOString()
     })
     .eq('id', profileId);
@@ -38,1005 +42,572 @@ export default function CustomizeMenu() {
   const { profile } = useOutletContext();
   const fetcher = useFetcher();
 
-  // State initialization: load from db customization JSON or merge with template defaults
-  const [templateId, setTemplateId] = useState(profile.template_id || 'classic');
-  
-  const getInitialCustomization = () => {
-    const dbValue = profile.customization || {};
-    const defaultTpl = getTemplateDefaults(profile.template_id || 'classic');
-    return {
-      colors: { ...defaultTpl.colors, ...dbValue.colors },
-      fonts: { ...defaultTpl.fonts, ...dbValue.fonts },
-      layout: { ...defaultTpl.layout, ...dbValue.layout },
-      badges: { ...defaultTpl.badges, ...dbValue.badges },
-      customCss: dbValue.customCss || ''
-    };
-  };
-
-  const [customization, setCustomization] = useState(getInitialCustomization);
-  const [activeTab, setActiveTab] = useState('templates');
-  const [previewDevice, setPreviewDevice] = useState('mobile'); // 'mobile' | 'tablet' | 'desktop'
+  // State initialization with fallbacks
+  const [displayMode, setDisplayMode] = useState(profile.display_mode || 'image-text');
+  const [imageSize, setImageSize] = useState(profile.image_size || 'M');
+  const [fontSize, setFontSize] = useState(profile.font_size || 'M');
+  const [layoutStyle, setLayoutStyle] = useState(profile.layout_style || 'classic');
+  const [theme, setTheme] = useState(profile.theme || 'light');
+  const [mainColor, setMainColor] = useState(profile.main_color || '#f97316');
+  const [customHex, setCustomHex] = useState(profile.main_color || '#f97316');
+  const [fontFamily, setFontFamily] = useState(profile.font_family || 'Inter');
   const [toast, setToast] = useState(null);
 
-  // Check if there are unsaved changes
+  // Check for unsaved changes
   const isDirty = 
-    templateId !== (profile.template_id || 'classic') ||
-    JSON.stringify(customization) !== JSON.stringify(profile.customization || getTemplateDefaults(profile.template_id || 'classic'));
+    displayMode !== (profile.display_mode || 'image-text') ||
+    imageSize !== (profile.image_size || 'M') ||
+    fontSize !== (profile.font_size || 'M') ||
+    layoutStyle !== (profile.layout_style || 'classic') ||
+    theme !== (profile.theme || 'light') ||
+    mainColor !== (profile.main_color || '#f97316') ||
+    fontFamily !== (profile.font_family || 'Inter');
 
-  // Quick preset swatches list
-  const presetSwatches = ['#f97316', '#ef4444', '#8b5cf6', '#3b82f6', '#22c55e', '#ec4899', '#f59e0b', '#14b8a6'];
-
-  const updateColor = (key, val) => {
-    setCustomization(prev => ({
-      ...prev,
-      colors: { ...prev.colors, [key]: val }
-    }));
+  // Sync custom hex input with mainColor state when swatch selected
+  const handleSelectColor = (hex) => {
+    setMainColor(hex);
+    setCustomHex(hex);
   };
 
-  const updateFont = (key, val) => {
-    setCustomization(prev => ({
-      ...prev,
-      fonts: { ...prev.fonts, [key]: val }
-    }));
-  };
-
-  const updateLayout = (key, val) => {
-    setCustomization(prev => ({
-      ...prev,
-      layout: { ...prev.layout, [key]: val }
-    }));
-  };
-
-  const updateBadge = (badgeKey, field, val) => {
-    setCustomization(prev => ({
-      ...prev,
-      badges: {
-        ...prev.badges,
-        [`show${badgeKey}`]: field === 'show' ? val : prev.badges[`show${badgeKey}`],
-        [`${badgeKey.toLowerCase()}Label`]: field === 'label' ? val : prev.badges[`${badgeKey.toLowerCase()}Label`],
-        [`${badgeKey.toLowerCase()}Color`]: field === 'color' ? val : prev.badges[`${badgeKey.toLowerCase()}Color`],
-      }
-    }));
-  };
-
-  const handleSelectTemplate = (tplId) => {
-    setTemplateId(tplId);
-    const defaults = getTemplateDefaults(tplId);
-    setCustomization(defaults);
-  };
-
-  const handleResetToTemplate = () => {
-    const defaults = getTemplateDefaults(templateId);
-    setCustomization(defaults);
+  const handleCustomHexChange = (e) => {
+    const val = e.target.value;
+    setCustomHex(val);
+    if (/^#[0-9A-F]{6}$/i.test(val)) {
+      setMainColor(val);
+    }
   };
 
   const handleSave = () => {
     const formData = new FormData();
     formData.append('profileId', profile.id);
-    formData.append('templateId', templateId);
-    formData.append('customization', JSON.stringify(customization));
+    formData.append('display_mode', displayMode);
+    formData.append('image_size', imageSize);
+    formData.append('font_size', fontSize);
+    formData.append('layout_style', layoutStyle);
+    formData.append('theme', theme);
+    formData.append('main_color', mainColor);
+    formData.append('font_family', fontFamily);
 
     fetcher.submit(formData, { method: 'POST' });
-    setToast({ type: 'saving', message: 'Saving customization...' });
+    setToast({ type: 'saving', message: 'Saving changes...' });
   };
 
-  // Toast status hooks
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data) {
       if (fetcher.data.success) {
         setToast({ type: 'success', message: 'Appearance saved successfully!' });
-        profile.template_id = templateId;
-        profile.customization = customization;
+        profile.display_mode = displayMode;
+        profile.image_size = imageSize;
+        profile.font_size = fontSize;
+        profile.layout_style = layoutStyle;
+        profile.theme = theme;
+        profile.main_color = mainColor;
+        profile.font_family = fontFamily;
       } else {
         setToast({ type: 'error', message: fetcher.data.error || 'Failed to save configuration' });
       }
-      const timer = setTimeout(() => setToast(null), 3500);
+      const timer = setTimeout(() => setToast(null), 3000);
       return () => clearTimeout(timer);
     }
   }, [fetcher.state, fetcher.data]);
 
-  // Construct preview variable definitions
-  const previewStyles = {
-    '--color-bg': customization.colors.background,
-    '--color-card-bg': customization.colors.cardBackground,
-    '--color-text': customization.colors.primaryText,
-    '--color-text-secondary': customization.colors.secondaryText,
-    '--color-accent': customization.colors.accent,
-    '--color-border': customization.colors.border,
-    '--color-tab-active': customization.colors.tabActive,
-    '--color-tab-active-text': customization.colors.tabActiveText,
-    '--color-tab-inactive': customization.colors.tabInactive,
-    '--color-tab-inactive-text': customization.colors.tabInactiveText,
-    '--color-price': customization.colors.price,
-    '--color-badge': customization.colors.badge,
-    '--color-header': customization.colors.header,
+  // Color Swatch Swatches array
+  const swatches = [
+    { name: 'Orange', hex: '#f97316' },
+    { name: 'Red', hex: '#ef4444' },
+    { name: 'Pink', hex: '#ec4899' },
+    { name: 'Purple', hex: '#8b5cf6' },
+    { name: 'Blue', hex: '#3b82f6' },
+    { name: 'Cyan', hex: '#06b6d4' },
+    { name: 'Teal', hex: '#14b8a6' },
+    { name: 'Green', hex: '#22c55e' },
+    { name: 'Lime', hex: '#84cc16' },
+    { name: 'Yellow', hex: '#eab308' },
+    { name: 'Amber', hex: '#f59e0b' },
+    { name: 'Rose', hex: '#f43f5e' }
+  ];
 
-    '--font-heading': `"${customization.fonts.heading}", sans-serif`,
-    '--font-body': `"${customization.fonts.body}", sans-serif`,
-    '--font-heading-size': `${customization.fonts.headingSize}px`,
-    '--font-body-size': `${customization.fonts.bodySize}px`,
-    '--font-heading-weight': customization.fonts.headingWeight,
-    '--font-body-weight': customization.fonts.bodyWeight,
-    '--letter-spacing': `${customization.fonts.letterSpacing}px`,
-    '--line-height': customization.fonts.lineHeight,
-
-    '--card-radius': `${customization.layout.cardRadius}px`,
-    '--card-padding': `${customization.layout.cardPadding}px`,
-    '--image-radius': `${customization.layout.imageRadius}px`,
-    '--banner-height': `${customization.layout.bannerHeight}px`,
-  };
-
-  // Google Font URL builder
-  const fontUrl = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(customization.fonts.heading)}:wght@400;650;700;800&family=${encodeURIComponent(customization.fonts.body)}:wght@300;400;600&display=swap`;
-
-  // Resolved shadow class for mock menu
-  const getShadowClass = () => {
-    switch (customization.layout.cardShadow) {
-      case 'sm': return 'shadow-sm';
-      case 'md': return 'shadow-md';
-      case 'lg': return 'shadow-lg';
-      case 'xl': return 'shadow-xl';
-      default: return 'shadow-none';
-    }
-  };
-
-  // Custom Category Tab styling resolved class helpers
-  const getCategoryTabClass = (isActive) => {
-    if (customization.layout.tabStyle === 'pills') {
-      return isActive 
-        ? 'bg-[var(--color-tab-active)] text-[var(--color-tab-active-text)] rounded-full'
-        : 'bg-[var(--color-tab-inactive)] text-[var(--color-tab-inactive-text)] rounded-full';
-    } else if (customization.layout.tabStyle === 'underline') {
-      return isActive
-        ? 'border-b-2 border-[var(--color-accent)] text-[var(--color-accent)] font-bold rounded-none'
-        : 'border-b-2 border-transparent text-[var(--color-text-secondary)] rounded-none';
-    } else if (customization.layout.tabStyle === 'boxed') {
-      return isActive
-        ? 'bg-[var(--color-tab-active)] text-[var(--color-tab-active-text)] rounded-lg'
-        : 'bg-[var(--color-tab-inactive)] text-[var(--color-tab-inactive-text)] border border-[var(--color-border)] rounded-lg';
-    } else { // minimal
-      return isActive
-        ? 'text-[var(--color-accent)] font-extrabold rounded-none'
-        : 'text-[var(--color-text-secondary)] rounded-none';
-    }
-  };
+  // Google Font choices
+  const fonts = [
+    { name: 'Inter', arabic: false },
+    { name: 'Poppins', arabic: false },
+    { name: 'Montserrat', arabic: false },
+    { name: 'Playfair Display', arabic: false },
+    { name: 'Lora', arabic: false },
+    { name: 'Cairo', arabic: true },
+    { name: 'Tajawal', arabic: true },
+    { name: 'Nunito', arabic: false },
+    { name: 'Raleway', arabic: false },
+    { name: 'DM Sans', arabic: false }
+  ];
 
   return (
-    <div className="flex h-[calc(100vh-140px)] -m-6 md:-m-8 bg-[#0F1524] border border-slate-800 rounded-none overflow-hidden select-none">
+    <div className="max-w-4xl mx-auto bg-white text-slate-800 rounded-3xl p-6 md:p-8 shadow-xl border border-slate-200/60 relative select-none">
       
-      {/* Dynamic Font Loader Link */}
-      <link rel="stylesheet" href={fontUrl} />
+      {/* Font preloader for card preview renders */}
+      <link 
+        rel="stylesheet" 
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=DM+Sans:wght@400;700&family=Inter:wght@400;700&family=Lora:wght@400;700&family=Montserrat:wght@400;700&family=Nunito:wght@400;700&family=Playfair+Display:wght@400;700&family=Poppins:wght@400;700&family=Raleway:wght@400;700&family=Tajawal:wght@400;700&display=swap" 
+      />
 
-      {/* LEFT PANEL - Controls (40% width) */}
-      <div className="w-[40%] border-r border-slate-800 bg-slate-950 flex flex-col overflow-hidden shrink-0">
-        
-        {/* Sticky Control Header */}
-        <div className="p-4 border-b border-slate-800 bg-slate-950 shrink-0 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-bold text-white uppercase tracking-wider">Customize Menu</h2>
-            {isDirty && (
-              <span className="flex h-2.5 w-2.5 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-orange-500"></span>
-              </span>
-            )}
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleResetToTemplate}
-              className="text-xs text-slate-400 hover:text-white transition-colors cursor-pointer flex items-center gap-1"
-            >
-              <RotateCcw className="h-3 w-3" /> Reset
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={!isDirty || fetcher.state === 'submitting'}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
-                isDirty && fetcher.state !== 'submitting'
-                  ? 'bg-orange-500 hover:bg-orange-600 text-slate-950 hover:scale-[1.02] cursor-pointer'
-                  : 'bg-slate-800 text-slate-500 cursor-not-allowed'
-              }`}
-            >
-              <Save className="h-3.5 w-3.5" /> Save Changes
-            </button>
-          </div>
+      {/* Header Info */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-100 pb-6 mb-8 gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Design & Customization</h1>
+          <p className="text-sm text-slate-500 mt-1">Configure layout, colors, typography, and display parameters for your menu.</p>
         </div>
-
-        {/* Tab Controls Navigation List */}
-        <div className="flex border-b border-slate-800 bg-slate-900 overflow-x-auto no-scrollbar shrink-0">
-          {[
-            { id: 'templates', label: 'Templates', icon: Eye },
-            { id: 'colors', label: 'Colors', icon: Palette },
-            { id: 'typography', label: 'Fonts', icon: Type },
-            { id: 'layout', label: 'Layout', icon: Layout },
-            { id: 'badges', label: 'Badges', icon: Award },
-            { id: 'advanced', label: 'CSS', icon: Code }
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-4 py-3 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
-                  isActive 
-                    ? 'border-orange-500 text-white bg-slate-950' 
-                    : 'border-transparent text-slate-450 text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Tab Contents Pane (Scrolling Container) */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-6">
-          
-          {/* Tab 1: Templates Panel */}
-          {activeTab === 'templates' && (
-            <div className="space-y-4">
-              <p className="text-xs text-slate-400">Select a layout preset to instantly customize colors, fonts, and styles.</p>
-              <div className="grid grid-cols-2 gap-3.5">
-                {templates.map((tpl) => {
-                  const isActive = templateId === tpl.id;
-                  return (
-                    <button
-                      key={tpl.id}
-                      onClick={() => handleSelectTemplate(tpl.id)}
-                      className={`flex flex-col text-start p-3.5 rounded-xl border transition-all relative overflow-hidden group ${
-                        isActive
-                          ? 'border-orange-500 bg-orange-500/5'
-                          : 'border-slate-800 hover:border-slate-700 bg-slate-900/60 hover:bg-slate-900'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between mb-3 w-full">
-                        <span className="text-2xl">{tpl.emoji}</span>
-                        {isActive && <Check className="h-4 w-4 text-orange-500 stroke-[3]" />}
-                      </div>
-                      
-                      {/* Mini colored squares strip */}
-                      <div className="flex items-center gap-1.5 mb-2.5">
-                        <span className="h-3 w-3 rounded-full border border-slate-800/20" style={{ backgroundColor: tpl.colors.background }} />
-                        <span className="h-3 w-3 rounded-full border border-slate-800/20" style={{ backgroundColor: tpl.colors.cardBackground }} />
-                        <span className="h-3 w-3 rounded-full border border-slate-800/20" style={{ backgroundColor: tpl.colors.accent }} />
-                      </div>
-
-                      <span className="text-xs font-bold text-slate-100">{tpl.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Tab 2: Colors Panel */}
-          {activeTab === 'colors' && (
-            <div className="space-y-6">
-              
-              {/* Block 1: BG & Cards */}
-              <div className="bg-slate-900/40 border border-slate-800/50 rounded-xl p-4 space-y-2.5">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-450 text-slate-400 mb-2">Background & Cards</h3>
-                <ColorPicker label="Page Background" value={customization.colors.background} onChange={(val) => updateColor('background', val)} />
-                <ColorPicker label="Card Background" value={customization.colors.cardBackground} onChange={(val) => updateColor('cardBackground', val)} />
-                <ColorPicker label="Header Background" value={customization.colors.header} onChange={(val) => updateColor('header', val)} />
-                <ColorPicker label="Borders & Separators" value={customization.colors.border} onChange={(val) => updateColor('border', val)} />
-              </div>
-
-              {/* Block 2: Text typography */}
-              <div className="bg-slate-900/40 border border-slate-800/50 rounded-xl p-4 space-y-2.5">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-450 text-slate-400 mb-2">Typography & Content</h3>
-                <ColorPicker label="Primary Text" value={customization.colors.primaryText} onChange={(val) => updateColor('primaryText', val)} />
-                <ColorPicker label="Secondary Text" value={customization.colors.secondaryText} onChange={(val) => updateColor('secondaryText', val)} />
-                <ColorPicker label="Prices Accent" value={customization.colors.price} onChange={(val) => updateColor('price', val)} />
-              </div>
-
-              {/* Block 3: Accent Highlights */}
-              <div className="bg-slate-900/40 border border-slate-800/50 rounded-xl p-4 space-y-2.5">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-450 text-slate-400 mb-2">Accents & Category Tabs</h3>
-                <ColorPicker label="Primary Brand Accent" value={customization.colors.accent} onChange={(val) => updateColor('accent', val)} />
-                <ColorPicker label="Active Tab Background" value={customization.colors.tabActive} onChange={(val) => updateColor('tabActive', val)} />
-                <ColorPicker label="Active Tab Text" value={customization.colors.tabActiveText} onChange={(val) => updateColor('tabActiveText', val)} />
-                <ColorPicker label="Inactive Tab Background" value={customization.colors.tabInactive} onChange={(val) => updateColor('tabInactive', val)} />
-                <ColorPicker label="Inactive Tab Text" value={customization.colors.tabInactiveText} onChange={(val) => updateColor('tabInactiveText', val)} />
-              </div>
-
-            </div>
-          )}
-
-          {/* Tab 3: Typography Panel */}
-          {activeTab === 'typography' && (
-            <div className="space-y-6">
-              
-              {/* Heading Fonts block */}
-              <div className="bg-slate-900/40 border border-slate-800/50 rounded-xl p-4 space-y-4">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Heading Typography</h3>
-                <div>
-                  <label className="block text-[10px] text-slate-400 uppercase font-semibold tracking-wider mb-1.5">Font Family</label>
-                  <select
-                    value={customization.fonts.heading}
-                    onChange={(e) => updateFont('heading', e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs font-semibold text-white focus:outline-none focus:border-orange-500"
-                  >
-                    {googleFontsList.map(font => <option key={font} value={font}>{font}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-[10px] text-slate-400 uppercase font-semibold tracking-wider">Font Size</label>
-                    <span className="text-xs font-bold text-orange-500">{customization.fonts.headingSize}px</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="16"
-                    max="48"
-                    value={customization.fonts.headingSize}
-                    onChange={(e) => updateFont('headingSize', parseInt(e.target.value))}
-                    className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-orange-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] text-slate-400 uppercase font-semibold tracking-wider mb-1.5">Font Weight</label>
-                  <select
-                    value={customization.fonts.headingWeight}
-                    onChange={(e) => updateFont('headingWeight', e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs font-semibold text-white focus:outline-none focus:border-orange-500"
-                  >
-                    {['300', '400', '500', '600', '700', '800'].map(w => <option key={w} value={w}>{w}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              {/* Body Typography block */}
-              <div className="bg-slate-900/40 border border-slate-800/50 rounded-xl p-4 space-y-4">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Body Typography</h3>
-                <div>
-                  <label className="block text-[10px] text-slate-400 uppercase font-semibold tracking-wider mb-1.5">Font Family</label>
-                  <select
-                    value={customization.fonts.body}
-                    onChange={(e) => updateFont('body', e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs font-semibold text-white focus:outline-none focus:border-orange-500"
-                  >
-                    {googleFontsList.map(font => <option key={font} value={font}>{font}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-[10px] text-slate-400 uppercase font-semibold tracking-wider">Font Size</label>
-                    <span className="text-xs font-bold text-orange-500">{customization.fonts.bodySize}px</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="12"
-                    max="20"
-                    value={customization.fonts.bodySize}
-                    onChange={(e) => updateFont('bodySize', parseInt(e.target.value))}
-                    className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-orange-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] text-slate-400 uppercase font-semibold tracking-wider mb-1.5">Font Weight</label>
-                  <select
-                    value={customization.fonts.bodyWeight}
-                    onChange={(e) => updateFont('bodyWeight', e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs font-semibold text-white focus:outline-none focus:border-orange-500"
-                  >
-                    {['300', '400', '500', '600', '700'].map(w => <option key={w} value={w}>{w}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              {/* Spacing Spreads block */}
-              <div className="bg-slate-900/40 border border-slate-800/50 rounded-xl p-4 space-y-4">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Spacing Details</h3>
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-[10px] text-slate-400 uppercase font-semibold tracking-wider">Letter Spacing</label>
-                    <span className="text-xs font-bold text-orange-500">{customization.fonts.letterSpacing}px</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="-2"
-                    max="8"
-                    value={customization.fonts.letterSpacing}
-                    onChange={(e) => updateFont('letterSpacing', parseInt(e.target.value))}
-                    className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-orange-500"
-                  />
-                </div>
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-[10px] text-slate-400 uppercase font-semibold tracking-wider">Line Height</label>
-                    <span className="text-xs font-bold text-orange-500">{customization.fonts.lineHeight}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="1"
-                    max="2.5"
-                    step="0.1"
-                    value={customization.fonts.lineHeight}
-                    onChange={(e) => updateFont('lineHeight', parseFloat(e.target.value))}
-                    className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-orange-500"
-                  />
-                </div>
-              </div>
-
-            </div>
-          )}
-
-          {/* Tab 4: Layout Panel */}
-          {activeTab === 'layout' && (
-            <div className="space-y-6">
-              
-              {/* Card Style Selector */}
-              <div className="bg-slate-900/40 border border-slate-800/50 rounded-xl p-4">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3.5">Card Style</h3>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { id: 'grid-2', label: '2 Col Grid' },
-                    { id: 'grid-3', label: '3 Col Grid' },
-                    { id: 'list', label: 'Horizontal List' },
-                    { id: 'compact', label: 'Compact List' },
-                    { id: 'magazine', label: 'Magazine' },
-                    { id: 'full', label: 'Full Width' }
-                  ].map((style) => {
-                    const isSelected = customization.layout.cardStyle === style.id;
-                    return (
-                      <button
-                        key={style.id}
-                        onClick={() => updateLayout('cardStyle', style.id)}
-                        className={`py-2.5 px-1.5 rounded-lg border text-center text-[10px] font-bold uppercase tracking-wide transition-all cursor-pointer ${
-                          isSelected
-                            ? 'border-orange-500 bg-orange-500/10 text-white'
-                            : 'border-slate-800 bg-slate-900/40 text-slate-450 text-slate-400 hover:border-slate-700'
-                        }`}
-                      >
-                        {style.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Images block */}
-              <div className="bg-slate-900/40 border border-slate-800/50 rounded-xl p-4 space-y-4">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Image Rendering</h3>
-                
-                <div className="flex items-center justify-between py-1">
-                  <span className="text-xs font-semibold text-slate-200">Show Item Images</span>
-                  <input
-                    type="checkbox"
-                    checked={customization.layout.showImage}
-                    onChange={(e) => updateLayout('showImage', e.target.checked)}
-                    className="h-4 w-4 rounded border-slate-800 bg-slate-900 text-orange-500 focus:ring-orange-500 accent-orange-500 cursor-pointer"
-                  />
-                </div>
-
-                {customization.layout.showImage && (
-                  <>
-                    <div>
-                      <label className="block text-[10px] text-slate-400 uppercase font-semibold tracking-wider mb-1.5">Image Alignment</label>
-                      <select
-                        value={customization.layout.imagePosition}
-                        onChange={(e) => updateLayout('imagePosition', e.target.value)}
-                        className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs font-semibold text-white focus:outline-none focus:border-orange-500"
-                      >
-                        {['top', 'left', 'right', 'background'].map(pos => (
-                          <option key={pos} value={pos}>{pos.toUpperCase()}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="text-[10px] text-slate-400 uppercase font-semibold tracking-wider">Image Corner Radius</label>
-                        <span className="text-xs font-bold text-orange-500">{customization.layout.imageRadius}px</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="0"
-                        max="32"
-                        value={customization.layout.imageRadius}
-                        onChange={(e) => updateLayout('imageRadius', parseInt(e.target.value))}
-                        className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-orange-500"
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Cards details block */}
-              <div className="bg-slate-900/40 border border-slate-800/50 rounded-xl p-4 space-y-4">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Card Properties</h3>
-                
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-[10px] text-slate-400 uppercase font-semibold tracking-wider">Card Corner Radius</label>
-                    <span className="text-xs font-bold text-orange-500">{customization.layout.cardRadius}px</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="24"
-                    value={customization.layout.cardRadius}
-                    onChange={(e) => updateLayout('cardRadius', parseInt(e.target.value))}
-                    className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-orange-500"
-                  />
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-[10px] text-slate-400 uppercase font-semibold tracking-wider">Card Inner Padding</label>
-                    <span className="text-xs font-bold text-orange-500">{customization.layout.cardPadding}px</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="8"
-                    max="32"
-                    value={customization.layout.cardPadding}
-                    onChange={(e) => updateLayout('cardPadding', parseInt(e.target.value))}
-                    className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-orange-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] text-slate-400 uppercase font-semibold tracking-wider mb-1.5">Card Drop Shadow</label>
-                  <select
-                    value={customization.layout.cardShadow}
-                    onChange={(e) => updateLayout('cardShadow', e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs font-semibold text-white focus:outline-none focus:border-orange-500"
-                  >
-                    {['none', 'sm', 'md', 'lg', 'xl'].map(sh => (
-                      <option key={sh} value={sh}>{sh.toUpperCase()}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Category tabs block */}
-              <div className="bg-slate-900/40 border border-slate-800/50 rounded-xl p-4 space-y-4">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Category Selection Tabs</h3>
-                <div>
-                  <label className="block text-[10px] text-slate-400 uppercase font-semibold tracking-wider mb-1.5">Tab Styling</label>
-                  <select
-                    value={customization.layout.tabStyle}
-                    onChange={(e) => updateLayout('tabStyle', e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs font-semibold text-white focus:outline-none focus:border-orange-500"
-                  >
-                    {['pills', 'underline', 'boxed', 'minimal'].map(style => (
-                      <option key={style} value={style}>{style.toUpperCase()}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[10px] text-slate-400 uppercase font-semibold tracking-wider mb-1.5">Tab Alignment Position</label>
-                  <select
-                    value={customization.layout.tabPosition}
-                    onChange={(e) => updateLayout('tabPosition', e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs font-semibold text-white focus:outline-none focus:border-orange-500"
-                  >
-                    {['top', 'side'].map(pos => (
-                      <option key={pos} value={pos}>{pos.toUpperCase()}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Menu Content display toggles */}
-              <div className="bg-slate-900/40 border border-slate-800/50 rounded-xl p-4 space-y-4">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Content Toggles</h3>
-                <div className="flex items-center justify-between py-1">
-                  <span className="text-xs font-semibold text-slate-200">Show Descriptions</span>
-                  <input
-                    type="checkbox"
-                    checked={customization.layout.showDescription}
-                    onChange={(e) => updateLayout('showDescription', e.target.checked)}
-                    className="h-4 w-4 rounded border-slate-800 bg-slate-900 text-orange-500 focus:ring-orange-500 accent-orange-500 cursor-pointer"
-                  />
-                </div>
-                <div className="flex items-center justify-between py-1">
-                  <span className="text-xs font-semibold text-slate-200">Show Calories Count</span>
-                  <input
-                    type="checkbox"
-                    checked={customization.layout.showCalories}
-                    onChange={(e) => updateLayout('showCalories', e.target.checked)}
-                    className="h-4 w-4 rounded border-slate-800 bg-slate-900 text-orange-500 focus:ring-orange-500 accent-orange-500 cursor-pointer"
-                  />
-                </div>
-                <div className="flex items-center justify-between py-1">
-                  <span className="text-xs font-semibold text-slate-200">Show Badges</span>
-                  <input
-                    type="checkbox"
-                    checked={customization.layout.showBadges}
-                    onChange={(e) => updateLayout('showBadges', e.target.checked)}
-                    className="h-4 w-4 rounded border-slate-800 bg-slate-900 text-orange-500 focus:ring-orange-500 accent-orange-500 cursor-pointer"
-                  />
-                </div>
-                <div className="flex items-center justify-between py-1">
-                  <span className="text-xs font-semibold text-slate-200">Show Currency Tag</span>
-                  <input
-                    type="checkbox"
-                    checked={customization.layout.showCurrency}
-                    onChange={(e) => updateLayout('showCurrency', e.target.checked)}
-                    className="h-4 w-4 rounded border-slate-800 bg-slate-900 text-orange-500 focus:ring-orange-500 accent-orange-500 cursor-pointer"
-                  />
-                </div>
-                {customization.layout.showCurrency && (
-                  <div>
-                    <label className="block text-[10px] text-slate-400 uppercase font-semibold tracking-wider mb-1.5">Currency Symbol</label>
-                    <input
-                      type="text"
-                      value={customization.layout.currency}
-                      onChange={(e) => updateLayout('currency', e.target.value)}
-                      placeholder="$"
-                      className="w-full bg-slate-900 border border-slate-805 border-slate-800 rounded-lg px-3 py-2 text-xs font-semibold text-white focus:outline-none focus:border-orange-500"
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* Header Style Config */}
-              <div className="bg-slate-900/40 border border-slate-800/50 rounded-xl p-4 space-y-4">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Banner & Header</h3>
-                <div>
-                  <label className="block text-[10px] text-slate-400 uppercase font-semibold tracking-wider mb-1.5">Header Layout</label>
-                  <select
-                    value={customization.layout.headerStyle}
-                    onChange={(e) => updateLayout('headerStyle', e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs font-semibold text-white focus:outline-none focus:border-orange-500"
-                  >
-                    {['logo-only', 'logo-banner', 'full-banner'].map(hdr => (
-                      <option key={hdr} value={hdr}>{hdr.toUpperCase().replace('-', ' + ')}</option>
-                    ))}
-                  </select>
-                </div>
-                {customization.layout.headerStyle !== 'logo-only' && (
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-[10px] text-slate-400 uppercase font-semibold tracking-wider">Banner Height</label>
-                      <span className="text-xs font-bold text-orange-500">{customization.layout.bannerHeight}px</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="100"
-                      max="300"
-                      value={customization.layout.bannerHeight}
-                      onChange={(e) => updateLayout('bannerHeight', parseInt(e.target.value))}
-                      className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-orange-500"
-                    />
-                  </div>
-                )}
-              </div>
-
-            </div>
-          )}
-
-          {/* Tab 5: Badges Panel */}
-          {activeTab === 'badges' && (
-            <div className="space-y-6">
-              {[
-                { key: 'New', label: 'New Dish Tag' },
-                { key: 'Popular', label: 'Best Seller Tag' },
-                { key: 'Spicy', label: 'Spicy Hot Tag' },
-                { key: 'Vegan', label: 'Vegan Tag' },
-                { key: 'Halal', label: 'Halal Tag' }
-              ].map((badge) => {
-                const showVal = customization.badges[`show${badge.key}`];
-                const textVal = customization.badges[`${badge.key.toLowerCase()}Label`];
-                const colorVal = customization.badges[`${badge.key.toLowerCase()}Color`];
-                return (
-                  <div key={badge.key} className="bg-slate-900/40 border border-slate-800/50 rounded-xl p-4 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200">{badge.label}</h3>
-                      <input
-                        type="checkbox"
-                        checked={showVal}
-                        onChange={(e) => updateBadge(badge.key, 'show', e.target.checked)}
-                        className="h-4 w-4 rounded border-slate-800 bg-slate-900 text-orange-500 focus:ring-orange-500 accent-orange-500 cursor-pointer"
-                      />
-                    </div>
-                    
-                    {showVal && (
-                      <div className="space-y-3.5 pt-2.5 border-t border-slate-800/60">
-                        <div>
-                          <label className="block text-[10px] text-slate-400 uppercase font-semibold tracking-wider mb-1.5">Label Text</label>
-                          <input
-                            type="text"
-                            value={textVal}
-                            onChange={(e) => updateBadge(badge.key, 'label', e.target.value)}
-                            className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs font-semibold text-white focus:outline-none focus:border-orange-500"
-                          />
-                        </div>
-                        <ColorPicker
-                          label="Badge Base Color"
-                          value={colorVal}
-                          onChange={(val) => updateBadge(badge.key, 'color', val)}
-                        />
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Tab 6: Advanced Panel */}
-          {activeTab === 'advanced' && (
-            <div className="space-y-4 h-full flex flex-col">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                <span className="text-xs font-bold text-slate-350 flex items-center gap-1">
-                  <Code className="h-4 w-4" /> Custom CSS Editor
-                </span>
-                <button
-                  onClick={() => setCustomization(prev => ({ ...prev, customCss: "" }))}
-                  className="text-[10px] text-slate-450 hover:text-white uppercase font-bold transition-all cursor-pointer"
-                >
-                  Clear styles
-                </button>
-              </div>
-
-              <textarea
-                value={customization.customCss}
-                onChange={(e) => setCustomization(prev => ({ ...prev, customCss: e.target.value }))}
-                placeholder="/* Scopes with .tarapeza-public-menu */&#10;.custom-menu-card {&#10;  border-width: 2px !important;&#10;}"
-                className="w-full flex-1 min-h-[220px] bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-300 focus:outline-none focus:border-orange-500 resize-y"
-              />
-
-              <div className="bg-orange-500/10 border border-orange-500/20 text-orange-300 text-[11px] p-3 rounded-lg flex items-start gap-2">
-                <span className="text-orange-500 mt-0.5">⚠️</span>
-                <span>
-                  <strong>Warning:</strong> Custom CSS overrides template variables and layout styles. Write scoping classes safely.
-                </span>
-              </div>
-            </div>
-          )}
-
-        </div>
+        <Link
+          to={`/menu/${profile.slug}?preview=true`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 hover:border-orange-500 text-xs font-bold text-slate-600 hover:text-orange-500 bg-white hover:bg-orange-50/20 rounded-xl transition-all shadow-sm active:scale-95"
+        >
+          <span>Preview Menu</span>
+          <ExternalLink className="h-3.5 w-3.5" />
+        </Link>
       </div>
 
-      {/* RIGHT PANEL - Mock Live Preview (60% width) */}
-      <div className="w-[60%] bg-[#0A0F1D] flex flex-col overflow-hidden">
-        
-        {/* Preview Panel Header */}
-        <div className="h-14 border-b border-slate-800 px-6 items-center justify-between bg-slate-950 shrink-0 flex">
-          <div className="flex items-center gap-2">
-            <Eye className="h-4 w-4 text-orange-500" />
-            <span className="text-xs font-bold text-white uppercase tracking-wider">Mock Design Canvas</span>
-          </div>
-
-          {/* Device toggle list */}
-          <div className="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-0.5 gap-1">
+      <div className="space-y-12">
+        {/* SECTION 1: DISPLAY MODE */}
+        <section className="space-y-4">
+          <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+            <span className="w-1.5 h-4 bg-orange-500 rounded-full" />
+            Choose Display Mode
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
-              { id: 'mobile', icon: Smartphone, label: 'Mobile' },
-              { id: 'tablet', icon: Tablet, label: 'Tablet' },
-              { id: 'desktop', icon: Monitor, label: 'Desktop' }
-            ].map((device) => {
-              const Icon = device.icon;
+              { id: 'image-text', name: 'Image + Text', desc: 'Photos & text description' },
+              { id: 'image', name: 'Image Only', desc: 'Visual card grids' },
+              { id: 'text', name: 'Text Only', desc: 'Clean, text list' }
+            ].map((opt) => {
+              const selected = displayMode === opt.id;
               return (
                 <button
-                  key={device.id}
-                  onClick={() => setPreviewDevice(device.id)}
-                  title={device.label}
-                  className={`p-1.5 rounded-md transition-colors cursor-pointer ${
-                    previewDevice === device.id
-                      ? 'bg-orange-500 text-slate-950'
-                      : 'text-slate-400 hover:text-slate-250 hover:text-slate-200'
+                  key={opt.id}
+                  onClick={() => setDisplayMode(opt.id)}
+                  className={`p-4 text-start rounded-2xl border-2 transition-all relative ${
+                    selected 
+                      ? 'border-orange-500 bg-orange-50/10' 
+                      : 'border-slate-100 hover:border-slate-200 bg-slate-50/50 hover:bg-slate-50'
                   }`}
                 >
-                  <Icon className="h-3.5 w-3.5" />
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-slate-800">{opt.name}</span>
+                    {selected && <Check className="h-4 w-4 text-orange-500 stroke-[3]" />}
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">{opt.desc}</p>
                 </button>
               );
             })}
           </div>
+        </section>
 
-          <a
-            href={`/menu/${profile.slug}?preview=true`}
-            target="_blank"
-            rel="noopener noreferrer"
-            title="Open real menu in new tab"
-            className="p-1.5 rounded-lg border border-slate-800 bg-slate-900 text-slate-400 hover:text-white transition-colors cursor-pointer"
-          >
-            <ExternalLink className="h-3.5 w-3.5" />
-          </a>
-        </div>
+        {/* SECTION 2: IMAGE SIZE */}
+        <section className="space-y-4">
+          <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+            <span className="w-1.5 h-4 bg-orange-500 rounded-full" />
+            Image Size
+          </h2>
+          <div className="flex flex-wrap gap-3">
+            {[
+              { id: 'XS', name: 'XS', val: '90px' },
+              { id: 'S', name: 'S', val: '120px' },
+              { id: 'M', name: 'M', val: '160px' },
+              { id: 'L', name: 'L', val: '200px' },
+              { id: 'XL', name: 'XL', val: '250px' }
+            ].map((opt) => {
+              const selected = imageSize === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => setImageSize(opt.id)}
+                  className={`px-6 py-3.5 rounded-xl border-2 transition-all font-bold text-xs flex items-center gap-2 ${
+                    selected 
+                      ? 'border-orange-500 bg-orange-50/10 text-orange-600' 
+                      : 'border-slate-100 bg-slate-50/50 hover:border-slate-200 text-slate-600'
+                  }`}
+                >
+                  <span>{opt.name}</span>
+                  <span className="opacity-60 text-[10px] font-normal">({opt.val})</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
 
-        {/* Live Mock Render Viewport */}
-        <div className="flex-1 overflow-y-auto bg-[#080B14] p-8 flex items-start justify-center">
-          
-          <div
-            style={{
-              width: previewDevice === 'mobile' ? '375px' : previewDevice === 'tablet' ? '768px' : '100%',
-              transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-            }}
-            className={`bg-slate-900/10 ${
-              previewDevice !== 'desktop' 
-                ? 'rounded-[36px] border-[8px] border-slate-950 shadow-2xl relative overflow-hidden' 
-                : 'w-full rounded-none border-none'
-            }`}
-          >
-            {/* Notch if Mobile device */}
-            {previewDevice === 'mobile' && (
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-5 bg-slate-950 rounded-b-2xl z-30 flex items-center justify-center">
-                <div className="h-1.5 w-1.5 rounded-full bg-slate-850 bg-slate-800" />
-              </div>
-            )}
+        {/* SECTION 3: FONT SIZE */}
+        <section className="space-y-4">
+          <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+            <span className="w-1.5 h-4 bg-orange-500 rounded-full" />
+            Font Size
+          </h2>
+          <div className="flex gap-3">
+            {[
+              { id: 'S', name: 'S - Small' },
+              { id: 'M', name: 'M - Medium' },
+              { id: 'L', name: 'L - Large' }
+            ].map((opt) => {
+              const selected = fontSize === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => setFontSize(opt.id)}
+                  className={`px-6 py-3.5 rounded-xl border-2 transition-all font-bold text-xs ${
+                    selected 
+                      ? 'border-orange-500 bg-orange-50/10 text-orange-600' 
+                      : 'border-slate-100 bg-slate-50/50 hover:border-slate-200 text-slate-600'
+                  }`}
+                >
+                  {opt.name}
+                </button>
+              );
+            })}
+          </div>
+        </section>
 
-            {/* Inner canvas container */}
-            <div 
-              style={previewStyles}
-              className="tarapeza-public-menu w-full h-[600px] overflow-y-auto no-scrollbar pt-6 pb-20 relative select-none"
-            >
-              
-              {/* Dynamic CSS rules injected inside mockup scope */}
-              <style dangerouslySetInnerHTML={{ __html: generateCssStyles(customization) }} />
+        {/* SECTION 4: CHOOSE LAYOUT */}
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+              <span className="w-1.5 h-4 bg-orange-500 rounded-full" />
+              Choose a layout for your digital menu
+            </h2>
+            <p className="text-xs text-slate-500 mt-1">Select the structure of categories, tabs, and columns for your layout.</p>
+          </div>
 
-              {/* 1. Header Layout */}
-              <div className="w-full shrink-0 flex flex-col items-center justify-center p-6 border-b border-[var(--color-border)] bg-[var(--color-header)] relative">
-                {customization.layout.headerStyle !== 'logo-only' && (
-                  <div 
-                    style={{ height: `${customization.layout.bannerHeight - 60}px` }}
-                    className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40 z-0 bg-slate-800"
-                  />
-                )}
-                
-                <div className="relative z-10 flex flex-col items-center">
-                  <div className="h-14 w-14 rounded-xl border border-[var(--color-border)] bg-[var(--color-card-bg)] shadow-md flex items-center justify-center text-lg font-black overflow-hidden mb-2">
-                    {profile?.logo_url ? <img src={profile.logo_url} alt="Logo" className="h-full w-full object-cover" /> : '🍽️'}
-                  </div>
-                  <h1 className="text-xl font-bold tracking-tight text-[var(--color-text)]">{profile.name}</h1>
-                  <p className="text-[10px] text-[var(--color-text-secondary)] mt-1 max-w-xs text-center">Interactive visual QR menu mockup preview</p>
-                </div>
-              </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+            {[
+              { id: 'classic', name: 'Classic', desc: 'Clean list layout', badge: 'Free' },
+              { id: 'tab', name: 'Tab', desc: 'Categories as tabs', badge: 'Pro' },
+              { id: 'sidebar', name: 'Sidebar', desc: 'Sidebar categories', badge: 'Pro' },
+              { id: 'grid', name: 'Grid', desc: '2-column card grid', badge: 'Free' }
+            ].map((opt) => {
+              const selected = layoutStyle === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => setLayoutStyle(opt.id)}
+                  className={`flex flex-col items-center p-3 rounded-2xl border-2 transition-all text-start relative group cursor-pointer ${
+                    selected 
+                      ? 'border-orange-500 bg-orange-50/5' 
+                      : 'border-slate-100 hover:border-slate-200 bg-slate-50/30'
+                  }`}
+                >
+                  {/* Selected checkmark */}
+                  {selected && (
+                    <div className="absolute top-2 right-2 bg-emerald-500 text-white rounded-full p-0.5 z-10">
+                      <Check className="h-3.5 w-3.5 stroke-[4]" />
+                    </div>
+                  )}
 
-              {/* 2. Category Tabs list */}
-              <div className="sticky top-0 z-20 px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-bg)] flex items-center justify-start gap-2 overflow-x-auto no-scrollbar">
-                {[
-                  { id: 'cat1', label: 'Appetizers' },
-                  { id: 'cat2', label: 'Main Courses' },
-                  { id: 'cat3', label: 'Desserts & Drinks' }
-                ].map((cat, idx) => {
-                  const active = idx === 1;
-                  return (
-                    <span
-                      key={cat.id}
-                      className={`shrink-0 px-4 py-2 text-xs font-bold uppercase tracking-wider cursor-default transition-all ${getCategoryTabClass(active)}`}
-                    >
-                      {cat.label}
-                    </span>
-                  );
-                })}
-              </div>
-
-              {/* 3. Cards grid view */}
-              <div className="p-4 space-y-6">
-                
-                {/* Category Header */}
-                <h3 className="text-xs font-extrabold text-[var(--color-text)] tracking-wider uppercase">Main Courses</h3>
-                
-                {/* Menu items layout mapper */}
-                <div className={
-                  customization.layout.cardStyle === 'grid-3' ? 'grid grid-cols-3 gap-2.5' :
-                  customization.layout.cardStyle === 'grid-2' ? 'grid grid-cols-2 gap-3.5' :
-                  'space-y-4'
-                }>
-                  {[
-                    {
-                      id: 'item1',
-                      name: 'Smoked Truffle Burger',
-                      desc: 'Grilled Angus beef patty, melted gruyere, black truffle aioli, brioche bun.',
-                      price: '18.99',
-                      cal: '750 kcal',
-                      image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&q=80',
-                      isNew: true,
-                      isPopular: false
-                    },
-                    {
-                      id: 'item2',
-                      name: 'Crispy Lemon Salmon',
-                      desc: 'Pan-seared Atlantic salmon, wild asparagus, citrus reduction butter, dill.',
-                      price: '24.50',
-                      cal: '540 kcal',
-                      image: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&q=80',
-                      isNew: false,
-                      isPopular: true
-                    }
-                  ].map((item, itemIdx) => {
-                    const showImage = customization.layout.showImage;
-                    const imgPos = customization.layout.imagePosition;
-                    const isCompact = customization.layout.cardStyle === 'compact';
-                    const isMagazine = customization.layout.cardStyle === 'magazine';
-                    const isImageRight = isMagazine ? (itemIdx % 2 === 1) : (imgPos === 'right');
+                  {/* Visual mockup representation inside a phone frame */}
+                  <div className={`w-full aspect-[9/16] rounded-xl border border-slate-200 relative overflow-hidden bg-slate-50 flex flex-col p-1.5 text-[5px] leading-tight select-none shadow-sm ${
+                    theme === 'dark' ? 'bg-[#0f172a] text-slate-100' : 'bg-white text-slate-800'
+                  }`}>
+                    {/* Notch */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-1.5 bg-slate-900/90 rounded-b-[4px]"></div>
                     
-                    return (
-                      <div
-                        key={item.id}
-                        className={`custom-menu-card overflow-hidden flex transition-all duration-300 ${getShadowClass()} ${
-                          isCompact ? 'py-2 px-3 items-center justify-between' :
-                          (customization.layout.cardStyle.startsWith('grid') || imgPos === 'top') ? 'flex-col p-0' :
-                          isImageRight ? 'flex-row-reverse p-3 gap-3' : 'flex-row p-3 gap-3'
-                        }`}
-                      >
-                        {/* Mock Image container */}
-                        {showImage && imgPos !== 'background' && (
-                          <div 
-                            className="relative shrink-0 overflow-hidden bg-slate-800"
-                            style={{
-                              width: (customization.layout.cardStyle.startsWith('grid') || imgPos === 'top') ? '100%' : isCompact ? '32px' : '72px',
-                              height: (customization.layout.cardStyle.startsWith('grid') || imgPos === 'top') ? '110px' : isCompact ? '32px' : '72px',
-                              borderRadius: `${customization.layout.imageRadius}px`
-                            }}
-                          >
-                            <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
-                          </div>
-                        )}
+                    {/* Simulated Header */}
+                    <div className="border-b border-slate-100/50 py-1.5 px-0.5 flex flex-col items-center mt-1">
+                      <div className="w-3.5 h-3.5 rounded-full bg-slate-200 mb-0.5" />
+                      <div className="w-10 h-1 bg-slate-350 bg-slate-300 rounded" />
+                    </div>
 
-                        {/* Card metadata fields */}
-                        <div className={`flex-1 flex flex-col justify-center ${
-                          (customization.layout.cardStyle.startsWith('grid') || imgPos === 'top') ? 'p-3' : ''
-                        }`}>
-                          
-                          {/* Badges block */}
-                          {customization.layout.showBadges && (
-                            <div className="flex flex-wrap gap-1 mb-1.5">
-                              {item.isNew && customization.badges.showNew && (
-                                <span 
-                                  style={{ backgroundColor: customization.badges.newColor }}
-                                  className="text-[8px] font-black uppercase text-white px-1.5 py-0.5 rounded"
-                                >
-                                  {customization.badges.newLabel}
-                                </span>
-                              )}
-                              {item.isPopular && customization.badges.showPopular && (
-                                <span 
-                                  style={{ backgroundColor: customization.badges.popularColor }}
-                                  className="text-[8px] font-black uppercase text-white px-1.5 py-0.5 rounded"
-                                >
-                                  {customization.badges.popularLabel}
-                                </span>
-                              )}
+                    {/* Render phone screen layouts */}
+                    {opt.id === 'classic' && (
+                      <div className="flex-1 overflow-hidden py-1 space-y-1.5">
+                        <div className="w-12 h-1 bg-slate-400 rounded" />
+                        <div className="space-y-1">
+                          {[1, 2, 3].map(i => (
+                            <div key={i} className="flex gap-1 border border-slate-100 p-0.5 rounded">
+                              <div className="w-4 h-4 bg-slate-200 rounded" />
+                              <div className="flex-1 space-y-0.5">
+                                <div className="w-8 h-1 bg-slate-300 rounded" />
+                                <div className="w-12 h-0.5 bg-slate-200 rounded" />
+                              </div>
                             </div>
-                          )}
-
-                          <h4 className="font-bold text-xs leading-snug text-[var(--color-text)]">{item.name}</h4>
-                          
-                          {customization.layout.showDescription && !isCompact && (
-                            <p className="text-[10px] text-[var(--color-text-secondary)] mt-1 line-clamp-2 leading-relaxed">
-                              {item.desc}
-                            </p>
-                          )}
-
-                          <div className="flex items-center justify-between mt-2.5">
-                            <span className="text-xs font-bold text-[var(--color-price)]">
-                              {customization.layout.showCurrency && customization.layout.currency}{item.price}
-                            </span>
-                            {customization.layout.showCalories && (
-                              <span className="text-[9px] text-[var(--color-text-secondary)]">{item.cal}</span>
-                            )}
-                          </div>
-
+                          ))}
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+                    )}
 
+                    {opt.id === 'tab' && (
+                      <div className="flex-1 overflow-hidden py-1 space-y-1.5 flex flex-col">
+                        <div className="flex gap-1 overflow-x-auto pb-0.5">
+                          <div className="px-1.5 py-0.5 bg-orange-500 text-white rounded-full font-bold text-[3px]">Cat 1</div>
+                          <div className="px-1.5 py-0.5 bg-slate-100 rounded-full text-[3px]">Cat 2</div>
+                          <div className="px-1.5 py-0.5 bg-slate-100 rounded-full text-[3px]">Cat 3</div>
+                        </div>
+                        <div className="space-y-1 flex-1">
+                          {[1, 2].map(i => (
+                            <div key={i} className="flex gap-1 border border-slate-100 p-0.5 rounded">
+                              <div className="w-4 h-4 bg-slate-200 rounded" />
+                              <div className="flex-1 space-y-0.5">
+                                <div className="w-8 h-1 bg-slate-300 rounded" />
+                                <div className="w-10 h-0.5 bg-slate-200 rounded" />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {opt.id === 'sidebar' && (
+                      <div className="flex-1 overflow-hidden py-1 flex gap-1">
+                        <div className="w-7 shrink-0 border-r border-slate-100 space-y-0.5 flex flex-col pt-0.5">
+                          <div className="w-full h-1 bg-orange-500 rounded-sm" />
+                          <div className="w-5 h-1 bg-slate-100 rounded-sm" />
+                          <div className="w-6 h-1 bg-slate-100 rounded-sm" />
+                        </div>
+                        <div className="flex-1 space-y-1">
+                          {[1, 2].map(i => (
+                            <div key={i} className="flex gap-1 border border-slate-100 p-0.5 rounded">
+                              <div className="w-3 h-3 bg-slate-200 rounded" />
+                              <div className="flex-1 space-y-0.5">
+                                <div className="w-6 h-1 bg-slate-300 rounded" />
+                                <div className="w-8 h-0.5 bg-slate-250 rounded" />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {opt.id === 'grid' && (
+                      <div className="flex-1 overflow-hidden py-1 space-y-1 flex flex-col">
+                        <div className="w-12 h-1 bg-slate-400 rounded" />
+                        <div className="grid grid-cols-2 gap-1 flex-1">
+                          {[1, 2, 3, 4].map(i => (
+                            <div key={i} className="border border-slate-100 p-0.5 rounded flex flex-col gap-0.5">
+                              <div className="w-full h-4 bg-slate-200 rounded" />
+                              <div className="w-8 h-1 bg-slate-300 rounded" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                  </div>
+
+                  {/* Info below mockup */}
+                  <div className="mt-3 flex items-center justify-between w-full">
+                    <span className="text-xs font-bold text-slate-800">{opt.name}</span>
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-extrabold ${
+                      opt.badge === 'Pro' 
+                        ? 'bg-amber-100 text-amber-700 border border-amber-200' 
+                        : 'bg-slate-100 text-slate-600'
+                    }`}>
+                      {opt.badge}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-0.5 w-full">{opt.desc}</p>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* SECTION 5: THEME */}
+        <section className="space-y-4">
+          <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+            <span className="w-1.5 h-4 bg-orange-500 rounded-full" />
+            Light or Dark Theme
+          </h2>
+          <div className="grid grid-cols-2 gap-6 max-w-lg">
+            {[
+              { id: 'light', name: 'Light Theme', bg: 'bg-white text-slate-800' },
+              { id: 'dark', name: 'Dark Theme', bg: 'bg-slate-950 text-slate-100' }
+            ].map((opt) => {
+              const selected = theme === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => setTheme(opt.id)}
+                  className={`flex flex-col items-center p-3 rounded-2xl border-2 transition-all text-start relative group cursor-pointer ${
+                    selected 
+                      ? 'border-orange-500 bg-orange-50/5' 
+                      : 'border-slate-100 hover:border-slate-200 bg-slate-50/30'
+                  }`}
+                >
+                  {selected && (
+                    <div className="absolute top-2 right-2 bg-emerald-500 text-white rounded-full p-0.5 z-10">
+                      <Check className="h-3.5 w-3.5 stroke-[4]" />
+                    </div>
+                  )}
+
+                  {/* Theme Mockup Frame */}
+                  <div className={`w-full aspect-[9/13] rounded-xl border border-slate-200 relative overflow-hidden flex flex-col p-2 text-[5px] shadow-sm ${opt.bg}`}>
+                    {/* Notch */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-1.5 bg-slate-900 rounded-b-[4px]"></div>
+
+                    {/* Header */}
+                    <div className="border-b border-current/10 py-1.5 px-0.5 flex flex-col items-center mt-1">
+                      <div className="w-4 h-4 rounded-full bg-orange-500" />
+                      <div className="w-10 h-1 bg-current/30 rounded mt-0.5" />
+                    </div>
+
+                    {/* Content list */}
+                    <div className="flex-1 overflow-hidden py-2 space-y-1.5">
+                      <div className="w-12 h-1 bg-current/40 rounded" />
+                      {[1, 2].map(i => (
+                        <div key={i} className="flex gap-1 border border-current/10 p-0.5 rounded">
+                          <div className="w-4 h-4 bg-current/10 rounded" />
+                          <div className="flex-1 space-y-0.5">
+                            <div className="w-8 h-1 bg-current/30 rounded" />
+                            <div className="w-12 h-0.5 bg-current/10 rounded" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <span className="text-xs font-bold text-slate-800 mt-2.5">{opt.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* SECTION 6: MAIN COLOR */}
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+              <span className="w-1.5 h-4 bg-orange-500 rounded-full" />
+              Main Color
+            </h2>
+            <p className="text-xs text-slate-500 mt-1">This sets the primary brand accent color used for icons, active category highlights, prices, and CTA buttons.</p>
+          </div>
+
+          <div className="space-y-6">
+            {/* Swatch Grid */}
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-3 max-w-2xl">
+              {swatches.map((col) => {
+                const selected = mainColor.toLowerCase() === col.hex;
+                return (
+                  <button
+                    key={col.hex}
+                    onClick={() => handleSelectColor(col.hex)}
+                    style={{ backgroundColor: col.hex }}
+                    className="aspect-square rounded-xl shadow-sm border border-slate-200/40 relative flex items-center justify-center cursor-pointer transform hover:scale-105 active:scale-95 transition-all"
+                    title={col.name}
+                  >
+                    {selected && (
+                      <div className="bg-white text-slate-900 rounded-full p-0.5 shadow-md border border-slate-200">
+                        <Check className="h-3 w-3 stroke-[4]" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Custom hex input */}
+            <div className="max-w-xs">
+              <label className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1.5">Custom HEX Color</label>
+              <div className="flex items-center gap-2">
+                <div 
+                  className="w-10 h-10 rounded-xl border border-slate-200 shrink-0 shadow-inner"
+                  style={{ backgroundColor: mainColor }}
+                />
+                <input
+                  type="text"
+                  value={customHex}
+                  onChange={handleCustomHexChange}
+                  placeholder="#f97316"
+                  maxLength={7}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 transition-all uppercase"
+                />
               </div>
-
-              {/* 4. Footer credits */}
-              <div className="absolute bottom-4 inset-x-0 text-center text-[10px] text-[var(--color-text-secondary)] opacity-60">
-                Powered by Tarapeza
-              </div>
-
             </div>
           </div>
-        </div>
+        </section>
 
+        {/* SECTION 7: CHOOSE FONT */}
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+              <span className="w-1.5 h-4 bg-orange-500 rounded-full" />
+              Choose Font
+            </h2>
+            <p className="text-xs text-slate-500 mt-1">Select the typography style for your heading and menu text.</p>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
+            {fonts.map((f) => {
+              const selected = fontFamily === f.name;
+              return (
+                <button
+                  key={f.name}
+                  onClick={() => setFontFamily(f.name)}
+                  className={`p-4 rounded-xl border-2 transition-all text-start flex flex-col justify-between h-28 relative cursor-pointer ${
+                    selected 
+                      ? 'border-orange-500 bg-orange-50/5' 
+                      : 'border-slate-100 hover:border-slate-200 bg-slate-50/30'
+                  }`}
+                >
+                  <div className="flex justify-between items-start w-full gap-1">
+                    <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">{f.name}</span>
+                    {f.arabic && (
+                      <span className="bg-emerald-50 text-emerald-700 text-[8px] font-extrabold px-1.5 py-0.5 rounded border border-emerald-100">
+                        ARABIC
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Large visual rendering of font name in its own family */}
+                  <span 
+                    style={{ fontFamily: `"${f.name}", sans-serif` }}
+                    className="text-lg font-bold text-slate-800 leading-tight block w-full mt-2"
+                  >
+                    {f.name}
+                  </span>
+
+                  {selected && (
+                    <div className="absolute bottom-3 right-3 bg-emerald-500 text-white rounded-full p-0.5">
+                      <Check className="h-3 w-3 stroke-[4]" />
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      </div>
+
+      {/* BOTTOM STICKY BAR */}
+      <div className="sticky bottom-0 z-40 bg-white/95 backdrop-blur border-t border-slate-100 py-4 px-6 -mx-6 -mb-6 md:-mx-8 md:-mb-8 mt-12 flex items-center justify-between rounded-b-3xl shadow-lg shadow-slate-100/50">
+        <Link
+          to={`/menu/${profile.slug}?preview=true`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 px-4 py-2.5 border border-slate-200 hover:border-slate-350 hover:bg-slate-50 text-xs font-bold text-slate-600 rounded-xl transition-all shadow-sm active:scale-95"
+        >
+          <span>See Example Menu</span>
+          <ExternalLink className="h-3.5 w-3.5" />
+        </Link>
+
+        <button
+          onClick={handleSave}
+          disabled={!isDirty || fetcher.state === 'submitting'}
+          className={`relative flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm ${
+            isDirty && fetcher.state !== 'submitting'
+              ? 'bg-orange-500 hover:bg-orange-600 text-white hover:scale-[1.02] cursor-pointer'
+              : 'bg-slate-150 text-slate-400 bg-slate-100 cursor-not-allowed'
+          }`}
+        >
+          {isDirty && (
+            <span className="flex h-2 w-2 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+            </span>
+          )}
+          <span>Save Changes</span>
+        </button>
       </div>
 
       {/* Toast Alert Notification */}
       {toast && (
-        <div className="fixed bottom-8 right-8 z-50 animate-slide-up">
+        <div className="fixed bottom-24 right-8 z-50 animate-slide-up">
           <div className={`px-4 py-3 rounded-xl shadow-2xl border text-xs font-bold flex items-center gap-2.5 ${
             toast.type === 'success' 
               ? 'bg-emerald-950 border-emerald-800 text-emerald-300' 

@@ -100,6 +100,7 @@ export default function DashboardLayout() {
         <Navbar 
           onMenuToggle={() => setSidebarOpen(true)} 
           profile={profile} 
+          user={user}
           subscriptionInfo={subscriptionInfo} 
         />
         {announcements.length > 0 && announcements[currentAnnouncementIdx] && (

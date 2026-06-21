@@ -18,6 +18,7 @@ export default [
     index("routes/dashboard.jsx"),
     route("menu", "routes/dashboard-menu.jsx"),
     route("customize", "routes/dashboard-customize.jsx"),
+    route("information", "routes/dashboard-information.jsx"),
     route("qr", "routes/dashboard-qr.jsx"),
     route("billing", "routes/dashboard-billing.jsx"),
     route("settings", "routes/dashboard-settings.jsx"),
