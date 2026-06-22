@@ -4,20 +4,13 @@ import { supabase } from '../lib/supabase/client';
 import {
   Save,
   Loader2,
-  Link as LinkIcon,
-  Palette,
-  Building,
-  Phone,
-  MapPin,
-  Image as ImageIcon,
   Lock,
   CheckCircle2,
   XCircle,
   X,
   Megaphone,
-  Wifi
+  Settings
 } from 'lucide-react';
-import imageCompression from 'browser-image-compression';
 
 export default function DashboardSettingsPage() {
   const navigate = useNavigate();
@@ -25,38 +18,19 @@ export default function DashboardSettingsPage() {
   
   const [profile, setProfile] = useState(initialProfile);
   const [saving, setSaving] = useState(false);
-  const [restaurantName, setRestaurantName] = useState(initialProfile?.name || '');
-  const [slug, setSlug] = useState(initialProfile?.slug || '');
-  const [phone, setPhone] = useState(initialProfile?.phone || '');
-  const [address, setAddress] = useState(initialProfile?.address || '');
-  const [themeColor, setThemeColor] = useState(initialProfile?.theme_color || '#f97316');
-  const [logoUrl, setLogoUrl] = useState(initialProfile?.logo_url || '');
-  const [coverUrl, setCoverUrl] = useState(initialProfile?.cover_url || '');
-  const [description, setDescription] = useState(initialProfile?.description || '');
+  
+  // Settings States
   const [currency, setCurrency] = useState(initialProfile?.currency || 'USD');
   const [promoBannerActive, setPromoBannerActive] = useState(initialProfile?.promo_banner_active || false);
   const [promoBannerText, setPromoBannerText] = useState(initialProfile?.promo_banner_text || '');
   const [promoBannerTextAr, setPromoBannerTextAr] = useState(initialProfile?.promo_banner_text_ar || '');
   const [promoBannerColor, setPromoBannerColor] = useState(initialProfile?.promo_banner_color || 'accent');
   const [promoBannerScroll, setPromoBannerScroll] = useState(initialProfile?.promo_banner_scroll || false);
-  
-  // Wi-Fi fields
-  const [wifiSsid, setWifiSsid] = useState(initialProfile?.wifi_ssid || '');
-  const [wifiPassword, setWifiPassword] = useState(initialProfile?.wifi_password || '');
-  const [wifiEncryption, setWifiEncryption] = useState(initialProfile?.wifi_encryption || 'WPA');
-  const [savingWifi, setSavingWifi] = useState(false);
-
-  // Upload fields
-  const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [uploadingCover, setUploadingCover] = useState(false);
 
   // Password fields
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [updatingPassword, setUpdatingPassword] = useState(false);
-
-  // Origin state for live preview links
-  const [origin, setOrigin] = useState('');
 
   // Tab selection state
   const [activeTab, setActiveTab] = useState('general');
@@ -76,127 +50,16 @@ export default function DashboardSettingsPage() {
     }, 5000);
   }, [removeToast]);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setOrigin(window.location.origin);
-    }
-  }, []);
-
-  const handleLogoUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploadingLogo(true);
-
-    try {
-      // 1. Compress Image client-side before uploading (max size 300KB, max dim 500px)
-      const options = {
-        maxSizeMB: 0.3,
-        maxWidthOrHeight: 500,
-        useWebWorker: true,
-      };
-
-      const compressedFile = await imageCompression(file, options);
-
-      // 2. Upload to Supabase Storage - 'logos' bucket
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `settings/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('logos')
-        .upload(filePath, compressedFile, { cacheControl: '3600', upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      // 3. Get Public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('logos')
-        .getPublicUrl(filePath);
-
-      setLogoUrl(publicUrl);
-      addToast('success', 'Logo uploaded and compressed successfully!');
-    } catch (error) {
-      addToast('error', `Logo upload failed: ${error.message}`);
-    } finally {
-      setUploadingLogo(false);
-    }
-  };
-
-  const handleCoverUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploadingCover(true);
-
-    try {
-      // 1. Compress Image client-side before uploading (max size 300KB, max dim 800px)
-      const options = {
-        maxSizeMB: 0.3,
-        maxWidthOrHeight: 800,
-        useWebWorker: true,
-      };
-
-      const compressedFile = await imageCompression(file, options);
-
-      // 2. Upload to Supabase Storage - 'logos' bucket under 'covers/' path
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `covers/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('logos')
-        .upload(filePath, compressedFile, { cacheControl: '3600', upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      // 3. Get Public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('logos')
-        .getPublicUrl(filePath);
-
-      setCoverUrl(publicUrl);
-      addToast('success', 'Cover photo uploaded and compressed successfully!');
-    } catch (error) {
-      addToast('error', `Cover photo upload failed: ${error.message}`);
-    } finally {
-      setUploadingCover(false);
-    }
-  };
-
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     setSaving(true);
-
-    // Slug validation: letters, numbers, hyphens only
-    const slugRegex = /^[a-z0-9-]+$/;
-    if (!slugRegex.test(slug.toLowerCase())) {
-      addToast('error', 'Slug can only contain lowercase letters, numbers, and hyphens.');
-      setSaving(false);
-      return;
-    }
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
       const updates = {
-        id: profile.id,
-        owner_id: user.id,
-        name: restaurantName,
-        slug: slug.toLowerCase(),
-        phone: phone,
-        address,
-        theme_color: themeColor,
-        logo_url: logoUrl,
-        cover_url: coverUrl,
-        description,
         currency,
-
         promo_banner_active: promoBannerActive,
         promo_banner_text: promoBannerText,
         promo_banner_text_ar: promoBannerTextAr,
@@ -204,49 +67,21 @@ export default function DashboardSettingsPage() {
         promo_banner_scroll: promoBannerScroll,
       };
 
-      const { error } = await supabase.from('restaurants').upsert(updates);
-
-      if (error) throw error;
-
-      // Update local profile state
-      setProfile((prev) => ({ ...prev, ...updates }));
-      addToast('success', 'Restaurant settings saved successfully!');
-      navigate(".", { replace: true });
-    } catch (error) {
-      addToast('error', `Error updating settings: ${error.message}`);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleSaveWifi = async (e) => {
-    e.preventDefault();
-    setSavingWifi(true);
-
-    try {
       const { error } = await supabase
         .from('restaurants')
-        .update({
-          wifi_ssid: wifiSsid,
-          wifi_password: wifiPassword,
-          wifi_encryption: wifiEncryption,
-        })
+        .update(updates)
         .eq('id', profile.id);
 
       if (error) throw error;
 
       // Update local profile state
-      setProfile((prev) => ({
-        ...prev,
-        wifi_ssid: wifiSsid,
-        wifi_password: wifiPassword,
-        wifi_encryption: wifiEncryption,
-      }));
-      addToast('success', 'Wi-Fi settings saved successfully!');
+      setProfile((prev) => ({ ...prev, ...updates }));
+      addToast('success', 'Settings saved successfully!');
+      navigate(".", { replace: true });
     } catch (error) {
-      addToast('error', `Error saving Wi-Fi settings: ${error.message}`);
+      addToast('error', `Error updating settings: ${error.message}`);
     } finally {
-      setSavingWifi(false);
+      setSaving(false);
     }
   };
 
@@ -306,21 +141,8 @@ export default function DashboardSettingsPage() {
               : 'border-transparent text-slate-400 hover:text-white hover:border-slate-700'
           }`}
         >
-          <Building className="h-4 w-4" />
-          <span>General Info</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('branding')}
-          className={`flex items-center space-x-2 py-3 px-4 border-b-2 text-sm font-semibold transition-all whitespace-nowrap cursor-pointer ${
-            activeTab === 'branding'
-              ? 'border-orange-500 text-orange-400 bg-orange-500/5'
-              : 'border-transparent text-slate-400 hover:text-white hover:border-slate-700'
-          }`}
-        >
-          <ImageIcon className="h-4 w-4" />
-          <span>Branding & Media</span>
+          <Settings className="h-4 w-4" />
+          <span>General Settings</span>
         </button>
 
         <button
@@ -345,8 +167,8 @@ export default function DashboardSettingsPage() {
               : 'border-transparent text-slate-400 hover:text-white hover:border-slate-700'
           }`}
         >
-          <Wifi className="h-4 w-4" />
-          <span>Wi-Fi & Security</span>
+          <Lock className="h-4 w-4" />
+          <span>Account Security</span>
         </button>
       </div>
 
@@ -356,275 +178,41 @@ export default function DashboardSettingsPage() {
           <div className="bg-[#111A2E]/60 border border-slate-800/80 rounded-2xl shadow-xl p-6 backdrop-blur-md">
             <form onSubmit={handleSaveSettings} className="space-y-6">
               <h2 className="text-lg font-bold text-white flex items-center space-x-2 pb-3 border-b border-slate-800/80">
-                <Building className="h-5 w-5 text-orange-500" />
-                <span>Business Information</span>
+                <Settings className="h-5 w-5 text-orange-500" />
+                <span>General Settings</span>
               </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Restaurant Name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={restaurantName}
-                    onChange={(e) => setRestaurantName(e.target.value)}
-                    className="w-full bg-[#0B0F19] border border-slate-800/80 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Menu URL Slug
-                  </label>
-                  <div className="relative flex items-center">
-                    <span className="absolute left-3 text-slate-500 text-xs select-none">
-                      /menu/
-                    </span>
-                    <input
-                      type="text"
-                      required
-                      value={slug}
-                      onChange={(e) => setSlug(e.target.value)}
-                      className="w-full bg-[#0B0F19] border border-slate-800/80 rounded-xl pl-16 pr-4 py-2.5 text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm"
-                    />
-                  </div>
-                  {origin && slug && (
-                    <p className="mt-1.5 text-slate-400 text-[11px] flex items-center space-x-1">
-                      <LinkIcon className="h-3 w-3 text-orange-500" />
-                      <span>Your menu is live at: </span>
-                      <a
-                        href={`${origin}/menu/${slug}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-orange-400 hover:underline font-semibold hover:text-orange-300"
-                      >
-                        {origin.replace(/^https?:\/\//, '')}/menu/{slug}
-                      </a>
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Phone Number
-                  </label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-3.5 h-4 w-4 text-slate-500" />
-                    <input
-                      type="text"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="+1 (555) 000-0000"
-                      className="w-full bg-[#0B0F19] border border-slate-800/80 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Brand Accent Color
-                  </label>
-                  <div className="flex items-center space-x-3 bg-[#0B0F19] border border-slate-800/80 rounded-xl px-3 py-1.5 h-[41px]">
-                    <input
-                      type="color"
-                      value={themeColor}
-                      onChange={(e) => setThemeColor(e.target.value)}
-                      className="h-7 w-12 border border-slate-800/80 rounded cursor-pointer bg-[#0F1524]"
-                    />
-                    <span className="text-xs font-mono text-slate-300">
-                      {themeColor.toUpperCase()}
-                    </span>
-                    <div
-                      className="h-4 w-4 rounded-full border border-slate-700 shadow-inner ml-auto"
-                      style={{ backgroundColor: themeColor }}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Business Currency
-                  </label>
-                  <select
-                    value={currency}
-                    onChange={(e) => setCurrency(e.target.value)}
-                    className="w-full bg-[#0B0F19] border border-slate-800/80 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm h-[41px] appearance-none"
-                  >
-                    <option value="USD">USD ($)</option>
-                    <option value="SYP">SYP (SYP)</option>
-                    <option value="EUR">EUR (€)</option>
-                    <option value="GBP">GBP (£)</option>
-                    <option value="SAR">SAR (ر.س)</option>
-                    <option value="AED">AED (AED)</option>
-                    <option value="QAR">QAR (QAR)</option>
-                    <option value="KWD">KWD (KWD)</option>
-                    <option value="BHD">BHD (BHD)</option>
-                    <option value="OMR">OMR (OMR)</option>
-                    <option value="EGP">EGP (EGP)</option>
-                    <option value="TRY">TRY (TRY)</option>
-                    <option value="INR">INR (₹)</option>
-                    <option value="AUD">AUD (A$)</option>
-                    <option value="CAD">CAD (C$)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
+              <div className="max-w-md">
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Address
+                  Business Currency
                 </label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
-                  <textarea
-                    rows={2}
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="123 Culinary Road, Food District"
-                    className="w-full bg-[#0B0F19] border border-slate-800/80 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm mb-4"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                  Restaurant Description
-                </label>
-                <textarea
-                  rows={3}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="A brief description of your restaurant's story, cuisine details, or vibes..."
-                  className="w-full bg-[#0B0F19] border border-slate-800/80 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm resize-none"
-                />
+                <select
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="w-full bg-[#0B0F19] border border-slate-800/80 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm h-[41px]"
+                >
+                  <option value="USD">USD ($)</option>
+                  <option value="SYP">SYP (SYP)</option>
+                  <option value="EUR">EUR (€)</option>
+                  <option value="GBP">GBP (£)</option>
+                  <option value="SAR">SAR (ر.س)</option>
+                  <option value="AED">AED (AED)</option>
+                  <option value="QAR">QAR (QAR)</option>
+                  <option value="KWD">KWD (KWD)</option>
+                  <option value="BHD">BHD (BHD)</option>
+                  <option value="OMR">OMR (OMR)</option>
+                  <option value="EGP">EGP (EGP)</option>
+                  <option value="TRY">TRY (TRY)</option>
+                  <option value="INR">INR (₹)</option>
+                  <option value="AUD">AUD (A$)</option>
+                  <option value="CAD">CAD (C$)</option>
+                </select>
+                <p className="mt-2 text-slate-400 text-xs">
+                  This currency symbol will be displayed next to price items on your client-facing menu.
+                </p>
               </div>
 
               <div className="pt-4 border-t border-slate-800/80">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="inline-flex items-center space-x-2 bg-orange-500 hover:bg-orange-600 text-slate-950 rounded-xl py-3 px-6 text-sm font-black shadow-lg shadow-orange-500/10 hover:shadow-orange-500/20 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
-                >
-                  {saving ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Saving General Info...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4" />
-                      <span>Save General Info</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {activeTab === 'branding' && (
-          <div className="bg-[#111A2E]/60 border border-slate-800/80 rounded-2xl shadow-xl p-6 backdrop-blur-md animate-slide-up">
-            <form onSubmit={handleSaveSettings} className="space-y-6">
-              <h2 className="text-lg font-bold text-white flex items-center space-x-2 pb-3 border-b border-slate-800/80">
-                <ImageIcon className="h-5 w-5 text-orange-500" />
-                <span>Branding Assets</span>
-              </h2>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Logo Card */}
-                <div className="bg-[#0B0F19]/40 border border-slate-800/80 rounded-2xl p-6 flex flex-col items-center">
-                  <h3 className="text-sm font-semibold text-slate-350 self-start mb-6 pb-2 border-b border-slate-800/40 w-full flex items-center space-x-2">
-                    <Building className="h-4 w-4 text-orange-500" />
-                    <span>Restaurant Logo</span>
-                  </h3>
-
-                  <div className="relative group flex items-center justify-center">
-                    {logoUrl ? (
-                      <img
-                        src={logoUrl}
-                        alt="Logo Preview"
-                        className="h-32 w-32 rounded-2xl object-cover border border-slate-800/80 shadow-md transition-opacity group-hover:opacity-75 bg-[#0B0F19]"
-                      />
-                    ) : (
-                      <div className="h-32 w-32 rounded-2xl bg-[#0B0F19] border-2 border-dashed border-slate-800/80 flex flex-col items-center justify-center text-slate-500">
-                        <Building className="h-10 w-10 text-slate-600 mb-1" />
-                        <span className="text-[10px]">No Logo Set</span>
-                      </div>
-                    )}
-                    {uploadingLogo && (
-                      <div className="absolute inset-0 bg-slate-950/40 rounded-2xl flex items-center justify-center">
-                        <Loader2 className="h-6 w-6 animate-spin text-white" />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="mt-6 w-full text-center">
-                    <label className="cursor-pointer inline-flex items-center justify-center space-x-2 w-full border border-slate-800/80 hover:border-orange-500 hover:text-orange-400 bg-[#0B0F19]/40 hover:bg-[#0B0F19] text-slate-300 text-xs font-bold py-2.5 px-4 rounded-xl transition-all shadow-sm">
-                      <span>Choose Logo File</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleLogoUpload}
-                        disabled={uploadingLogo}
-                        className="hidden"
-                      />
-                    </label>
-                    <p className="text-[10px] text-slate-500 mt-2">
-                      Max 300KB. Automatically compressed client-side.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Cover Banner Card */}
-                <div className="bg-[#0B0F19]/40 border border-slate-800/80 rounded-2xl p-6 flex flex-col items-center">
-                  <h3 className="text-sm font-semibold text-slate-350 self-start mb-6 pb-2 border-b border-slate-800/40 w-full flex items-center space-x-2">
-                    <ImageIcon className="h-4 w-4 text-orange-500" />
-                    <span>Cover Photo Banner</span>
-                  </h3>
-
-                  <div className="relative group flex items-center justify-center w-full">
-                    {coverUrl ? (
-                      <img
-                        src={coverUrl}
-                        alt="Cover Preview"
-                        className="h-32 w-full rounded-2xl object-cover border border-slate-800/80 shadow-md transition-opacity group-hover:opacity-75 bg-[#0B0F19]"
-                      />
-                    ) : (
-                      <div className="h-32 w-full rounded-2xl bg-[#0B0F19] border-2 border-dashed border-slate-800/80 flex flex-col items-center justify-center text-slate-500">
-                        <ImageIcon className="h-8 w-8 text-slate-600 mb-1" />
-                        <span className="text-[10px]">No Cover Banner Set</span>
-                      </div>
-                    )}
-                    {uploadingCover && (
-                      <div className="absolute inset-0 bg-slate-950/40 rounded-2xl flex items-center justify-center">
-                        <Loader2 className="h-6 w-6 animate-spin text-white" />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="mt-6 w-full text-center">
-                    <label className="cursor-pointer inline-flex items-center justify-center space-x-2 w-full border border-slate-800/80 hover:border-orange-500 hover:text-orange-400 bg-[#0B0F19]/40 hover:bg-[#0B0F19] text-slate-300 text-xs font-bold py-2.5 px-4 rounded-xl transition-all shadow-sm">
-                      <span>Choose Cover File</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleCoverUpload}
-                        disabled={uploadingCover}
-                        className="hidden"
-                      />
-                    </label>
-                    <p className="text-[10px] text-slate-500 mt-2">
-                      Landscape. Max 300KB. Compressed client-side.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between flex-wrap gap-3">
-                <span className="text-xs text-slate-500">Note: Upload files will be staged until you save branding settings.</span>
                 <button
                   type="submit"
                   disabled={saving}
@@ -633,12 +221,12 @@ export default function DashboardSettingsPage() {
                   {saving ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Saving Media...</span>
+                      <span>Saving General Settings...</span>
                     </>
                   ) : (
                     <>
                       <Save className="h-4 w-4" />
-                      <span>Save Branding Assets</span>
+                      <span>Save General Settings</span>
                     </>
                   )}
                 </button>
@@ -728,7 +316,7 @@ export default function DashboardSettingsPage() {
                           <label className="text-xs font-bold text-slate-350 block">Scrolling Marquee Text</label>
                           <span className="text-[10px] text-slate-400 block">Animate the promo text to scroll horizontally.</span>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer select-none">
+                        <label className="relative inline-flex inline-flex items-center cursor-pointer select-none">
                           <input
                             type="checkbox"
                             checked={promoBannerScroll}
@@ -756,7 +344,7 @@ export default function DashboardSettingsPage() {
                   {saving ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Saving Promo...</span>
+                      <span>Saving Promo Banner...</span>
                     </>
                   ) : (
                     <>
@@ -771,135 +359,61 @@ export default function DashboardSettingsPage() {
         )}
 
         {activeTab === 'security' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-slide-up">
-            {/* Wi-Fi Sharing Card */}
-            <div className="bg-[#111A2E]/60 border border-slate-800/80 rounded-2xl shadow-xl p-6 backdrop-blur-md">
-              <h2 className="text-lg font-bold text-white flex items-center space-x-2 pb-3 border-b border-slate-800/80 mb-6">
-                <Wifi className="h-5 w-5 text-orange-500" />
-                <span>Wi-Fi Sharing Settings</span>
-              </h2>
+          <div className="bg-[#111A2E]/60 border border-slate-800/80 rounded-2xl shadow-xl p-6 backdrop-blur-md max-w-xl">
+            <h2 className="text-lg font-bold text-white flex items-center space-x-2 pb-3 border-b border-slate-800/80 mb-6">
+              <Lock className="h-5 w-5 text-orange-500" />
+              <span>Change Password</span>
+            </h2>
 
-              <form onSubmit={handleSaveWifi} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Wi-Fi Network SSID (Name)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Cafe_Guest_WiFi"
-                    value={wifiSsid}
-                    onChange={(e) => setWifiSsid(e.target.value)}
-                    className="w-full bg-[#0B0F19] border border-slate-800/80 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm"
-                  />
-                </div>
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Min 6 characters"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-[#0B0F19] border border-slate-800/80 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm"
+                />
+              </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Wi-Fi Password
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="Leave empty for open networks"
-                    value={wifiPassword}
-                    onChange={(e) => setWifiPassword(e.target.value)}
-                    className="w-full bg-[#0B0F19] border border-slate-800/80 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm"
-                  />
-                </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                  Confirm Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Re-type new password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full bg-[#0B0F19] border border-slate-800/80 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm"
+                />
+              </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Security Encryption Type
-                  </label>
-                  <select
-                    value={wifiEncryption}
-                    onChange={(e) => setWifiEncryption(e.target.value)}
-                    className="w-full bg-[#0B0F19] border border-slate-800/80 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm appearance-none"
-                  >
-                    <option value="WPA" className="bg-[#111A2E]">WPA/WPA2 (Standard)</option>
-                    <option value="WEP" className="bg-[#111A2E]">WEP (Legacy)</option>
-                    <option value="nopass" className="bg-[#111A2E]">None / Open Network</option>
-                  </select>
-                </div>
-
-                <div className="pt-2">
-                  <button
-                    type="submit"
-                    disabled={savingWifi}
-                    className="w-full inline-flex items-center justify-center space-x-2 border border-slate-800 hover:border-orange-500 hover:text-orange-400 bg-[#0B0F19]/40 hover:bg-[#0B0F19] text-slate-305 rounded-xl py-3 px-4 text-sm font-bold transition-all shadow-sm disabled:opacity-50 cursor-pointer"
-                  >
-                    {savingWifi ? (
-                      <>
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                        <span>Saving Credentials...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-3.5 w-3.5" />
-                        <span>Save Wi-Fi Settings</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
-            </div>
-
-            {/* Password Card */}
-            <div className="bg-[#111A2E]/60 border border-slate-800/80 rounded-2xl shadow-xl p-6 backdrop-blur-md">
-              <h2 className="text-lg font-bold text-white flex items-center space-x-2 pb-3 border-b border-slate-800/80 mb-6">
-                <Lock className="h-5 w-5 text-orange-500" />
-                <span>Change Password</span>
-              </h2>
-
-              <form onSubmit={handleChangePassword} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    New Password
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    placeholder="Min 6 characters"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-[#0B0F19] border border-slate-800/80 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                    Confirm Password
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    placeholder="Re-type new password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full bg-[#0B0F19] border border-slate-800/80 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-sm"
-                  />
-                </div>
-
-                <div className="pt-8">
-                  <button
-                    type="submit"
-                    disabled={updatingPassword}
-                    className="w-full inline-flex items-center justify-center space-x-2 border border-slate-800 hover:border-orange-500 hover:text-orange-400 bg-[#0B0F19]/40 hover:bg-[#0B0F19] text-slate-305 rounded-xl py-3 px-4 text-sm font-bold transition-all shadow-sm disabled:opacity-50 cursor-pointer"
-                  >
-                    {updatingPassword ? (
-                      <>
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                        <span>Updating Password...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="h-3.5 w-3.5" />
-                        <span>Update Password</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
-            </div>
+              <div className="pt-4 border-t border-slate-800/80">
+                <button
+                  type="submit"
+                  disabled={updatingPassword}
+                  className="inline-flex items-center space-x-2 bg-orange-500 hover:bg-orange-600 text-slate-950 rounded-xl py-3 px-6 text-sm font-black shadow-lg shadow-orange-500/10 hover:shadow-orange-500/20 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  {updatingPassword ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Updating Password...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="h-4 w-4" />
+                      <span>Update Password</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         )}
       </div>

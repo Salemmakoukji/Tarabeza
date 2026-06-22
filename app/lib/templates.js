@@ -604,15 +604,26 @@ export function generateCssStyles(cust) {
     .tarapeza-public-menu {
       background-color: var(--color-bg) !important;
       color: var(--color-text) !important;
-      font-family: var(--font-body), sans-serif !important;
       line-height: var(--line-height) !important;
+    }
+
+    .tarapeza-public-menu,
+    .tarapeza-public-menu *,
+    .tarapeza-public-menu .font-sans,
+    .tarapeza-public-menu .font-serif,
+    .tarapeza-public-menu .font-mono {
+      font-family: var(--font-body), sans-serif !important;
     }
 
     .tarapeza-public-menu h1,
     .tarapeza-public-menu h2,
     .tarapeza-public-menu h3,
     .tarapeza-public-menu h4,
-    .tarapeza-public-menu h5 {
+    .tarapeza-public-menu h5,
+    .tarapeza-public-menu h6,
+    .tarapeza-public-menu [class*="restaurantName"],
+    .tarapeza-public-menu [class*="itemName"],
+    .tarapeza-public-menu [class*="sectionHeader"] {
       font-family: var(--font-heading), sans-serif !important;
       font-weight: var(--font-heading-weight) !important;
       letter-spacing: var(--letter-spacing) !important;

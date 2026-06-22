@@ -72,7 +72,7 @@ export async function loader({ request, params }) {
       const tiktokParam = url.searchParams.get('tiktok');
       const youtubeParam = url.searchParams.get('youtube');
       const tripadvisorParam = url.searchParams.get('tripadvisor');
-      const wifiNameParam = url.searchParams.get('wifi_name');
+      const wifiSsidParam = url.searchParams.get('wifi_ssid') || url.searchParams.get('wifi_name');
       const wifiPasswordParam = url.searchParams.get('wifi_password');
       const businessHoursParam = url.searchParams.get('business_hours');
       const temporarilyClosedParam = url.searchParams.get('temporarily_closed');
@@ -88,7 +88,7 @@ export async function loader({ request, params }) {
       if (tiktokParam) restaurant.tiktok = tiktokParam;
       if (youtubeParam) restaurant.youtube = youtubeParam;
       if (tripadvisorParam) restaurant.tripadvisor = tripadvisorParam;
-      if (wifiNameParam) restaurant.wifi_name = wifiNameParam;
+      if (wifiSsidParam) restaurant.wifi_ssid = wifiSsidParam;
       if (wifiPasswordParam) restaurant.wifi_password = wifiPasswordParam;
       if (businessHoursParam) {
         try {
@@ -111,10 +111,56 @@ export async function loader({ request, params }) {
     const templateDefaults = getTemplateDefaults(restaurant.template_id || 'classic');
     const savedCustomization = restaurant.customization || {};
 
+    const themeMode = restaurant.theme || 'light';
+    const themeColors = themeMode === 'dark' ? {
+      background: '#0F1524',
+      cardBackground: '#1E293B',
+      primaryText: '#F8FAFC',
+      secondaryText: '#94A3B8',
+      border: '#334155',
+      tabInactive: '#1E293B',
+      tabInactiveText: '#94A3B8',
+      header: '#1E293B'
+    } : {
+      background: '#FFFFFF',
+      cardBackground: '#F8FAFC',
+      primaryText: '#0F172A',
+      secondaryText: '#64748B',
+      border: '#E2E8F0',
+      tabInactive: '#F1F5F9',
+      tabInactiveText: '#64748B',
+      header: '#FFFFFF'
+    };
+
     const mergedCustomization = {
-      colors: { ...templateDefaults.colors, ...savedCustomization.colors },
-      fonts: { ...templateDefaults.fonts, ...savedCustomization.fonts },
-      layout: { ...templateDefaults.layout, ...savedCustomization.layout },
+      colors: { 
+        ...templateDefaults.colors, 
+        ...themeColors,
+        ...savedCustomization.colors,
+        ...(restaurant.main_color ? {
+          accent: restaurant.main_color,
+          tabActive: restaurant.main_color,
+          price: restaurant.main_color,
+          badge: restaurant.main_color
+        } : {})
+      },
+      fonts: { 
+        ...templateDefaults.fonts, 
+        ...savedCustomization.fonts,
+        ...(restaurant.font_family ? {
+          heading: restaurant.font_family,
+          body: restaurant.font_family
+        } : {})
+      },
+      layout: { 
+        ...templateDefaults.layout, 
+        ...savedCustomization.layout,
+        showImage: restaurant.display_mode !== 'text',
+        cardStyle: restaurant.layout_style === 'grid' ? 'grid-2' : 'list',
+        tabStyle: restaurant.layout_style === 'tab' ? 'pills' : (restaurant.layout_style === 'sidebar' ? 'minimal' : 'pills'),
+        ...(restaurant.image_size ? { imageSize: restaurant.image_size } : {}),
+        ...(restaurant.font_size ? { fontSize: restaurant.font_size } : {})
+      },
       badges: { ...templateDefaults.badges, ...savedCustomization.badges },
       customCss: savedCustomization.customCss || '',
     };
@@ -265,7 +311,9 @@ export default function PublicMenuPage() {
       color: var(--color-text) !important;
     }
 
-    body, button, input, select, textarea, span, h1, h2, h3, h4, h5, h6, p, div {
+    body, button, input, select, textarea, span, h1, h2, h3, h4, h5, h6, p, div,
+    .font-sans, .font-serif, .font-mono,
+    .tarapeza-public-menu, .tarapeza-public-menu * {
       font-family: "${fontFamily}", sans-serif !important;
     }
   `;

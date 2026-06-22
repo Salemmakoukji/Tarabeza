@@ -34,7 +34,7 @@ export async function action({ request }) {
   const youtube = formData.get('youtube');
   const tripadvisor = formData.get('tripadvisor');
   
-  const wifi_name = formData.get('wifi_name');
+  const wifi_ssid = formData.get('wifi_ssid');
   const wifi_password = formData.get('wifi_password');
   const business_hours = formData.get('business_hours');
   const temporarily_closed = formData.get('temporarily_closed') === 'true';
@@ -58,7 +58,7 @@ export async function action({ request }) {
       tiktok,
       youtube,
       tripadvisor,
-      wifi_name,
+      wifi_ssid,
       wifi_password,
       business_hours: JSON.parse(business_hours),
       temporarily_closed,
@@ -105,7 +105,7 @@ export default function RestaurantInformationPage() {
   const [tripadvisor, setTripadvisor] = useState(profile.tripadvisor || '');
 
   // WiFi States
-  const [wifiName, setWifiName] = useState(profile.wifi_name || '');
+  const [wifiSsid, setWifiSsid] = useState(profile.wifi_ssid || '');
   const [wifiPassword, setWifiPassword] = useState(profile.wifi_password || '');
   const [showWifiPassword, setShowWifiPassword] = useState(false);
 
@@ -149,7 +149,7 @@ export default function RestaurantInformationPage() {
     tiktok !== (profile.tiktok || '') ||
     youtube !== (profile.youtube || '') ||
     tripadvisor !== (profile.tripadvisor || '') ||
-    wifiName !== (profile.wifi_name || '') ||
+    wifiSsid !== (profile.wifi_ssid || '') ||
     wifiPassword !== (profile.wifi_password || '') ||
     temporarilyClosed !== (profile.temporarily_closed || false) ||
     JSON.stringify(businessHours) !== JSON.stringify(getInitialBusinessHours());
@@ -312,7 +312,7 @@ export default function RestaurantInformationPage() {
     formData.append('tiktok', tiktok);
     formData.append('youtube', youtube);
     formData.append('tripadvisor', tripadvisor);
-    formData.append('wifi_name', wifiName);
+    formData.append('wifi_ssid', wifiSsid);
     formData.append('wifi_password', wifiPassword);
     formData.append('business_hours', JSON.stringify(businessHours));
     formData.append('temporarily_closed', temporarilyClosed ? 'true' : 'false');
@@ -343,7 +343,7 @@ export default function RestaurantInformationPage() {
         profile.tiktok = tiktok;
         profile.youtube = youtube;
         profile.tripadvisor = tripadvisor;
-        profile.wifi_name = wifiName;
+        profile.wifi_ssid = wifiSsid;
         profile.wifi_password = wifiPassword;
         profile.business_hours = businessHours;
         profile.temporarily_closed = temporarilyClosed;
@@ -681,11 +681,11 @@ export default function RestaurantInformationPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1.5">WiFi Name</label>
+              <label className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1.5">WiFi Name (SSID)</label>
               <input
                 type="text"
-                value={wifiName}
-                onChange={(e) => setWifiName(e.target.value)}
+                value={wifiSsid}
+                onChange={(e) => setWifiSsid(e.target.value)}
                 placeholder="WiFi Network SSID"
                 className="w-full bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none transition-all"
               />
