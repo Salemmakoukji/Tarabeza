@@ -11,6 +11,7 @@ export async function loader({ request, params }) {
     const isPreview = url.searchParams.get('preview') === 'true';
     const previewTemplate = url.searchParams.get('template');
     const previewAccent = url.searchParams.get('accent');
+    const lang = url.searchParams.get('lang') || 'en';
 
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
@@ -197,44 +198,70 @@ export async function loader({ request, params }) {
       ratings: ratingsRes.data || [],
       mergedCustomization,
       cssStyles,
-      fontUrl
+      fontUrl,
+      lang
     };
   } catch (err) {
     console.error('[menu-loader] Unexpected error:', err);
     return {
       profile: null, categories: [], menuItems: [], ratings: [],
-      mergedCustomization: null, cssStyles: '', fontUrl: ''
+      mergedCustomization: null, cssStyles: '', fontUrl: '', lang: 'en'
     };
   }
 }
 
-export function meta({ loaderData }) {
-  const profile = loaderData?.profile;
+export function meta({ data }) {
+  const profile = data?.profile;
   const restaurantName = profile?.name;
 
   if (!restaurantName) {
-    return [{ title: "Tarapeza | Digital QR Menu" }];
+    return [{ title: "Tarabeza | Digital QR Menu" }];
   }
 
-  const description = profile.description || `View ${restaurantName} menu`;
+  const lang = data?.lang || 'en';
   const logoUrl = profile.logo_url || '/og-image.png';
+  const coverUrl = profile.cover_url || logoUrl;
 
+  if (lang === 'ar') {
+    const description = `تصفح قائمة طعام ${restaurantName} الرقمية على طربيزة. استعرض المأكولات، الأسعار، واطلب مباشرة وبسرعة عبر مسح باركود QR التفاعلي.`;
+    return [
+      { title: `منيو ${restaurantName} | اطلب عبر باركود QR | طربيزة` },
+      { name: "description", content: description },
+      { property: "og:type", content: "restaurant.menu" },
+      { property: "og:url", content: `https://tarapeza.com/menu/${profile.slug}?lang=ar` },
+      { property: "og:title", content: `منيو ${restaurantName} | اطلب عبر باركود QR | طربيزة` },
+      { property: "og:description", content: description },
+      { property: "og:image", content: coverUrl },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:url", content: `https://tarapeza.com/menu/${profile.slug}?lang=ar` },
+      { name: "twitter:title", content: `منيو ${restaurantName} | اطلب عبر باركود QR | طربيزة` },
+      { name: "twitter:description", content: description },
+      { name: "twitter:image", content: coverUrl }
+    ];
+  }
+
+  // Default to English
+  const description = `View the digital menu of ${restaurantName} on Tarabeza. Explore dishes, check prices, and place your order instantly via interactive QR code.`;
   return [
-    { title: `${restaurantName} | Tarapeza` },
+    { title: `${restaurantName} Menu | Order via QR Code | Tarabeza` },
     { name: "description", content: description },
-    { property: "og:title", content: `${restaurantName} | Tarapeza` },
+    { property: "og:type", content: "restaurant.menu" },
+    { property: "og:url", content: `https://tarapeza.com/menu/${profile.slug}` },
+    { property: "og:title", content: `${restaurantName} Menu | Order via QR Code | Tarabeza` },
     { property: "og:description", content: description },
-    { property: "og:image", content: logoUrl },
-    { name: "twitter:title", content: `${restaurantName} | Tarapeza` },
+    { property: "og:image", content: coverUrl },
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:url", content: `https://tarapeza.com/menu/${profile.slug}` },
+    { name: "twitter:title", content: `${restaurantName} Menu | Order via QR Code | Tarabeza` },
     { name: "twitter:description", content: description },
-    { name: "twitter:image", content: logoUrl },
+    { name: "twitter:image", content: coverUrl }
   ];
 }
 
 
 
 export default function PublicMenuPage() {
-  const { profile, categories, menuItems, ratings, mergedCustomization, cssStyles, fontUrl } = useLoaderData();
+  const { profile, categories, menuItems, ratings, mergedCustomization, cssStyles, fontUrl, lang } = useLoaderData();
 
   if (!profile) {
     return (
@@ -374,6 +401,7 @@ export default function PublicMenuPage() {
         menuItems={menuItems}
         initialRatings={ratings}
         customization={mergedCustomization}
+        initialLang={lang}
       />
     </>
   );

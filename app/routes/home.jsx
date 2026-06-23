@@ -24,6 +24,9 @@ export async function loader({ request }) {
   const supabase = await createClient(request);
   const { data: { user } } = await supabase.auth.getUser();
   
+  const url = new URL(request.url);
+  const lang = url.searchParams.get('lang') || 'en';
+  
   if (user) {
     const { data: profile } = await supabase
       .from('restaurants')
@@ -31,10 +34,48 @@ export async function loader({ request }) {
       .eq('owner_id', user.id)
       .maybeSingle();
       
-    return { user, profile };
+    return { user, profile, lang };
   }
   
-  return { user: null, profile: null };
+  return { user: null, profile: null, lang };
+}
+
+export function meta({ data }) {
+  const lang = data?.lang || 'en';
+  
+  if (lang === 'ar') {
+    return [
+      { title: "طربيزة | نظام إدارة المطاعم والكافيهات الذكي والـ POS" },
+      { name: "description", content: "رقمن مطعمك أو مقهاك مع طربيزة. نظام كاشير سحابي (POS)، منيو باركود QR تفاعلي، إدارة الطاولات، تتبع المخزون، وتقارير مالية مباشرة وسهلة." },
+      { name: "keywords", content: "نظام إدارة مطاعم, منيو باركود QR, كاشير سحابي, نظام نقاط البيع, إدارة الطاولات, تتبع المخزون, رقمنة المطاعم" },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://tarapeza.com?lang=ar" },
+      { property: "og:title", content: "طربيزة | نظام إدارة المطاعم والكافيهات الذكي والـ POS" },
+      { property: "og:description", content: "رقمن مطعمك أو مقهاك مع طربيزة. نظام كاشير سحابي (POS)، منيو باركود QR تفاعلي، إدارة الطاولات، تتبع المخزون، وتقارير مالية مباشرة وسهلة." },
+      { property: "og:image", content: "https://tarapeza.com/og-image.png" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:url", content: "https://tarapeza.com?lang=ar" },
+      { name: "twitter:title", content: "طربيزة | نظام إدارة المطاعم والكافيهات الذكي والـ POS" },
+      { name: "twitter:description", content: "رقمن مطعمك أو مقهاك مع طربيزة. نظام كاشير سحابي (POS)، منيو باركود QR تفاعلي، إدارة الطاولات، تتبع المخزون، وتقارير مالية مباشرة وسهلة." },
+      { name: "twitter:image", content: "https://tarapeza.com/og-image.png" }
+    ];
+  }
+
+  return [
+    { title: "Tarabeza | Cloud Restaurant Management System & POS" },
+    { name: "description", content: "Digitize your restaurant or cafe with Tarabeza. Cloud POS, interactive QR code menus, table management, inventory tracking, & real-time financial reports." },
+    { name: "keywords", content: "restaurant management system, cloud POS, QR code menu, digital ordering, inventory tracking, table management, hospitality SaaS" },
+    { property: "og:type", content: "website" },
+    { property: "og:url", content: "https://tarapeza.com" },
+    { property: "og:title", content: "Tarabeza | Cloud Restaurant Management System & POS" },
+    { property: "og:description", content: "Digitize your restaurant or cafe with Tarabeza. Cloud POS, interactive QR code menus, table management, inventory tracking, & real-time financial reports." },
+    { property: "og:image", content: "https://tarapeza.com/og-image.png" },
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:url", content: "https://tarapeza.com" },
+    { name: "twitter:title", content: "Tarabeza | Cloud Restaurant Management System & POS" },
+    { name: "twitter:description", content: "Digitize your restaurant or cafe with Tarabeza. Cloud POS, interactive QR code menus, table management, inventory tracking, & real-time financial reports." },
+    { name: "twitter:image", content: "https://tarapeza.com/og-image.png" }
+  ];
 }
 
 const content = {
@@ -189,8 +230,8 @@ const content = {
 };
 
 export default function Home() {
-  const { user, profile } = useLoaderData();
-  const [lang, setLang] = useState('en');
+  const { user, profile, lang: initialLang } = useLoaderData();
+  const [lang, setLang] = useState(initialLang || 'en');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);

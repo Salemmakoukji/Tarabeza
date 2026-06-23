@@ -17,11 +17,17 @@ const translateDay = (day) => {
   return mapping[day] || day;
 };
 
-export default function MenuViewClient({ profile, categories = [], menuItems = [], initialRatings = [] }) {
+export default function MenuViewClient({ profile, categories = [], menuItems = [], initialRatings = [], initialLang = 'en' }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter] = useState('all'); // 'all' | 'chef' | 'bestseller' | 'new' | 'popular' | 'spicy'
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [lang, setLang] = useState('en'); // 'en' | 'ar'
+  const [lang, setLang] = useState(initialLang); // 'en' | 'ar'
+
+  useEffect(() => {
+    if (initialLang) {
+      setLang(initialLang);
+    }
+  }, [initialLang]);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showWifiModal, setShowWifiModal] = useState(false);
   const [copiedWifi, setCopiedWifi] = useState(false);
