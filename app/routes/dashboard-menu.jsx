@@ -50,7 +50,6 @@ export async function loader({ request }) {
   };
 }
 
-
 export default function MenuBuilder() {
   const { profile, initialCategories, initialMenuItems } = useLoaderData();
 
@@ -64,7 +63,6 @@ export default function MenuBuilder() {
   const [submittingItem, setSubmittingItem] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [importingCsv, setImportingCsv] = useState(false);
-  const [fetchingImages, setFetchingImages] = useState(false);
   
   // Stackable toasts
   const [toasts, setToasts] = useState([]);
@@ -111,46 +109,6 @@ export default function MenuBuilder() {
       removeToast(id);
     }, 5000);
   }, [removeToast]);
-
-  const handleAutoFetchImages = async () => {
-    const itemsWithoutImages = menuItems.filter(item => !item.image_url || item.image_url.trim() === '');
-    if (itemsWithoutImages.length === 0) {
-      showNotification('success', 'All menu items already have images!');
-      return;
-    }
-
-    setFetchingImages(true);
-    try {
-      const response = await fetch('/api/auto-fetch-images', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ action: 'auto-fetch-images' }),
-      });
-      
-      const result = await response.json();
-      if (result.success) {
-        if (result.count > 0) {
-          showNotification('success', `Successfully fetched and updated ${result.count} images! (Max 10 per click to prevent timeouts/limits)`);
-          if (result.updatedItems && result.updatedItems.length > 0) {
-            setMenuItems(prev => prev.map(item => {
-              const updated = result.updatedItems.find(u => u.id === item.id);
-              return updated ? { ...item, image_url: updated.image_url } : item;
-            }));
-          }
-        } else {
-          showNotification('success', 'No images found or all items are already processed.');
-        }
-      } else {
-        showNotification('error', result.error || 'Failed to fetch images');
-      }
-    } catch (err) {
-      showNotification('error', `Error fetching images: ${err.message}`);
-    } finally {
-      setFetchingImages(false);
-    }
-  };
 
   // Set default selected category
   useEffect(() => {
@@ -869,18 +827,6 @@ export default function MenuBuilder() {
               <Upload className="h-4 w-4 text-emerald-500" />
             )}
             <span>{importingCsv ? 'Importing...' : 'Import CSV'}</span>
-          </button>
-          <button
-            onClick={handleAutoFetchImages}
-            disabled={fetchingImages}
-            className="inline-flex items-center space-x-1.5 border border-slate-800 hover:border-orange-500 hover:text-orange-400 bg-[#0B0F19]/40 hover:bg-[#0B0F19] text-slate-300 py-2.5 px-4 rounded-xl text-sm font-bold transition-all shadow-sm disabled:opacity-50 cursor-pointer"
-          >
-            {fetchingImages ? (
-              <Loader2 className="h-4 w-4 animate-spin text-orange-500" />
-            ) : (
-              <Sparkles className="h-4 w-4 text-orange-500" />
-            )}
-            <span>{fetchingImages ? 'Fetching...' : 'Fetch automatic pictures'}</span>
           </button>
           <button
             onClick={openAddCategory}
