@@ -487,7 +487,7 @@ export default function DashboardQRPage() {
       const pageHeight = doc.internal.pageSize.getHeight();
       const midY = pageHeight / 2;
 
-      const brandColorHex = profile?.theme_color || '#f97316';
+      const brandColorHex = profile?.main_color || '#f97316';
       const brandRgb = hexToRgb(brandColorHex);
 
       const selected = AVAILABLE_FONTS.find(f => f.id === qrFontFamily);

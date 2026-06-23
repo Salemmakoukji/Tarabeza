@@ -3,9 +3,20 @@ import { Link, useNavigate } from 'react-router';
 import { supabase } from '../lib/supabase/client';
 import { 
   Loader2, User, Heart, Star, Sparkles, LogOut, Check, X,
-  AlertCircle, Coffee, Compass, Trash2, Calendar, MessageSquare
+  AlertCircle, Coffee, Compass, Trash2, Calendar, MessageSquare,
+  Edit, Share2, Copy, ExternalLink
 } from 'lucide-react';
 import Logo from '../components/logo';
+import QRCode from 'qrcode';
+
+const DIETARY_OPTIONS = [
+  { id: 'vegetarian', label: 'Vegetarian' },
+  { id: 'vegan', label: 'Vegan' },
+  { id: 'gluten-free', label: 'Gluten-Free' },
+  { id: 'lactose-free', label: 'Lactose-Free' },
+  { id: 'nut-allergy', label: 'Nut Allergy' },
+  { id: 'halal', label: 'Halal' },
+];
 
 export default function CustomerDashboardPage() {
   const navigate = useNavigate();
@@ -15,8 +26,44 @@ export default function CustomerDashboardPage() {
   const [favorites, setFavorites] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [loyalty, setLoyalty] = useState([]);
-  const [activeTab, setActiveTab] = useState('favorites'); // 'favorites' | 'loyalty' | 'reviews'
+  const [activeTab, setActiveTab] = useState('favorites'); // 'favorites' | 'loyalty' | 'reviews' | 'settings'
   
+  // Settings tab state
+  const [newName, setNewName] = useState('');
+  const [newPhone, setNewPhone] = useState('');
+  const [newBirthDate, setNewBirthDate] = useState('');
+  const [newDietaryPreferences, setNewDietaryPreferences] = useState([]);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [updatingName, setUpdatingName] = useState(false);
+  const [updatingPassword, setUpdatingPassword] = useState(false);
+
+  // Loyalty reward redemption state
+  const [selectedLoyaltyReward, setSelectedLoyaltyReward] = useState(null);
+  const [rewardQrUrl, setRewardQrUrl] = useState('');
+
+  // Edit reviews state
+  const [editingReview, setEditingReview] = useState(null);
+  const [editStars, setEditStars] = useState(5);
+  const [editComment, setEditComment] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  useEffect(() => {
+    if (selectedLoyaltyReward) {
+      QRCode.toDataURL(`TRBZ-LOYAL-${selectedLoyaltyReward.id}-${selectedLoyaltyReward.restaurant_id}`, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: '#0f172a',
+          light: '#ffffff'
+        }
+      }).then(url => setRewardQrUrl(url))
+        .catch(err => console.error('Error generating loyalty QR:', err));
+    } else {
+      setRewardQrUrl('');
+    }
+  }, [selectedLoyaltyReward]);
+
   // Toast notifications state
   const [toasts, setToasts] = useState([]);
 
@@ -32,6 +79,14 @@ export default function CustomerDashboardPage() {
     }, 5000);
   }, [removeToast]);
 
+  const toggleDietaryPreference = (prefId) => {
+    setNewDietaryPreferences((prev) =>
+      prev.includes(prefId)
+        ? prev.filter((p) => p !== prefId)
+        : [...prev, prefId]
+    );
+  };
+
   const loadDashboardData = useCallback(async (userId) => {
     try {
       // 1. Fetch Diner Profile
@@ -43,6 +98,10 @@ export default function CustomerDashboardPage() {
 
       if (profileErr) throw profileErr;
       setProfile(profileData);
+      setNewName(profileData.full_name || '');
+      setNewPhone(profileData.phone || '');
+      setNewBirthDate(profileData.birth_date || '');
+      setNewDietaryPreferences(profileData.dietary_preferences || []);
 
       // 2. Fetch Favorites (joined with restaurant profiles)
       const { data: favsData, error: favsErr } = await supabase
@@ -56,14 +115,44 @@ export default function CustomerDashboardPage() {
             slug,
             logo_url,
             cover_url,
-            theme_color,
+            main_color,
             address
           )
         `)
         .eq('customer_id', userId);
 
       if (favsErr) throw favsErr;
-      setFavorites(favsData || []);
+      
+      // Fetch ratings for saved places in parallel to calculate average
+      const restaurantIds = (favsData || []).map(fav => fav.restaurant_id);
+      let ratingsMap = {};
+      if (restaurantIds.length > 0) {
+        const { data: favRatings, error: ratingsErr } = await supabase
+          .from('ratings')
+          .select('restaurant_id, stars')
+          .in('restaurant_id', restaurantIds);
+          
+        if (!ratingsErr && favRatings) {
+          favRatings.forEach(r => {
+            if (!ratingsMap[r.restaurant_id]) {
+              ratingsMap[r.restaurant_id] = { sum: 0, count: 0 };
+            }
+            ratingsMap[r.restaurant_id].sum += r.stars;
+            ratingsMap[r.restaurant_id].count += 1;
+          });
+        }
+      }
+
+      const favoritesWithRatings = (favsData || []).map(fav => {
+        const ratingInfo = ratingsMap[fav.restaurant_id];
+        return {
+          ...fav,
+          averageRating: ratingInfo ? (ratingInfo.sum / ratingInfo.count).toFixed(1) : null,
+          totalRatings: ratingInfo ? ratingInfo.count : 0
+        };
+      });
+
+      setFavorites(favoritesWithRatings || []);
 
       // 3. Fetch Reviews left by customer
       const { data: reviewsData, error: reviewsErr } = await supabase
@@ -187,6 +276,129 @@ export default function CustomerDashboardPage() {
     }
   };
 
+  // Handle profile details update (Name, Phone, Birthdate, Dietary Preferences)
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    if (!newName.trim()) {
+      showNotification('error', 'Name cannot be empty.');
+      return;
+    }
+    setUpdatingName(true);
+    try {
+      const { error } = await supabase
+        .from('customer_profiles')
+        .update({
+          full_name: newName.trim(),
+          phone: newPhone.trim() || null,
+          birth_date: newBirthDate || null,
+          dietary_preferences: newDietaryPreferences
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+      
+      setProfile((prev) => ({
+        ...prev,
+        full_name: newName.trim(),
+        phone: newPhone.trim() || null,
+        birth_date: newBirthDate || null,
+        dietary_preferences: newDietaryPreferences
+      }));
+      showNotification('success', 'Profile details updated successfully.');
+    } catch (error) {
+      showNotification('error', error.message);
+    } finally {
+      setUpdatingName(false);
+    }
+  };
+
+  // Handle password update
+  const handleUpdatePassword = async (e) => {
+    e.preventDefault();
+    if (newPassword.length < 6) {
+      showNotification('error', 'Password must be at least 6 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      showNotification('error', 'Passwords do not match.');
+      return;
+    }
+    setUpdatingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) throw error;
+
+      setNewPassword('');
+      setConfirmPassword('');
+      showNotification('success', 'Password updated successfully.');
+    } catch (error) {
+      showNotification('error', error.message);
+    } finally {
+      setUpdatingPassword(false);
+    }
+  };
+
+  // Get time of day greeting
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  // Handle Share Menu
+  const handleShareMenu = (e, slug) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const shareUrl = `${window.location.origin}/menu/${slug}`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: 'Digital QR Menu',
+        url: shareUrl
+      }).catch((err) => console.log(err));
+    } else {
+      navigator.clipboard.writeText(shareUrl);
+      showNotification('success', 'Link copied to clipboard.');
+    }
+  };
+
+  // Start editing review
+  const handleStartEditReview = (review) => {
+    setEditingReview(review);
+    setEditStars(review.stars);
+    setEditComment(review.comment || '');
+  };
+
+  // Update existing review
+  const handleUpdateReview = async (e) => {
+    e.preventDefault();
+    setSavingEdit(true);
+    try {
+      const { error } = await supabase
+        .from('ratings')
+        .update({
+          stars: editStars,
+          comment: editComment.trim() || null
+        })
+        .eq('id', editingReview.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setReviews(reviews.map(r => r.id === editingReview.id ? { ...r, stars: editStars, comment: editComment.trim() || null } : r));
+      showNotification('success', 'Review updated successfully.');
+      setEditingReview(null);
+    } catch (error) {
+      showNotification('error', error.message);
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex h-screen bg-slate-950 items-center justify-center">
@@ -263,8 +475,20 @@ export default function CustomerDashboardPage() {
                 <Sparkles className="h-2.5 w-2.5" />
                 <span>Verified Diner</span>
               </span>
-              <h1 className="text-xl md:text-2xl font-black text-white">{profile?.full_name || 'Welcome!'}</h1>
+              <h1 className="text-xl md:text-2xl font-black text-white">{getGreeting()}, {profile?.full_name || 'Welcome'}!</h1>
               <p className="text-xs text-slate-400 mt-0.5">{user?.email}</p>
+              {profile?.dietary_preferences && profile.dietary_preferences.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2 justify-start">
+                  {profile.dietary_preferences.map((pref) => {
+                    const label = DIETARY_OPTIONS.find(o => o.id === pref)?.label || pref;
+                    return (
+                      <span key={pref} className="px-2 py-0.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-full text-[9px] font-bold">
+                        {label}
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
@@ -285,7 +509,7 @@ export default function CustomerDashboardPage() {
         </div>
 
         {/* Tab Selection */}
-        <div className="flex bg-slate-900/60 p-1.5 rounded-2xl border border-slate-900 gap-2 w-full max-w-md">
+        <div className="grid grid-cols-2 md:flex md:flex-row bg-slate-900/60 p-1.5 rounded-2xl border border-slate-900 gap-2 w-full max-w-2xl">
           <button
             onClick={() => setActiveTab('favorites')}
             className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold tracking-wide transition-all flex items-center justify-center space-x-1.5 gap-1.5 cursor-pointer ${
@@ -318,6 +542,17 @@ export default function CustomerDashboardPage() {
           >
             <MessageSquare className="h-4 w-4" />
             <span>My Reviews</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold tracking-wide transition-all flex items-center justify-center space-x-1.5 gap-1.5 cursor-pointer ${
+              activeTab === 'settings'
+                ? 'bg-indigo-500 text-white shadow-md'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <User className="h-4 w-4" />
+            <span>Profile Settings</span>
           </button>
         </div>
 
@@ -375,18 +610,33 @@ export default function CustomerDashboardPage() {
                           </div>
 
                           <div className="p-5 space-y-2 text-start">
-                            <h3 className="font-bold text-white text-sm leading-snug">{r.name}</h3>
+                            <div className="flex justify-between items-start gap-2">
+                              <h3 className="font-bold text-white text-sm leading-snug truncate">{r.name}</h3>
+                              {fav.averageRating && (
+                                <span className="text-[10px] bg-amber-400/10 text-amber-400 border border-amber-400/20 px-2 py-0.5 rounded font-bold shrink-0">
+                                  ⭐ {fav.averageRating}
+                                </span>
+                              )}
+                            </div>
                             {r.address && <p className="text-[11px] text-slate-500 truncate">{r.address}</p>}
                           </div>
                         </div>
 
-                        <div className="p-5 pt-0">
+                        <div className="p-5 pt-0 flex gap-2">
                           <Link
                             to={`/menu/${r.slug}`}
-                            className="w-full inline-flex items-center justify-center space-x-1.5 bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-indigo-500 text-slate-200 py-2.5 px-4 rounded-xl text-xs font-bold transition-all text-center"
+                            className="flex-1 inline-flex items-center justify-center bg-indigo-500 hover:bg-indigo-650 text-white py-2.5 px-4 rounded-xl text-xs font-bold transition-all text-center gap-1.5 shadow-md shadow-indigo-500/10"
                           >
-                            <span>Open Digital Menu</span>
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            <span>Open Menu</span>
                           </Link>
+                          <button
+                            onClick={(e) => handleShareMenu(e, r.slug)}
+                            className="p-2.5 rounded-xl bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 transition-all cursor-pointer"
+                            title="Share Menu"
+                          >
+                            <Share2 className="h-3.5 w-3.5" />
+                          </button>
                         </div>
                       </div>
                     );
@@ -465,12 +715,21 @@ export default function CustomerDashboardPage() {
                           })}
                         </div>
 
-                        <Link
-                          to={`/menu/${item.restaurants?.slug}`}
-                          className="text-center bg-slate-950/60 hover:bg-slate-900 border border-slate-900 hover:border-slate-800 text-[10px] font-bold text-slate-400 hover:text-white py-2 px-4 rounded-xl transition-all"
-                        >
-                          Visit Menu
-                        </Link>
+                        {isCompleted ? (
+                          <button
+                            onClick={() => setSelectedLoyaltyReward(item)}
+                            className="w-full inline-flex items-center justify-center bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-slate-955 py-2.5 px-4 rounded-xl text-xs font-bold transition-all text-center cursor-pointer shadow-md shadow-emerald-500/10 hover:shadow-emerald-500/20"
+                          >
+                            <span>Claim Free Reward 🎁</span>
+                          </button>
+                        ) : (
+                          <Link
+                            to={`/menu/${item.restaurants?.slug}`}
+                            className="text-center bg-slate-950/60 hover:bg-slate-900 border border-slate-900 hover:border-slate-800 text-[10px] font-bold text-slate-400 hover:text-white py-2 px-4 rounded-xl transition-all"
+                          >
+                            Visit Menu
+                          </Link>
+                        )}
                       </div>
                     );
                   })}
@@ -511,7 +770,6 @@ export default function CustomerDashboardPage() {
                           </div>
                         </div>
 
-                        {/* Stars output */}
                         <div className="flex space-x-0.5 gap-0.5 select-none">
                           {[1, 2, 3, 4, 5].map((val) => (
                             <Star 
@@ -530,21 +788,386 @@ export default function CustomerDashboardPage() {
                         )}
                       </div>
 
-                      <button
-                        onClick={() => handleDeleteReview(rev.id, rev.restaurant_id)}
-                        className="p-2 rounded-lg bg-slate-950/60 hover:bg-red-500/10 text-slate-500 hover:text-red-400 border border-slate-800/80 hover:border-red-950/20 transition-all shrink-0 mt-0.5 cursor-pointer"
-                        title="Delete Review"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      <div className="flex gap-2 shrink-0 mt-0.5">
+                        <button
+                          onClick={() => handleStartEditReview(rev)}
+                          className="p-2 rounded-lg bg-slate-950/60 hover:bg-indigo-500/10 text-slate-500 hover:text-indigo-400 border border-slate-800/80 hover:border-indigo-950/20 transition-all cursor-pointer"
+                          title="Edit Review"
+                        >
+                          <Edit className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteReview(rev.id, rev.restaurant_id)}
+                          className="p-2 rounded-lg bg-slate-950/60 hover:bg-red-500/10 text-slate-500 hover:text-red-400 border border-slate-800/80 hover:border-red-950/20 transition-all cursor-pointer"
+                          title="Delete Review"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
             </>
           )}
+
+          {activeTab === 'settings' && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-5xl mx-auto items-start text-start">
+              
+              {/* Profile details form */}
+              <div className="bg-[#111A2E]/60 border border-slate-800/80 rounded-3xl p-6 lg:col-span-2 space-y-6">
+                <div>
+                  <h2 className="text-base font-bold text-white">Account Details</h2>
+                  <p className="text-slate-400 text-[11px] mt-0.5">Manage your personal customer profile details.</p>
+                </div>
+                     <form onSubmit={handleUpdateProfile} className="space-y-4">
+                  <div>
+                    <label htmlFor="settings-name" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                      Full Name
+                    </label>
+                    <input
+                      id="settings-name"
+                      type="text"
+                      required
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      placeholder="Your Name"
+                      className="w-full bg-[#0f172a]/50 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-4 py-2.5 text-white placeholder-slate-650 focus:outline-none transition-all text-sm"
+                    />
+                  </div>
+
+                  {/* Phone & Birth Date */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="settings-phone" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                        Phone Number
+                      </label>
+                      <input
+                        id="settings-phone"
+                        type="tel"
+                        value={newPhone}
+                        onChange={(e) => setNewPhone(e.target.value)}
+                        placeholder="e.g. +1 (555) 000-0000"
+                        className="w-full bg-[#0f172a]/50 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-4 py-2.5 text-white placeholder-slate-600 focus:outline-none transition-all text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="settings-birthdate" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                        Date of Birth
+                      </label>
+                      <input
+                        id="settings-birthdate"
+                        type="date"
+                        value={newBirthDate}
+                        onChange={(e) => setNewBirthDate(e.target.value)}
+                        className="w-full bg-[#0f172a]/50 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-4 py-2.5 text-white focus:outline-none transition-all text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Dietary Preferences */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      Dietary Preferences & Allergies
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {DIETARY_OPTIONS.map((opt) => {
+                        const isSelected = newDietaryPreferences.includes(opt.id);
+                        return (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => toggleDietaryPreference(opt.id)}
+                            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all border cursor-pointer ${
+                              isSelected
+                                ? 'bg-indigo-500 border-indigo-500 text-white shadow-md'
+                                : 'border-slate-800 bg-[#0f172a]/30 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  
+                  <button
+                    type="submit"
+                    disabled={updatingName}
+                    className="inline-flex items-center space-x-2 bg-indigo-500 hover:bg-indigo-650 text-white font-bold py-2.5 px-5 rounded-xl text-xs shadow-md transition-all active:scale-[0.98] disabled:opacity-50 gap-1.5 cursor-pointer"
+                  >
+                    {updatingName ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <span>Save Changes</span>
+                    )}
+                  </button>
+                </form>
+
+                <div className="h-px bg-slate-900" />
+
+                <div>
+                  <h2 className="text-base font-bold text-white">Change Password</h2>
+                  <p className="text-slate-400 text-[11px] mt-0.5">Secure your diner account with a new login password.</p>
+                </div>
+
+                <form onSubmit={handleUpdatePassword} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="settings-password" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                        New Password
+                      </label>
+                      <input
+                        id="settings-password"
+                        type="password"
+                        required
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Min. 6 characters"
+                        className="w-full bg-[#0f172a]/50 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-4 py-2.5 text-white placeholder-slate-650 focus:outline-none transition-all text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="settings-confirm-password" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                        Confirm New Password
+                      </label>
+                      <input
+                        id="settings-confirm-password"
+                        type="password"
+                        required
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Re-enter password"
+                        className="w-full bg-[#0f172a]/50 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-4 py-2.5 text-white placeholder-slate-650 focus:outline-none transition-all text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={updatingPassword}
+                    className="inline-flex items-center space-x-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2.5 px-5 rounded-xl text-xs shadow-md transition-all active:scale-[0.98] disabled:opacity-50 gap-1.5"
+                  >
+                    {updatingPassword ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <span>Updating...</span>
+                      </>
+                    ) : (
+                      <span>Update Password</span>
+                    )}
+                  </button>
+                </form>
+              </div>
+
+              {/* Sidebar stats panel */}
+              <div className="space-y-6">
+                <div className="bg-[#111A2E]/60 border border-slate-800/80 rounded-3xl p-6 space-y-4">
+                  <h2 className="text-sm font-bold text-white pb-3 border-b border-slate-900">Diner Analytics</h2>
+                  
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-450">Member Since</span>
+                      <span className="text-slate-200 font-bold">
+                        {profile?.created_at 
+                          ? new Date(profile.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+                          : '—'
+                        }
+                      </span>
+                    </div>
+                    {profile?.phone && (
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-slate-450">Phone Number</span>
+                        <span className="text-slate-200 font-bold">{profile.phone}</span>
+                      </div>
+                    )}
+                    {profile?.birth_date && (
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-slate-450">Date of Birth</span>
+                        <span className="text-slate-200 font-bold">
+                          {new Date(profile.birth_date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-450">Reviews Written</span>
+                      <span className="text-indigo-400 font-black">{reviews.length}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-450">Cafes Bookmarked</span>
+                      <span className="text-indigo-400 font-black">{favorites.length}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-slate-450">Loyalty Stamps</span>
+                      <span className="text-indigo-400 font-black">
+                        {loyalty.reduce((sum, item) => sum + item.stamps_count, 0)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-[#111A2E]/20 border border-slate-900 rounded-3xl p-6 space-y-3">
+                  <h3 className="text-xs font-bold text-slate-400">Security Tips</h3>
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    Make sure to choose a unique password that is at least 6 characters long. Keep your session active, or sign out on shared public devices.
+                  </p>
+                </div>
+              </div>
+
+            </div>
+          )}
         </div>
       </main>
+
+      {/* Loyalty Reward Redemption Modal */}
+      {selectedLoyaltyReward && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+          onClick={() => setSelectedLoyaltyReward(null)}
+        >
+          <div
+            className="w-full max-w-md bg-[#0F1524] border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col relative text-start"
+            onClick={(e) => e.stopPropagation()}
+            style={{ animation: 'scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)' }}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setSelectedLoyaltyReward(null)}
+              className="absolute top-4 right-4 z-25 h-8 w-8 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <div className="p-6 space-y-6 flex flex-col items-center text-center">
+              <div className="h-14 w-14 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                <Coffee className="h-7 w-7" />
+              </div>
+
+              <div className="space-y-1.5">
+                <h3 className="text-lg font-black text-white">Redeem Free Reward!</h3>
+                <p className="text-slate-400 text-xs px-4">
+                  Show this validation code to the cashier/waiter at <strong className="text-white">{selectedLoyaltyReward.restaurants?.name}</strong> to claim your free drink or meal.
+                </p>
+              </div>
+
+              {/* QR Code Container */}
+              {rewardQrUrl ? (
+                <div className="p-4 bg-white border border-slate-800 rounded-2xl shadow-inner select-none">
+                  <img src={rewardQrUrl} alt="Validation QR Code" className="h-44 w-44" />
+                </div>
+              ) : (
+                <div className="h-44 w-44 bg-slate-900 rounded-2xl flex items-center justify-center border border-dashed border-slate-800">
+                  <Loader2 className="h-6 w-6 animate-spin text-emerald-500" />
+                </div>
+              )}
+
+              <div className="bg-slate-950/80 px-5 py-2.5 rounded-xl border border-slate-900 select-all font-mono text-xs font-bold text-emerald-400 tracking-wider">
+                Code: TRBZ-LOYAL-{selectedLoyaltyReward.id.substring(0, 4).toUpperCase()}
+              </div>
+
+              <button
+                onClick={() => setSelectedLoyaltyReward(null)}
+                className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-slate-950 font-bold py-3.5 px-4 rounded-xl text-xs active:scale-[0.98] transition-all shadow-lg shadow-emerald-500/10 cursor-pointer"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Review Modal */}
+      {editingReview && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+          onClick={() => setEditingReview(null)}
+        >
+          <div
+            className="w-full max-w-md bg-[#0F1524] border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col relative text-start"
+            onClick={(e) => e.stopPropagation()}
+            style={{ animation: 'scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)' }}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setEditingReview(null)}
+              className="absolute top-4 right-4 z-25 h-8 w-8 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <form onSubmit={handleUpdateReview} className="p-6 space-y-6">
+              <div className="space-y-1">
+                <h3 className="text-base font-bold text-white">Edit your review</h3>
+                <p className="text-slate-400 text-xs">For: <strong className="text-slate-300">{editingReview.restaurants?.name}</strong></p>
+              </div>
+
+              {/* Star selector */}
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  Select Stars
+                </label>
+                <div className="flex space-x-1.5 gap-1.5 select-none">
+                  {[1, 2, 3, 4, 5].map((val) => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => setEditStars(val)}
+                      className="p-1 hover:scale-110 active:scale-90 transition-transform cursor-pointer"
+                    >
+                      <Star
+                        className={`h-7 w-7 ${
+                          val <= editStars ? 'fill-amber-400 text-amber-400' : 'text-slate-800'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Comment text area */}
+              <div className="space-y-2">
+                <label htmlFor="edit-comment" className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  Review Comment (Optional)
+                </label>
+                <textarea
+                  id="edit-comment"
+                  value={editComment}
+                  onChange={(e) => setEditComment(e.target.value)}
+                  placeholder="Tell us what you liked or disliked..."
+                  className="w-full bg-[#0f172a]/50 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-4 py-2.5 text-white placeholder-slate-600 focus:outline-none transition-all text-sm resize-none h-24"
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditingReview(null)}
+                  className="flex-1 border border-slate-800 hover:bg-slate-900 text-slate-350 font-bold py-3.5 px-4 rounded-xl text-xs active:scale-[0.98] transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingEdit}
+                  className="flex-1 bg-indigo-500 hover:bg-indigo-650 text-white font-bold py-3.5 px-4 rounded-xl text-xs active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-indigo-500/10"
+                >
+                  {savingEdit ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <span>Save Changes</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

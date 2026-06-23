@@ -48,7 +48,7 @@ export default function OnboardingPage() {
           setRestaurant(data);
           setName(data.name || '');
           setSlug(data.slug || '');
-          setThemeColor(data.theme_color || '#f97316');
+          setThemeColor(data.main_color || '#f97316');
           setLogoUrl(data.logo_url || '');
           setCoverUrl(data.cover_url || '');
           setDescription(data.description || '');
@@ -190,7 +190,7 @@ export default function OnboardingPage() {
         slug,
         phone,
         address,
-        theme_color: themeColor,
+        main_color: themeColor,
         logo_url: logoUrl,
         cover_url: coverUrl,
         description,

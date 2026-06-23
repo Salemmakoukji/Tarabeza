@@ -32,7 +32,12 @@ function LoginForm() {
         document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=86400; SameSite=Lax; Secure`;
       }
 
-      window.location.replace('/dashboard');
+      const role = data?.user?.user_metadata?.role || 'merchant';
+      if (role === 'customer') {
+        window.location.replace('/customer/dashboard');
+      } else {
+        window.location.replace('/dashboard');
+      }
     } catch (error) {
       setErrorMsg(error.message || 'An unexpected error occurred.');
     } finally {

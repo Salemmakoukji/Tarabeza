@@ -11,6 +11,9 @@ CREATE TABLE public.customer_profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     full_name TEXT NOT NULL,
     role TEXT NOT NULL DEFAULT 'customer' CHECK (role IN ('customer', 'merchant', 'admin')),
+    phone TEXT,
+    birth_date DATE,
+    dietary_preferences TEXT[] DEFAULT '{}'::TEXT[] NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
