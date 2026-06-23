@@ -30,9 +30,9 @@ export function links() {
       rel: "stylesheet",
       href: "https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&family=Inter:wght@100..900&family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&display=swap",
     },
-    { rel: "icon", type: "image/png", href: "/Simple Logo - Orange.png" },
-    { rel: "shortcut icon", type: "image/png", href: "/Simple Logo - Orange.png" },
-    { rel: "apple-touch-icon", type: "image/png", href: "/Simple Logo - Orange.png" },
+    { rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
+    { rel: "shortcut icon", href: "/favicon.ico" },
+    { rel: "apple-touch-icon", href: "/Logo - Orange - Square.png" },
   ];
 }
 
