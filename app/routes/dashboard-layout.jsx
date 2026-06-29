@@ -37,14 +37,24 @@ export async function loader({ request }) {
     .eq('restaurant_id', profile.id)
     .maybeSingle();
 
-  // Calculate Trial details (14 days)
-  const createdDate = new Date(profile.created_at);
+  // Calculate Trial details (14 days from profile created_at fallback or subscription expires_at if trialing)
   const now = new Date();
-  const trialDurationDays = 14;
-  const elapsedMs = now.getTime() - createdDate.getTime();
-  const elapsedDays = Math.floor(elapsedMs / (1000 * 60 * 60 * 24));
-  const trialDaysLeft = Math.max(0, trialDurationDays - elapsedDays);
-  const isTrialActive = elapsedDays < trialDurationDays;
+  let trialDaysLeft = 0;
+  let isTrialActive = false;
+
+  if (subscription && subscription.status === 'trialing' && subscription.expires_at) {
+    const expiresDate = new Date(subscription.expires_at);
+    const remainingMs = expiresDate.getTime() - now.getTime();
+    trialDaysLeft = Math.max(0, Math.ceil(remainingMs / (1000 * 60 * 60 * 24)));
+    isTrialActive = expiresDate > now;
+  } else {
+    const createdDate = new Date(profile.created_at);
+    const trialDurationDays = 14;
+    const elapsedMs = now.getTime() - createdDate.getTime();
+    const elapsedDays = Math.floor(elapsedMs / (1000 * 60 * 60 * 24));
+    trialDaysLeft = Math.max(0, trialDurationDays - elapsedDays);
+    isTrialActive = elapsedDays < trialDurationDays;
+  }
 
   // Subscription verification
   const hasPaidAccess = subscription && 
