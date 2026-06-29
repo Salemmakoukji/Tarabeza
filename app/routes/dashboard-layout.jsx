@@ -42,11 +42,17 @@ export async function loader({ request }) {
   let trialDaysLeft = 0;
   let isTrialActive = false;
 
-  if (subscription && subscription.status === 'trialing' && subscription.expires_at) {
-    const expiresDate = new Date(subscription.expires_at);
-    const remainingMs = expiresDate.getTime() - now.getTime();
-    trialDaysLeft = Math.max(0, Math.ceil(remainingMs / (1000 * 60 * 60 * 24)));
-    isTrialActive = expiresDate > now;
+  if (subscription) {
+    if (subscription.status === 'trialing' && subscription.expires_at) {
+      const expiresDate = new Date(subscription.expires_at);
+      const remainingMs = expiresDate.getTime() - now.getTime();
+      trialDaysLeft = Math.max(0, Math.ceil(remainingMs / (1000 * 60 * 60 * 24)));
+      isTrialActive = expiresDate > now;
+    } else {
+      // If any subscription record exists (even if active/expired/canceled), the initial trial is over
+      trialDaysLeft = 0;
+      isTrialActive = false;
+    }
   } else {
     const createdDate = new Date(profile.created_at);
     const trialDurationDays = 14;
