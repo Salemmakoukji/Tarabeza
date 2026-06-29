@@ -48,7 +48,7 @@ export default function AboutPage() {
       {/* Dynamic ambient glow spots */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#F97316]/10 rounded-full mix-blend-multiply filter blur-[100px] opacity-10 animate-pulse pointer-events-none"></div>
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/10 rounded-full mix-blend-multiply filter blur-[100px] opacity-10 animate-pulse pointer-events-none" style={{ animationDelay: '2s' }}></div>
-
+/* Header */
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[#0F1524]/80 backdrop-blur-md border-b border-slate-900">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
@@ -75,7 +75,7 @@ export default function AboutPage() {
 
       {/* Main Content */}
       <main className="flex-1 max-w-4xl mx-auto px-6 py-16 sm:py-24 space-y-16 relative z-10 w-full">
-        
+
         {/* Hero Title */}
         <div className="text-center space-y-4">
           <span className="inline-flex items-center space-x-1.5 gap-1.5 bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-bold tracking-wider uppercase px-4 py-1.5 rounded-full">
