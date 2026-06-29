@@ -53,6 +53,8 @@ export default function Dashboard() {
   const { profile, subscriptionInfo } = useOutletContext();
   const { initialCategories, initialMenuItems, initialRatings, initialScans } = useLoaderData();
 
+  const isBasic = subscriptionInfo?.plan === 'basic' && !subscriptionInfo?.isTrialActive;
+
   const [categoriesCount] = useState(initialCategories.length);
   const [itemsCount] = useState(initialMenuItems.length);
   const [qrUrl, setQrUrl] = useState('');
