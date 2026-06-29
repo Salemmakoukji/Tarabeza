@@ -288,7 +288,8 @@ async function drawCustomQR(text, options) {
 }
 
 export default function DashboardQRPage() {
-  const { profile } = useOutletContext();
+  const { profile, subscriptionInfo } = useOutletContext();
+  const isBasic = subscriptionInfo?.plan === 'basic' && !subscriptionInfo?.isTrialActive;
 
   const [fgColor, setFgColor] = useState(profile?.qr_fg_color || '#000000');
   const [fgColor2, setFgColor2] = useState(profile?.qr_fg_color2 || '#f97316');
@@ -352,22 +353,22 @@ export default function DashboardQRPage() {
     const generateQR = async () => {
       try {
         const url = await drawCustomQR(menuUrl, {
-          fgColor,
-          fgColor2,
-          bgColor,
-          qrStyleType,
-          gradientDirection,
-          dotStyle,
-          eyeStyle,
-          eyeColor,
-          showLogo,
-          logoUrl: profile?.logo_url,
-          logoStyle,
-          brandLetter: profile?.name ? profile.name[0] : 'M'
+          fgColor: isBasic ? '#000000' : fgColor,
+          fgColor2: isBasic ? '#000000' : fgColor2,
+          bgColor: isBasic ? '#ffffff' : bgColor,
+          qrStyleType: isBasic ? 'solid' : qrStyleType,
+          gradientDirection: isBasic ? 'diagonal' : gradientDirection,
+          dotStyle: isBasic ? 'square' : dotStyle,
+          eyeStyle: isBasic ? 'square' : eyeStyle,
+          eyeColor: isBasic ? '#000000' : eyeColor,
+          showLogo: isBasic ? false : showLogo,
+          logoStyle: isBasic ? 'square' : logoStyle,
+          qrFontFamily: isBasic ? 'helvetica' : qrFontFamily,
+          brandLetter: profile?.name?.charAt(0)?.toUpperCase() || 'M'
         });
         setQrUrl(url);
       } catch (err) {
-        console.error('Error generating QR code:', err);
+        console.error('Error generating QR:', err);
       }
     };
 
@@ -474,6 +475,11 @@ export default function DashboardQRPage() {
 
   const handleDownloadPDF = async () => {
     if (!qrUrl) return;
+    if (isBasic) {
+      setSaveError('PDF Table Tent card download is a Pro feature. Please upgrade your plan.');
+      setTimeout(() => setSaveError(''), 5000);
+      return;
+    }
     setDownloadingPDF(true);
 
     try {
@@ -617,7 +623,25 @@ export default function DashboardQRPage() {
               <span>Customize QR Style</span>
             </h2>
 
-            <div className="space-y-5 mt-4 max-h-[60vh] overflow-y-auto pr-1 no-scrollbar font-sans">
+            {isBasic && (
+              <div className="bg-orange-500/10 border border-orange-500/20 text-orange-400 p-3 rounded-xl text-xs space-y-2 mt-4 font-sans">
+                <p className="font-bold flex items-center gap-1.5">
+                  <Sparkles className="h-4 w-4 shrink-0 text-orange-400" />
+                  <span>Basic Plan Limits Active</span>
+                </p>
+                <p className="text-[11px] leading-relaxed text-slate-300">
+                  Custom colors, gradients, dot/eye shapes, and logo overlays are Pro features. Your QR code is set to standard black & white.
+                </p>
+                <a
+                  href="/dashboard/billing"
+                  className="inline-flex items-center text-[10px] font-bold text-orange-400 hover:text-orange-355 underline"
+                >
+                  Upgrade to Pro to customize style
+                </a>
+              </div>
+            )}
+
+            <div className={`space-y-5 mt-4 max-h-[60vh] overflow-y-auto pr-1 no-scrollbar font-sans ${isBasic ? "pointer-events-none opacity-40 select-none" : ""}`}>
               <div className="space-y-3">
                 <h3 className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Style & Colors</h3>
                 
@@ -921,8 +945,8 @@ export default function DashboardQRPage() {
 
             <button
               onClick={handleSaveQRSettings}
-              disabled={saving}
-              className="w-full py-2.5 bg-orange-500 hover:bg-orange-655 text-slate-950 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-orange-500/10 hover:shadow-orange-500/20 transition-all active:scale-[0.98] disabled:opacity-50 font-sans cursor-pointer"
+              disabled={saving || isBasic}
+              className="w-full py-2.5 bg-orange-500 hover:bg-orange-655 text-slate-950 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-orange-500/10 hover:shadow-orange-500/20 transition-all active:scale-[0.98] disabled:opacity-50 font-sans cursor-pointer font-bold"
             >
               {saving ? (
                 <>
@@ -1062,7 +1086,11 @@ export default function DashboardQRPage() {
             <button
               onClick={handleDownloadPDF}
               disabled={!qrUrl || downloadingPDF}
-              className="inline-flex items-center justify-center space-x-2 bg-orange-500 hover:bg-orange-600 text-slate-950 font-bold py-3 px-6 rounded-xl transition-all shadow-sm active:scale-[0.98] disabled:opacity-50 text-sm whitespace-nowrap cursor-pointer border-0"
+              className={`inline-flex items-center justify-center space-x-2 font-bold py-3 px-6 rounded-xl transition-all shadow-sm active:scale-[0.98] disabled:opacity-50 text-sm whitespace-nowrap cursor-pointer border-0 ${
+                isBasic
+                  ? 'bg-slate-800 text-slate-500 border border-slate-700/50 cursor-not-allowed'
+                  : 'bg-orange-500 hover:bg-orange-600 text-slate-950'
+              }`}
             >
               {downloadingPDF ? (
                 <>

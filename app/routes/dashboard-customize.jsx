@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useOutletContext, useFetcher, Link } from 'react-router';
 import { createClient } from '../lib/supabase/server';
-import { Check, ExternalLink, ArrowRight, Eye } from 'lucide-react';
+import { Check, ExternalLink, ArrowRight, Eye, Star } from 'lucide-react';
 
 export async function action({ request }) {
   const supabase = await createClient(request);
@@ -39,7 +39,7 @@ export async function action({ request }) {
 }
 
 export default function CustomizeMenu() {
-  const { profile } = useOutletContext();
+  const { profile, subscriptionInfo } = useOutletContext();
   const fetcher = useFetcher();
 
   // State initialization with fallbacks
@@ -141,9 +141,35 @@ export default function CustomizeMenu() {
     { name: 'DM Sans', arabic: false }
   ];
 
+  const isBasic = subscriptionInfo?.plan === 'basic' && !subscriptionInfo?.isTrialActive;
+
   return (
     <div className="max-w-4xl mx-auto bg-white text-slate-800 rounded-3xl p-6 md:p-8 shadow-xl border border-slate-200/60 relative select-none">
-      
+      {/* Locked overlay */}
+      {isBasic && (
+        <div className="absolute inset-0 z-50 bg-[#0F1524]/60 backdrop-blur-md flex items-center justify-center p-6 rounded-3xl">
+          <div className="max-w-md w-full bg-[#162035]/90 border border-slate-800 rounded-3xl p-8 text-center space-y-6 shadow-2xl animate-scale-up">
+            <div className="h-16 w-16 mx-auto rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400">
+              <Star className="h-8 w-8 fill-orange-500/20 text-orange-500" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-xl font-bold text-white">Premium Styling Customizer 🔒</h2>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Customizing menu templates, choosing premium fonts, applying color palettes, and creating dark theme layouts are Pro subscription features. Upgrade your plan to unlock the full styling studio!
+              </p>
+            </div>
+            <Link
+              to="/dashboard/billing"
+              className="w-full inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-slate-950 font-bold py-3 px-4 rounded-xl text-xs shadow-lg active:scale-98 transition-all gap-1.5 cursor-pointer"
+            >
+              <span>Upgrade to Pro</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      )}
+
+      <div className={isBasic ? "pointer-events-none select-none opacity-20 blur-[2px]" : ""}>
       {/* Font preloader for card preview renders */}
       <link 
         rel="stylesheet" 
@@ -621,6 +647,7 @@ export default function CustomizeMenu() {
         </div>
       )}
 
+      </div>
     </div>
   );
 }

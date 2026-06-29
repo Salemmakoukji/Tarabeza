@@ -124,23 +124,17 @@ const content = {
     pricingSubtitle: 'Choose the perfect plan for your business. No hidden fees.',
     planBasic: 'Basic',
     planPro: 'Pro',
-    planPremium: 'Premium',
-    priceBasic: '$15',
-    pricePro: '$29',
-    pricePremium: '$49',
+    priceBasic: '$10',
+    pricePro: '$20',
     perMonth: '/mo',
     popular: 'Popular',
     feature1: '1 Restaurant profile',
     feature2: 'Up to 50 menu items',
     feature3: 'Standard QR Code generator',
-    feature4: '3 Restaurant profiles',
-    feature5: 'Unlimited menu items',
-    feature6: 'Custom QR color generator',
-    feature7: 'Basic analytics dashboard',
-    feature8: 'Unlimited restaurants & items',
-    feature9: 'Premium styling customizer',
-    feature10: 'Full analytics & views counter',
-    feature11: '24/7 Priority support',
+    feature4: 'Unlimited menu items',
+    feature5: 'Premium styling customizer',
+    feature6: 'Full analytics & views counter',
+    feature7: '24/7 Priority support',
     choosePlan: 'Choose Plan',
     footerDesc: 'Modernize your restaurant dining experience with interactive digital QR menus.',
     product: 'Product',
@@ -198,23 +192,17 @@ const content = {
     pricingSubtitle: 'اختر الخطة المثالية لعملك. بدون رسوم خفية.',
     planBasic: 'الأساسية',
     planPro: 'الاحترافية',
-    planPremium: 'الممتازة',
-    priceBasic: '$15',
-    pricePro: '$29',
-    pricePremium: '$49',
+    priceBasic: '$10',
+    pricePro: '$20',
     perMonth: '/شهرياً',
     popular: 'الأكثر شعبية',
     feature1: 'ملف تعريف مطعم واحد',
     feature2: 'حتى 50 طبق وقسم',
     feature3: 'منشئ رموز QR قياسي',
-    feature4: '3 ملفات تعريف مطاعم',
-    feature5: 'أطباق وأقسام غير محدودة',
-    feature6: 'منشئ رموز QR بألوان مخصصة',
-    feature7: 'لوحة تحليلات وإحصاءات أساسية',
-    feature8: 'مطاعم وأطباق غير محدودة',
-    feature9: 'تخصيص كامل للألوان والتصميم',
-    feature10: 'إحصائيات كاملة للمشاهدات والزيارات',
-    feature11: 'دعم فني ذو أولوية على مدار الساعة',
+    feature4: 'أطباق وأقسام غير محدودة',
+    feature5: 'تخصيص كامل للألوان والتصميم',
+    feature6: 'إحصائيات كاملة للمشاهدات والزيارات',
+    feature7: 'دعم فني ذو أولوية على مدار الساعة',
     choosePlan: 'اختر الخطة',
     footerDesc: 'عصرن تجربة زوار مطعمك من خلال قوائم الطعام الرقمية التفاعلية برموز الاستجابة السريعة.',
     product: 'المنتج',
@@ -266,8 +254,7 @@ export default function Home() {
 
   const planFeatures = {
     basic: [t.feature1, t.feature2, t.feature3],
-    pro: [t.feature4, t.feature5, t.feature6, t.feature7],
-    premium: [t.feature8, t.feature9, t.feature10, t.feature11]
+    pro: [t.feature4, t.feature5, t.feature6, t.feature7]
   };
 
   const featureCards = [
@@ -727,7 +714,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-5xl mx-auto items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch">
             {/* Basic Plan */}
             <div className="bg-slate-900/40 border border-slate-900 p-8 rounded-2xl flex flex-col justify-between space-y-8 hover:border-slate-800 transition-colors relative">
               <div className="space-y-4">
@@ -785,33 +772,6 @@ export default function Home() {
               <Link
                 to="/register"
                 className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-bold text-center py-3.5 px-4 rounded-xl transition-all shadow-lg shadow-orange-500/10 active:scale-98"
-              >
-                {t.choosePlan}
-              </Link>
-            </div>
-
-            {/* Premium Plan */}
-            <div className="bg-slate-900/40 border border-slate-900 p-8 rounded-2xl flex flex-col justify-between space-y-8 hover:border-slate-800 transition-colors relative">
-              <div className="space-y-4">
-                <h3 className="text-xl font-bold text-slate-100">{t.planPremium}</h3>
-                <div className="flex items-baseline space-x-1 gap-1">
-                  <span className="text-4xl font-black text-white">{t.pricePremium}</span>
-                  <span className="text-slate-500 text-xs">{t.perMonth}</span>
-                </div>
-                <div className="h-px bg-slate-900 w-full"></div>
-                <ul className="space-y-3">
-                  {planFeatures.premium.map((feat, i) => (
-                    <li key={i} className="flex items-center space-x-2 gap-2 text-xs text-slate-400">
-                      <Check className="h-4 w-4 text-emerald-500 shrink-0" />
-                      <span>{feat}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <Link
-                to="/register"
-                className="w-full bg-slate-950 hover:bg-slate-900 border border-slate-800 text-slate-200 text-xs font-bold text-center py-3.5 px-4 rounded-xl transition-all active:scale-98"
               >
                 {t.choosePlan}
               </Link>

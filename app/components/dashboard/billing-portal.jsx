@@ -104,7 +104,6 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
     switch (planName.toLowerCase()) {
       case 'basic': return window.ENV?.PADDLE_BASIC_PRICE_ID;
       case 'pro': return window.ENV?.PADDLE_PRO_PRICE_ID;
-      case 'premium': return window.ENV?.PADDLE_PREMIUM_PRICE_ID;
       default: return null;
     }
   };
@@ -173,7 +172,7 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
           <p className="text-slate-400 text-sm">Choose the tier that matches your restaurant requirements.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto items-stretch">
           {/* Plan 1: Basic */}
           <div className={`bg-[#162035]/65 border rounded-2xl p-6 flex flex-col justify-between space-y-6 shadow-sm hover:shadow-md transition-shadow relative ${
             subscriptionInfo.plan === 'basic' && subscriptionInfo.hasPaidAccess ? 'ring-2 ring-emerald-500 border-transparent shadow-lg shadow-emerald-500/5' : 'border-slate-800'
@@ -186,7 +185,7 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
                 )}
               </div>
               <div className="flex items-baseline space-x-1 gap-1">
-                <span className="text-3xl font-black text-white">$15</span>
+                <span className="text-3xl font-black text-white">$10</span>
                 <span className="text-slate-400 text-xs">/month</span>
               </div>
               <p className="text-xs text-slate-400">Perfect for single coffee shops or diners.</p>
@@ -202,13 +201,13 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
                 </li>
                 <li className="flex items-center space-x-2 gap-2 text-xs text-slate-300">
                   <Check className="h-3.5 w-3.5 text-emerald-550 shrink-0" />
-                  <span>Standard QR flyer downloads</span>
+                  <span>Standard QR Code generator</span>
                 </li>
               </ul>
             </div>
 
             <button
-              onClick={() => handleCheckout('Basic', 15)}
+              onClick={() => handleCheckout('Basic', 10)}
               disabled={loadingPlan !== null || (subscriptionInfo.plan === 'basic' && subscriptionInfo.hasPaidAccess)}
               className={`w-full font-bold text-xs py-3 px-4 rounded-xl transition-all shadow-sm flex items-center justify-center space-x-1.5 ${
                 subscriptionInfo.plan === 'basic' && subscriptionInfo.hasPaidAccess
@@ -249,7 +248,7 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
                 )}
               </div>
               <div className="flex items-baseline space-x-1 gap-1">
-                <span className="text-3xl font-black text-white">$29</span>
+                <span className="text-3xl font-black text-white">$20</span>
                 <span className="text-slate-400 text-xs">/month</span>
               </div>
               <p className="text-xs text-slate-350">Perfect for growing bistros and bars.</p>
@@ -257,25 +256,25 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
               <ul className="space-y-2.5">
                 <li className="flex items-center space-x-2 gap-2 text-xs text-slate-200">
                   <Check className="h-3.5 w-3.5 text-orange-500 shrink-0" />
-                  <span>3 Restaurant profiles</span>
-                </li>
-                <li className="flex items-center space-x-2 gap-2 text-xs text-slate-200">
-                  <Check className="h-3.5 w-3.5 text-orange-500 shrink-0" />
                   <span>Unlimited menu items</span>
                 </li>
                 <li className="flex items-center space-x-2 gap-2 text-xs text-slate-200">
                   <Check className="h-3.5 w-3.5 text-orange-500 shrink-0" />
-                  <span>Custom QR colors & styled flyers</span>
+                  <span>Premium styling customizer</span>
                 </li>
                 <li className="flex items-center space-x-2 gap-2 text-xs text-slate-200">
                   <Check className="h-3.5 w-3.5 text-orange-500 shrink-0" />
-                  <span>Basic scan metrics</span>
+                  <span>Full analytics & views counter</span>
+                </li>
+                <li className="flex items-center space-x-2 gap-2 text-xs text-slate-200">
+                  <Check className="h-3.5 w-3.5 text-orange-500 shrink-0" />
+                  <span>24/7 Priority support</span>
                 </li>
               </ul>
             </div>
 
             <button
-              onClick={() => handleCheckout('Pro', 29)}
+              onClick={() => handleCheckout('Pro', 20)}
               disabled={loadingPlan !== null || (subscriptionInfo.plan === 'pro' && subscriptionInfo.hasPaidAccess)}
               className={`w-full font-bold text-xs py-3 px-4 rounded-xl transition-all shadow-md flex items-center justify-center space-x-1.5 ${
                 subscriptionInfo.plan === 'pro' && subscriptionInfo.hasPaidAccess
@@ -290,63 +289,6 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
                 </>
               ) : (
                 <span>{subscriptionInfo.plan === 'pro' && subscriptionInfo.hasPaidAccess ? 'Active Plan' : 'Select Pro Plan'}</span>
-              )}
-            </button>
-          </div>
-
-          {/* Plan 3: Premium */}
-          <div className={`bg-[#162035]/65 border rounded-2xl p-6 flex flex-col justify-between space-y-6 shadow-sm hover:shadow-md transition-shadow relative ${
-            subscriptionInfo.plan === 'premium' && subscriptionInfo.hasPaidAccess ? 'ring-2 ring-emerald-500 border-transparent shadow-lg shadow-emerald-500/5' : 'border-slate-800'
-          }`}>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-md font-bold text-white">Premium</h3>
-                {subscriptionInfo.plan === 'premium' && subscriptionInfo.hasPaidAccess && (
-                  <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/35 font-bold px-2 py-0.5 rounded-full">Current</span>
-                )}
-              </div>
-              <div className="flex items-baseline space-x-1 gap-1">
-                <span className="text-3xl font-black text-white">$49</span>
-                <span className="text-slate-400 text-xs">/month</span>
-              </div>
-              <p className="text-xs text-slate-400">For multi-location dining groups.</p>
-              <div className="h-px bg-slate-800 w-full"></div>
-              <ul className="space-y-2.5">
-                <li className="flex items-center space-x-2 gap-2 text-xs text-slate-300">
-                  <Check className="h-3.5 w-3.5 text-emerald-550 shrink-0" />
-                  <span>Unlimited restaurant profiles</span>
-                </li>
-                <li className="flex items-center space-x-2 gap-2 text-xs text-slate-300">
-                  <Check className="h-3.5 w-3.5 text-emerald-550 shrink-0" />
-                  <span>Unlimited items & custom templates</span>
-                </li>
-                <li className="flex items-center space-x-2 gap-2 text-xs text-slate-300">
-                  <Check className="h-3.5 w-3.5 text-emerald-550 shrink-0" />
-                  <span>Full database analytics console</span>
-                </li>
-                <li className="flex items-center space-x-2 gap-2 text-xs text-slate-300">
-                  <Check className="h-3.5 w-3.5 text-emerald-550 shrink-0" />
-                  <span>24/7 Premium technical support</span>
-                </li>
-              </ul>
-            </div>
-
-            <button
-              onClick={() => handleCheckout('Premium', 49)}
-              disabled={loadingPlan !== null || (subscriptionInfo.plan === 'premium' && subscriptionInfo.hasPaidAccess)}
-              className={`w-full font-bold text-xs py-3 px-4 rounded-xl transition-all shadow-sm flex items-center justify-center space-x-1.5 ${
-                subscriptionInfo.plan === 'premium' && subscriptionInfo.hasPaidAccess
-                  ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/50'
-                  : 'bg-[#1e293b] border border-slate-800 hover:border-orange-500 hover:text-orange-500 text-slate-200 active:scale-98 hover:bg-[#25324c]'
-              }`}
-            >
-              {loadingPlan === 'Premium' ? (
-                <>
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  <span>Initiating checkout...</span>
-                </>
-              ) : (
-                <span>{subscriptionInfo.plan === 'premium' && subscriptionInfo.hasPaidAccess ? 'Active Plan' : 'Select Premium Plan'}</span>
               )}
             </button>
           </div>

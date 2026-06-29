@@ -54,7 +54,7 @@ export async function loader({ request }) {
   const isBlocked = !hasPaidAccess && !isTrialActive;
 
   const subscriptionInfo = {
-    plan: subscription?.plan || 'free',
+    plan: (subscription?.plan || 'free').toLowerCase(),
     status: subscription?.status || (isTrialActive ? 'trialing' : 'expired'),
     expires_at: subscription?.expires_at || null,
     trialDaysLeft,

@@ -215,7 +215,13 @@ export default function Dashboard() {
         <div className="bg-[#111A2E]/60 border border-slate-800/80 rounded-2xl p-6 shadow-sm flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Menu Views</span>
-            <h3 className="text-2xl font-black text-white mt-1">{scansCount}</h3>
+            {isBasic ? (
+              <span className="text-xs font-extrabold text-orange-400 mt-2 block flex items-center gap-1.5 uppercase tracking-wide">
+                🔒 PRO FEATURE
+              </span>
+            ) : (
+              <h3 className="text-2xl font-black text-white mt-1">{scansCount}</h3>
+            )}
           </div>
           <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 shadow-inner">
             <Eye className="h-6 w-6" />
@@ -239,34 +245,44 @@ export default function Dashboard() {
       {/* Analytics Visual Reports Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Category Weight Breakdown */}
-        <div className="bg-[#111A2E]/60 border border-slate-800/80 rounded-2xl p-6 shadow-sm space-y-4">
-          <div>
-            <h2 className="text-sm font-bold text-white">Category Weight Distribution</h2>
-            <p className="text-slate-400 text-[11px]">Percentage distribution of menu dishes across active categories.</p>
-          </div>
+        <div className="bg-[#111A2E]/60 border border-slate-800/80 rounded-2xl p-6 shadow-sm space-y-4 relative overflow-hidden">
+          {isBasic && (
+            <div className="absolute inset-0 z-10 bg-slate-950/70 backdrop-blur-[3px] flex flex-col items-center justify-center p-4 text-center">
+              <Star className="h-5 w-5 text-orange-400 fill-orange-400 mb-1" />
+              <h3 className="text-[11px] font-bold text-white uppercase tracking-wide">Category Distribution 🔒</h3>
+              <p className="text-[9px] text-slate-400 mt-1 max-w-[200px]">Unlock category metrics with Pro</p>
+              <Link to="/dashboard/billing" className="mt-2 text-[9px] bg-orange-500 hover:bg-orange-600 text-slate-950 font-bold px-2.5 py-1 rounded-lg">Upgrade</Link>
+            </div>
+          )}
+          <div className={isBasic ? "pointer-events-none select-none blur-[1.5px] opacity-20" : ""}>
+            <div>
+              <h2 className="text-sm font-bold text-white">Category Weight Distribution</h2>
+              <p className="text-slate-400 text-[11px]">Percentage distribution of menu dishes across active categories.</p>
+            </div>
 
-          <div className="space-y-4 pt-1">
-            {categoryDistribution.length === 0 ? (
-              <div className="text-center py-6 text-slate-550 text-xs font-semibold">No menu categories created yet.</div>
-            ) : (
-              categoryDistribution.slice(0, 5).map((cat) => {
-                const percentage = Math.round((cat.count / totalItemsCount) * 100);
-                return (
-                  <div key={cat.name} className="space-y-1.5">
-                    <div className="flex justify-between items-center text-[11px] font-bold">
-                      <span className="text-slate-200 truncate max-w-[180px]">{cat.name}</span>
-                      <span className="text-slate-450 shrink-0 font-sans">{cat.count} {cat.count === 1 ? 'item' : 'items'} ({percentage})%</span>
+            <div className="space-y-4 pt-1">
+              {categoryDistribution.length === 0 ? (
+                <div className="text-center py-6 text-slate-550 text-xs font-semibold">No menu categories created yet.</div>
+              ) : (
+                categoryDistribution.slice(0, 5).map((cat) => {
+                  const percentage = Math.round((cat.count / totalItemsCount) * 100);
+                  return (
+                    <div key={cat.name} className="space-y-1.5">
+                      <div className="flex justify-between items-center text-[11px] font-bold">
+                        <span className="text-slate-200 truncate max-w-[180px]">{cat.name}</span>
+                        <span className="text-slate-450 shrink-0 font-sans">{cat.count} {cat.count === 1 ? 'item' : 'items'} ({percentage})%</span>
+                      </div>
+                      <div className="w-full bg-[#0D1321] rounded-full h-2">
+                        <div 
+                          className="bg-orange-500 h-2 rounded-full transition-all duration-500" 
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="w-full bg-[#0D1321] rounded-full h-2">
-                      <div 
-                        className="bg-orange-500 h-2 rounded-full transition-all duration-500" 
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })
-            )}
+                  );
+                })
+              )}
+            </div>
           </div>
         </div>
 
@@ -304,32 +320,42 @@ export default function Dashboard() {
       {/* Weekly scans bar chart & Quick link side-by-side */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Weekly views chart */}
-        <div className="bg-[#111A2E]/60 border border-slate-800/80 rounded-2xl p-6 shadow-sm lg:col-span-2 space-y-4 flex flex-col justify-between">
-          <div>
-            <h2 className="text-sm font-bold text-white">Weekly Scans Ticker</h2>
-            <p className="text-slate-400 text-[11px]">Daily scanner hits showing cafe menu views over the past week.</p>
-          </div>
+        <div className="bg-[#111A2E]/60 border border-slate-800/80 rounded-2xl p-6 shadow-sm lg:col-span-2 space-y-4 flex flex-col justify-between relative overflow-hidden">
+          {isBasic && (
+            <div className="absolute inset-0 z-10 bg-slate-950/70 backdrop-blur-[3px] flex flex-col items-center justify-center p-4 text-center">
+              <Star className="h-6 w-6 text-orange-400 fill-orange-400 mb-1 animate-pulse" />
+              <h3 className="text-xs font-bold text-white uppercase tracking-wide">Weekly Scan Ticker & Analytics 🔒</h3>
+              <p className="text-[10px] text-slate-400 mt-1 max-w-sm">Upgrade to Pro to view scanner analytics, menu views, and live diner traffic metrics.</p>
+              <Link to="/dashboard/billing" className="mt-3 text-xs bg-orange-500 hover:bg-orange-600 text-slate-950 font-bold px-4 py-1.5 rounded-lg shadow-md transition-all active:scale-95">Upgrade to Pro</Link>
+            </div>
+          )}
+          <div className={isBasic ? "pointer-events-none select-none blur-[1.5px] opacity-20 flex-1 flex flex-col justify-between" : "flex-1 flex flex-col justify-between"}>
+            <div>
+              <h2 className="text-sm font-bold text-white">Weekly Scans Ticker</h2>
+              <p className="text-slate-400 text-[11px]">Daily scanner hits showing cafe menu views over the past week.</p>
+            </div>
 
-          <div className="flex items-end justify-between h-36 pt-4 px-2 border-b border-slate-800/80">
-            {weeklyViews.map((view) => {
-              const heightPercent = (view.count / maxScans) * 100;
-              return (
-                <div key={view.dateStr} className="flex flex-col items-center flex-1 group relative">
-                  {/* Tooltip */}
-                  <div className="absolute bottom-full mb-2 bg-slate-950 text-white text-[10px] font-bold py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-md z-10 whitespace-nowrap border border-slate-800">
-                    {view.count} scans
+            <div className="flex items-end justify-between h-36 pt-4 px-2 border-b border-slate-800/80">
+              {weeklyViews.map((view) => {
+                const heightPercent = (view.count / maxScans) * 100;
+                return (
+                  <div key={view.dateStr} className="flex flex-col items-center flex-1 group relative">
+                    {/* Tooltip */}
+                    <div className="absolute bottom-full mb-2 bg-slate-950 text-white text-[10px] font-bold py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-md z-10 whitespace-nowrap border border-slate-800">
+                      {view.count} scans
+                    </div>
+                    {/* Bar */}
+                    <div 
+                      className="w-7 sm:w-10 bg-indigo-500/10 hover:bg-indigo-500 rounded-t-lg transition-all duration-300 relative overflow-hidden group-hover:shadow-[0_0_8px_rgba(99,102,241,0.4)] cursor-pointer animate-fade-in"
+                      style={{ height: view.count > 0 ? `${heightPercent}%` : '4px' }}
+                    >
+                      <div className="absolute bottom-0 inset-x-0 bg-indigo-500/20 h-full origin-bottom transform scale-y-[0.8] group-hover:scale-y-[1.0] transition-transform duration-300 animate-pulse" />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-500 mt-2 font-sans">{view.day}</span>
                   </div>
-                  {/* Bar */}
-                  <div 
-                    className="w-7 sm:w-10 bg-indigo-500/10 hover:bg-indigo-500 rounded-t-lg transition-all duration-300 relative overflow-hidden group-hover:shadow-[0_0_8px_rgba(99,102,241,0.4)] cursor-pointer animate-fade-in"
-                    style={{ height: view.count > 0 ? `${heightPercent}%` : '4px' }}
-                  >
-                    <div className="absolute bottom-0 inset-x-0 bg-indigo-500/20 h-full origin-bottom transform scale-y-[0.8] group-hover:scale-y-[1.0] transition-transform duration-300 animate-pulse" />
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-500 mt-2 font-sans">{view.day}</span>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
 

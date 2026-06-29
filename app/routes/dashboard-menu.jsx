@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useLoaderData } from 'react-router';
+import { useLoaderData, useOutletContext } from 'react-router';
 import { supabase as browserSupabase } from '../lib/supabase/client';
 import { 
   Plus, Edit2, Trash2, Loader2, Image as ImageIcon, 
@@ -52,6 +52,7 @@ export async function loader({ request }) {
 
 export default function MenuBuilder() {
   const { profile, initialCategories, initialMenuItems } = useLoaderData();
+  const { subscriptionInfo } = useOutletContext();
 
   const [categories, setCategories] = useState(initialCategories);
   const [menuItems, setMenuItems] = useState(initialMenuItems);
@@ -289,6 +290,11 @@ export default function MenuBuilder() {
 
   // MENU ITEM CRUD ACTIONS
   const openAddItem = () => {
+    const isBasic = subscriptionInfo?.plan === 'basic' && !subscriptionInfo?.isTrialActive;
+    if (isBasic && menuItems.length >= 50) {
+      showNotification('error', 'Limit Reached: Basic Plan allows a maximum of 50 menu items. Please upgrade to Pro for unlimited items.');
+      return;
+    }
     setItemModalMode('add');
     setEditingItem(null);
     setItemName('');
@@ -360,6 +366,14 @@ export default function MenuBuilder() {
   const handleSaveItem = async (e) => {
     e.preventDefault();
     if (!itemName.trim() || !itemPrice || !itemCategoryId || !profile) return;
+
+    // Double check item limit for Basic plan
+    const isBasic = subscriptionInfo?.plan === 'basic' && !subscriptionInfo?.isTrialActive;
+    if (isBasic && menuItems.length >= 50 && itemModalMode === 'add') {
+      showNotification('error', 'Limit Reached: Basic Plan allows a maximum of 50 menu items. Please upgrade to Pro for unlimited items.');
+      return;
+    }
+
     setSubmittingItem(true);
 
     const priceNum = parseFloat(itemPrice);
@@ -430,6 +444,11 @@ export default function MenuBuilder() {
   };
 
   const handleDuplicateItem = (item) => {
+    const isBasic = subscriptionInfo?.plan === 'basic' && !subscriptionInfo?.isTrialActive;
+    if (isBasic && menuItems.length >= 50) {
+      showNotification('error', 'Limit Reached: Basic Plan allows a maximum of 50 menu items. Please upgrade to Pro for unlimited items.');
+      return;
+    }
     setItemModalMode('add');
     setEditingItem(null);
     setItemName(`${item.name} (Copy)`);
