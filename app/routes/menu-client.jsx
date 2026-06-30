@@ -22,6 +22,26 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
   const [activeFilter] = useState('all'); // 'all' | 'chef' | 'bestseller' | 'new' | 'popular' | 'spicy'
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [lang, setLang] = useState(initialLang); // 'en' | 'ar'
+  const [isFromQr, setIsFromQr] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      setIsFromQr(params.get('qr') === 'true');
+    }
+  }, []);
+
+  const handleOpenRateModal = () => {
+    const isRtl = lang === 'ar';
+    if (!isFromQr) {
+      alert(isRtl 
+        ? 'عذراً، يجب عليك مسح رمز QR من الطاولة لتتمكن من كتابة تقييم.' 
+        : 'Sorry, you must scan the QR code at the table to leave a review.'
+      );
+      return;
+    }
+    setShowRateModal(true);
+  };
   
   const formatPrice = (price) => {
     const currency = profile.currency || '$';
@@ -657,26 +677,26 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
               alt=""
               className="w-full h-full object-cover"
             />
-            {/* Floating Favorite Button - on cover */}
+            {/* Floating Reviews Button - on cover */}
             <div className="absolute top-3 right-3 z-10">
               <button
-                onClick={handleToggleFavorite}
+                onClick={handleOpenRateModal}
                 className="w-9 h-9 flex items-center justify-center bg-black/45 hover:bg-black/60 text-white rounded-full backdrop-blur-md transition-all duration-200 active:scale-90 shadow-sm"
-                title={isRtl ? "إضافة للمفضلة" : "Favorite"}
+                title={isRtl ? "قيمنا" : "Rate Us"}
               >
-                <Heart className={`h-4.5 w-4.5 transition-colors ${isFavorited ? 'fill-rose-500 text-rose-500' : 'text-white'}`} />
+                <Star className="h-4.5 w-4.5 text-amber-400 fill-amber-400" />
               </button>
             </div>
           </div>
         ) : (
-          /* Favorite button when no cover */
+          /* Reviews button when no cover */
           <div className="flex justify-end px-4 pt-3">
             <button
-              onClick={handleToggleFavorite}
+              onClick={handleOpenRateModal}
               className="w-9 h-9 flex items-center justify-center bg-[var(--card)] border border-[var(--border)] text-[var(--text-2)] hover:text-[var(--accent)] rounded-full transition-all duration-200 active:scale-90"
-              title={isRtl ? "إضافة للمفضلة" : "Favorite"}
+              title={isRtl ? "قيمنا" : "Rate Us"}
             >
-              <Heart className={`h-4.5 w-4.5 transition-colors ${isFavorited ? 'fill-rose-500 text-rose-500' : ''}`} />
+              <Star className="h-4.5 w-4.5 text-amber-400 fill-amber-400" />
             </button>
           </div>
         )}
@@ -735,7 +755,7 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
             )}
             <span>·</span>
             <button
-              onClick={() => setShowRateModal(true)}
+              onClick={handleOpenRateModal}
               className="hover:text-[var(--accent)] underline decoration-dotted transition-colors"
             >
               {currentT.rateUs}
@@ -1316,21 +1336,7 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
               </div>
             ) : (
               <form onSubmit={handleRatingSubmit} className="space-y-4 text-center">
-                {!customerUser && (
-                  <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-3 text-[10px] text-indigo-500 leading-normal font-medium text-start">
-                    {isRtl ? (
-                      <>
-                        <span>سجل الدخول كزبون لكتابة تقييم موثق وكسب طوابع الولاء! </span>
-                        <a href="/login" className="underline font-bold">سجل الدخول هنا</a>
-                      </>
-                    ) : (
-                      <>
-                        <span>Log in as a Diner to write a verified review and earn loyalty stamps! </span>
-                        <a href="/login" className="underline font-bold">Log in here</a>
-                      </>
-                    )}
-                  </div>
-                )}
+
 
                 {ratingError && (
                   <p className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 text-[11px] text-rose-600 font-bold">

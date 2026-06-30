@@ -315,7 +315,7 @@ export default function DashboardQRPage() {
 
   useEffect(() => {
     if (typeof window !== 'undefined' && profile) {
-      setMenuUrl(`${window.location.origin}/menu/${profile.slug}`);
+      setMenuUrl(`${window.location.origin}/menu/${profile.slug}?qr=true`);
     }
   }, [profile]);
 
