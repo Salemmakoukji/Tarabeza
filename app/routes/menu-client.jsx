@@ -40,7 +40,13 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
       );
       return;
     }
-    setShowRateModal(true);
+    setReviewsViewMode('write');
+    setShowReviewsModal(true);
+  };
+
+  const handleOpenReviewsModal = () => {
+    setReviewsViewMode('list');
+    setShowReviewsModal(true);
   };
   
   const formatPrice = (price) => {
@@ -68,7 +74,8 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
 
   // Ratings state
   const [ratings, setRatings] = useState(initialRatings);
-  const [showRateModal, setShowRateModal] = useState(false);
+  const [showReviewsModal, setShowReviewsModal] = useState(false);
+  const [reviewsViewMode, setReviewsViewMode] = useState('list'); // 'list' | 'write'
   const [selectedStars, setSelectedStars] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
   const [submittingRating, setSubmittingRating] = useState(false);
@@ -452,7 +459,7 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
       setReviewComment('');
       setSelectedStars(5);
       setTimeout(() => {
-        setShowRateModal(false);
+        setReviewsViewMode('list');
         setRatingSuccess(false);
       }, 2000);
     } catch (error) {
@@ -680,9 +687,9 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
             {/* Floating Reviews Button - on cover */}
             <div className="absolute top-3 right-3 z-10">
               <button
-                onClick={handleOpenRateModal}
+                onClick={handleOpenReviewsModal}
                 className="w-9 h-9 flex items-center justify-center bg-black/45 hover:bg-black/60 text-white rounded-full backdrop-blur-md transition-all duration-200 active:scale-90 shadow-sm"
-                title={isRtl ? "قيمنا" : "Rate Us"}
+                title={isRtl ? "تقييمات الزبائن" : "Customer Reviews"}
               >
                 <Star className="h-4.5 w-4.5 text-amber-400 fill-amber-400" />
               </button>
@@ -692,9 +699,9 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
           /* Reviews button when no cover */
           <div className="flex justify-end px-4 pt-3">
             <button
-              onClick={handleOpenRateModal}
+              onClick={handleOpenReviewsModal}
               className="w-9 h-9 flex items-center justify-center bg-[var(--card)] border border-[var(--border)] text-[var(--text-2)] hover:text-[var(--accent)] rounded-full transition-all duration-200 active:scale-90"
-              title={isRtl ? "قيمنا" : "Rate Us"}
+              title={isRtl ? "تقييمات الزبائن" : "Customer Reviews"}
             >
               <Star className="h-4.5 w-4.5 text-amber-400 fill-amber-400" />
             </button>
@@ -1312,86 +1319,172 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
         </div>
       )}
 
-      {/* Ratings Submit Modal */}
-      {showRateModal && (
+      {/* Ratings / Reviews Modal */}
+      {showReviewsModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-          <div className="w-full max-w-sm rounded-[24px] bg-[var(--card)] border border-[var(--border)] p-6 relative text-[var(--text)] shadow-2xl animate-[scaleUp_200ms_ease-out_forwards]">
+          <div className="w-full max-w-sm rounded-[24px] bg-[var(--card)] border border-[var(--border)] p-6 relative text-[var(--text)] shadow-2xl animate-[scaleUp_200ms_ease-out_forwards] flex flex-col max-h-[80vh]">
             <button
-              onClick={() => setShowRateModal(false)}
-              className={`absolute top-4 ${isRtl ? 'left-4' : 'right-4'} text-[var(--text-2)] hover:text-[var(--text)] transition-colors duration-200`}
+              onClick={() => setShowReviewsModal(false)}
+              className={`absolute top-4 ${isRtl ? 'left-4' : 'right-4'} text-[var(--text-2)] hover:text-[var(--text)] transition-colors duration-200 z-10`}
             >
               <X className="h-5 w-5" />
             </button>
 
-            <h3 className="text-sm font-bold text-center mb-4 mt-2 uppercase tracking-wider">
-              {currentT.rateThisCafe}
-            </h3>
+            {reviewsViewMode === 'list' ? (
+              <div className="flex flex-col flex-1 overflow-hidden">
+                <h3 className="text-sm font-bold text-center mb-4 mt-2 uppercase tracking-wider shrink-0">
+                  {isRtl ? 'تقييمات الزبائن' : 'Customer Reviews'}
+                </h3>
 
-            {ratingSuccess ? (
-              <div className="text-center py-6 space-y-2">
-                <div className="mx-auto h-12 w-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-3">
-                  <Star className="h-6 w-6 text-emerald-500 fill-emerald-500" />
-                </div>
-                <h4 className="font-bold text-sm">{currentT.ratingSuccessMsg}</h4>
-              </div>
-            ) : (
-              <form onSubmit={handleRatingSubmit} className="space-y-4 text-center">
-
-
-                {ratingError && (
-                  <p className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 text-[11px] text-rose-600 font-bold">
-                    {ratingError}
-                  </p>
-                )}
-
-                <div className="flex flex-col items-center gap-2">
-                  <span className="text-[10px] font-bold text-[var(--text-2)] uppercase tracking-wider">
-                    {currentT.selectStars}
-                  </span>
-                  <div className="flex gap-1.5">
-                    {[1, 2, 3, 4, 5].map((val) => {
-                      const isActive = val <= selectedStars;
-                      return (
-                        <button
-                          key={val}
-                          type="button"
-                          onClick={() => setSelectedStars(val)}
-                          className="p-1 hover:scale-125 active:scale-95 transition-all duration-200"
-                        >
-                          <Star
-                            className={`h-8 w-8 transition-colors ${isActive
-                              ? 'fill-amber-400 text-amber-400'
-                              : 'text-[var(--text-2)]/30'
-                              }`}
-                          />
-                        </button>
-                      );
-                    })}
+                {/* Score summary */}
+                <div className="flex items-center justify-center gap-4 bg-[var(--bg)] border border-[var(--border)] p-4 rounded-2xl mb-4 shrink-0">
+                  <div className="text-center">
+                    <span className="text-3xl font-black text-[var(--text)]">{averageRating || '—'}</span>
+                    <div className="flex gap-0.5 mt-1 justify-center">
+                      {[1, 2, 3, 4, 5].map((val) => (
+                        <Star 
+                          key={val} 
+                          className={`h-3 w-3 ${averageRating && val <= Math.round(Number(averageRating)) ? 'text-amber-400 fill-amber-400' : 'text-[var(--text-2)]/30'}`} 
+                        />
+                      ))}
+                    </div>
+                    <span className="text-[10px] text-[var(--text-2)] block mt-1 font-semibold">
+                      ({totalReviews} {isRtl ? 'تقييم' : 'reviews'})
+                    </span>
                   </div>
                 </div>
 
-                <textarea
-                  placeholder={currentT.writeComment}
-                  value={reviewComment}
-                  onChange={(e) => setReviewComment(e.target.value)}
-                  className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-[var(--text)] placeholder-[var(--text-2)]/60 focus:outline-none focus:ring-1 focus:ring-[var(--accent)] focus:border-[var(--accent)] transition-all duration-200 text-xs resize-none h-20"
-                />
-
-                <button
-                  type="submit"
-                  disabled={submittingRating}
-                  className="w-full font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all duration-200 bg-[var(--accent)] text-white disabled:opacity-50"
-                >
-                  {submittingRating ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>{currentT.submitRating}...</span>
-                    </>
+                {/* Reviews List */}
+                <div className="flex-1 overflow-y-auto no-scrollbar space-y-3 pr-1 text-start">
+                  {ratings.filter(r => !profile.customization?.hiddenReviews?.[r.id]).length === 0 ? (
+                    <div className="text-center py-8 text-[var(--text-2)] text-xs font-semibold">
+                      {isRtl ? 'لا توجد تقييمات بعد.' : 'No reviews yet.'}
+                    </div>
                   ) : (
-                    <span>{currentT.submitRating}</span>
+                    ratings
+                      .filter(r => !profile.customization?.hiddenReviews?.[r.id])
+                      .map((r) => {
+                        const reviewerName = r.customer_profiles?.full_name || (isRtl ? 'زائر' : 'Guest');
+                        const dateStr = new Date(r.created_at).toLocaleDateString(isRtl ? 'ar-EG' : 'en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        });
+                        return (
+                          <div key={r.id} className="p-3 bg-[var(--bg)] border border-[var(--border)] rounded-xl space-y-1.5">
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <span className="text-xs font-bold text-[var(--text)]">{reviewerName}</span>
+                              <span className="text-[9px] text-[var(--text-2)]">{dateStr}</span>
+                            </div>
+                            <div className="flex gap-0.5">
+                              {[1, 2, 3, 4, 5].map((val) => (
+                                <Star 
+                                  key={val} 
+                                  className={`h-2.5 w-2.5 ${val <= r.stars ? 'text-amber-400 fill-amber-400' : 'text-[var(--text-2)]/20'}`} 
+                                />
+                              ))}
+                            </div>
+                            {r.comment && (
+                              <p className="text-xs text-[var(--text-2)] leading-normal italic">"{r.comment}"</p>
+                            )}
+                          </div>
+                        );
+                      })
                   )}
-                </button>
-              </form>
+                </div>
+
+                {/* Footer Write Button (Only for QR Scanners) */}
+                {isFromQr && (
+                  <button
+                    onClick={() => setReviewsViewMode('write')}
+                    className="mt-4 w-full font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center bg-[var(--accent)] text-white hover:opacity-90 active:scale-[0.98] transition-all duration-200 shrink-0"
+                  >
+                    <span>{isRtl ? 'اكتب تقييمك' : 'Write a Review'}</span>
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col flex-1 overflow-hidden">
+                <h3 className="text-sm font-bold text-center mb-4 mt-2 uppercase tracking-wider shrink-0">
+                  {currentT.rateThisCafe}
+                </h3>
+
+                {ratingSuccess ? (
+                  <div className="text-center py-12 space-y-2 flex-1 flex flex-col items-center justify-center">
+                    <div className="mx-auto h-12 w-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-3">
+                      <Star className="h-6 w-6 text-emerald-500 fill-emerald-500" />
+                    </div>
+                    <h4 className="font-bold text-sm">{currentT.ratingSuccessMsg}</h4>
+                  </div>
+                ) : (
+                  <form onSubmit={handleRatingSubmit} className="space-y-4 text-center flex-1 flex flex-col justify-between overflow-y-auto no-scrollbar">
+                    <div className="space-y-4">
+                      {ratingError && (
+                        <p className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 text-[11px] text-rose-600 font-bold">
+                          {ratingError}
+                        </p>
+                      )}
+
+                      <div className="flex flex-col items-center gap-2">
+                        <span className="text-[10px] font-bold text-[var(--text-2)] uppercase tracking-wider">
+                          {currentT.selectStars}
+                        </span>
+                        <div className="flex gap-1.5">
+                          {[1, 2, 3, 4, 5].map((val) => {
+                            const isActive = val <= selectedStars;
+                            return (
+                              <button
+                                key={val}
+                                type="button"
+                                onClick={() => setSelectedStars(val)}
+                                className="p-1 hover:scale-125 active:scale-95 transition-all duration-200"
+                              >
+                                <Star
+                                  className={`h-8 w-8 transition-colors ${isActive
+                                    ? 'fill-amber-400 text-amber-400'
+                                    : 'text-[var(--text-2)]/30'
+                                    }`}
+                                />
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <textarea
+                        placeholder={currentT.writeComment}
+                        value={reviewComment}
+                        onChange={(e) => setReviewComment(e.target.value)}
+                        className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-[var(--text)] placeholder-[var(--text-2)]/60 focus:outline-none focus:ring-1 focus:ring-[var(--accent)] focus:border-[var(--accent)] transition-all duration-200 text-xs resize-none h-24"
+                      />
+                    </div>
+
+                    <div className="space-y-2 pt-4 shrink-0">
+                      <button
+                        type="submit"
+                        disabled={submittingRating}
+                        className="w-full font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all duration-200 bg-[var(--accent)] text-white disabled:opacity-50"
+                      >
+                        {submittingRating ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span>{currentT.submitRating}...</span>
+                          </>
+                        ) : (
+                          <span>{currentT.submitRating}</span>
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setReviewsViewMode('list')}
+                        className="w-full font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center border border-[var(--border)] hover:bg-[var(--card)] active:scale-[0.98] transition-all duration-200 text-[var(--text-2)]"
+                      >
+                        <span>{isRtl ? 'العودة للتقييمات' : 'Back to Reviews'}</span>
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
             )}
           </div>
         </div>

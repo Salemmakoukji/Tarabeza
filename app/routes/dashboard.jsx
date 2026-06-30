@@ -1,11 +1,57 @@
 import { useState, useEffect } from 'react';
-import { useLoaderData, useOutletContext, Link } from 'react-router';
+import { useLoaderData, useOutletContext, Link, useFetcher } from 'react-router';
 import { 
   Loader2, UtensilsCrossed, FolderHeart, QrCode, Settings, 
   ExternalLink, Sparkles, Copy, Check, Eye, Star
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { createClient } from '../lib/supabase/server';
+
+export async function action({ request }) {
+  const supabase = await createClient(request);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Unauthorized' };
+
+  const formData = await request.formData();
+  const restaurantId = formData.get('restaurantId');
+  const reviewId = formData.get('reviewId');
+  const hideAction = formData.get('hideAction') === 'true';
+
+  const { data: restaurant, error: fetchErr } = await supabase
+    .from('restaurants')
+    .select('customization')
+    .eq('id', restaurantId)
+    .single();
+
+  if (fetchErr || !restaurant) {
+    return { success: false, error: 'Restaurant not found' };
+  }
+
+  const customization = restaurant.customization || {};
+  if (!customization.hiddenReviews) {
+    customization.hiddenReviews = {};
+  }
+
+  if (hideAction) {
+    customization.hiddenReviews[reviewId] = true;
+  } else {
+    delete customization.hiddenReviews[reviewId];
+  }
+
+  const { error } = await supabase
+    .from('restaurants')
+    .update({
+      customization,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', restaurantId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, hiddenReviews: customization.hiddenReviews };
+}
 
 export async function loader({ request }) {
   const supabase = await createClient(request);
@@ -33,8 +79,9 @@ export async function loader({ request }) {
       .eq('restaurant_id', profile.id),
     supabase
       .from('ratings')
-      .select('*')
-      .eq('restaurant_id', profile.id),
+      .select('*, customer_profiles(full_name)')
+      .eq('restaurant_id', profile.id)
+      .order('created_at', { ascending: false }),
     supabase
       .from('scans_log')
       .select('scanned_at')
@@ -64,6 +111,24 @@ export default function Dashboard() {
   const [scansCount] = useState(initialScans.length);
   const [weeklyViews, setWeeklyViews] = useState([]);
   const [origin, setOrigin] = useState('');
+
+  const fetcher = useFetcher();
+  const [hiddenReviews, setHiddenReviews] = useState(profile.customization?.hiddenReviews || {});
+
+  useEffect(() => {
+    if (fetcher.state === 'idle' && fetcher.data && fetcher.data.success) {
+      setHiddenReviews(fetcher.data.hiddenReviews || {});
+    }
+  }, [fetcher.state, fetcher.data]);
+
+  const toggleReviewVisibility = (reviewId) => {
+    const isCurrentlyHidden = !!hiddenReviews[reviewId];
+    const formData = new FormData();
+    formData.append('restaurantId', profile.id);
+    formData.append('reviewId', reviewId);
+    formData.append('hideAction', (!isCurrentlyHidden).toString());
+    fetcher.submit(formData, { method: 'POST' });
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -428,6 +493,78 @@ export default function Dashboard() {
               <span>Edit Brand Highlight Color</span>
             </Link>
           </div>
+        </div>
+      </div>
+
+      {/* Customer Reviews Section */}
+      <div className="bg-[#111A2E]/60 border border-slate-800/80 rounded-2xl p-6 shadow-sm space-y-6">
+        <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
+          <div>
+            <h2 className="text-sm font-bold text-white flex items-center gap-1.5">
+              <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
+              <span>Customer Reviews List</span>
+            </h2>
+            <p className="text-slate-400 text-[11px] mt-1">View reviews submitted by customers and choose which ones to display on your public menu.</p>
+          </div>
+          <span className="bg-slate-800 text-slate-350 text-[10px] font-bold px-2.5 py-1 rounded-full">
+            {ratings.length} Total
+          </span>
+        </div>
+
+        <div className="space-y-4 max-h-[500px] overflow-y-auto pr-1 no-scrollbar">
+          {ratings.length === 0 ? (
+            <div className="text-center py-12 text-slate-500 text-xs font-semibold">No reviews received yet.</div>
+          ) : (
+            ratings.map((r) => {
+              const isHidden = !!hiddenReviews[r.id];
+              const dateStr = new Date(r.created_at).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+              });
+              const reviewerName = r.customer_profiles?.full_name || 'Guest User';
+
+              return (
+                <div 
+                  key={r.id} 
+                  className={`p-4 rounded-xl border transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                    isHidden 
+                      ? 'bg-slate-950/40 border-slate-900/60 opacity-60' 
+                      : 'bg-[#162035]/40 border-slate-800/85 hover:border-slate-700/80'
+                  }`}
+                >
+                  <div className="space-y-2 text-start flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold text-slate-200">{reviewerName}</span>
+                      <span className="text-[10px] text-slate-500 font-medium">{dateStr}</span>
+                      <div className="flex gap-0.5">
+                        {[1, 2, 3, 4, 5].map((val) => (
+                          <Star 
+                            key={val} 
+                            className={`h-3 w-3 ${val <= r.stars ? 'text-amber-400 fill-amber-400' : 'text-slate-700'}`} 
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    {r.comment && (
+                      <p className="text-xs text-slate-300 leading-normal italic break-words">"{r.comment}"</p>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => toggleReviewVisibility(r.id)}
+                    className={`shrink-0 text-[10px] font-extrabold px-3 py-1.5 rounded-lg transition-all active:scale-95 flex items-center gap-1.5 border ${
+                      isHidden 
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20' 
+                        : 'bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20'
+                    }`}
+                  >
+                    <span>{isHidden ? 'Show in Menu' : 'Hide from Menu'}</span>
+                  </button>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
     </div>
