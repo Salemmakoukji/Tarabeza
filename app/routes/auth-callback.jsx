@@ -15,20 +15,27 @@ export default function AuthCallback() {
           document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=3600; SameSite=Lax; Secure`;
           document.cookie = `sb-refresh-token=${data.session.refresh_token}; path=/; max-age=86400; SameSite=Lax; Secure`;
 
-          const role = data.session.user.user_metadata?.role || 'merchant';
-          if (role === 'customer') {
-            window.location.href = '/customer/dashboard';
+          const params = new URLSearchParams(hash.substring(1));
+          const type = params.get('type');
+
+          if (type === 'recovery') {
+            window.location.href = '/reset-password';
           } else {
-            // Check if restaurant profile exists
-            const { data: profile } = await supabase
-              .from('restaurants')
-              .select('id')
-              .eq('owner_id', data.session.user.id)
-              .maybeSingle();
-            
-            window.location.href = !profile 
-              ? '/onboarding' 
-              : '/dashboard';
+            const role = data.session.user.user_metadata?.role || 'merchant';
+            if (role === 'customer') {
+              window.location.href = '/customer/dashboard';
+            } else {
+              // Check if restaurant profile exists
+              const { data: profile } = await supabase
+                .from('restaurants')
+                .select('id')
+                .eq('owner_id', data.session.user.id)
+                .maybeSingle();
+              
+              window.location.href = !profile 
+                ? '/onboarding' 
+                : '/dashboard';
+            }
           }
         } else {
           window.location.href = '/login?error=Authentication+failed';

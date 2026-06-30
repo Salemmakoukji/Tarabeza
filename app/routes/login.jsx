@@ -1,5 +1,5 @@
 import { useState, Suspense } from 'react';
-import { useNavigate, useSearchParams } from 'react-router';
+import { useNavigate, useSearchParams, Link } from 'react-router';
 import { supabase } from '../lib/supabase/client';
 import { Loader2, AlertCircle, ArrowRight } from 'lucide-react';
 import Logo from '../components/logo';
@@ -115,9 +115,14 @@ function LoginForm() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-                Password
-              </label>
+              <div className="flex justify-between items-center mb-2">
+                <label htmlFor="password" className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  Password
+                </label>
+                <Link to="/reset-password" className="text-xs text-[#F97316] hover:text-orange-400 transition-colors font-semibold">
+                  Forgot password?
+                </Link>
+              </div>
               <input
                 id="password"
                 type="password"

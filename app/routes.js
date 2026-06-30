@@ -4,6 +4,7 @@ export default [
   index("routes/home.jsx"),
   route("login", "routes/login.jsx"),
   route("register", "routes/register.jsx"),
+  route("reset-password", "routes/reset-password.jsx"),
   route("onboarding", "routes/onboarding.jsx"),
   
   // Public directory and menus
