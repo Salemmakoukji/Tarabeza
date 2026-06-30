@@ -17,6 +17,7 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
   const revalidator = useRevalidator();
   const [loadingPlan, setLoadingPlan] = useState(null);
   const [toasts, setToasts] = useState([]);
+  const [billingPeriod, setBillingPeriod] = useState('monthly'); // 'monthly' | 'yearly'
   const [paddleLoaded, setPaddleLoaded] = useState(false);
 
   const addToast = useCallback((type, text) => {
@@ -74,9 +75,13 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
         // Wait 1.5s to simulate network payment
         await new Promise((resolve) => setTimeout(resolve, 1500));
 
-        // Expire subscription in 30 days
+        // Expire subscription in 30 days or 365 days
         const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + 30);
+        if (billingPeriod === 'yearly') {
+          expiresAt.setDate(expiresAt.getDate() + 365);
+        } else {
+          expiresAt.setDate(expiresAt.getDate() + 30);
+        }
 
         const { error } = await supabase
           .from('subscriptions')
@@ -167,9 +172,27 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
 
       {/* Pricing Grid */}
       <div>
-        <div className="text-center max-w-xl mx-auto space-y-2 mb-8">
+        <div className="text-center max-w-xl mx-auto space-y-2 mb-4">
           <h2 className="text-2xl font-bold text-white">Select Subscription Plan</h2>
           <p className="text-slate-400 text-sm">Choose the tier that matches your restaurant requirements.</p>
+        </div>
+
+        {/* Billing Period Toggle */}
+        <div className="flex justify-center items-center pt-2 gap-3 mb-8">
+          <span className={`text-xs font-semibold tracking-wide transition-colors duration-200 ${billingPeriod === 'monthly' ? 'text-white font-bold' : 'text-slate-500'}`}>
+            Monthly
+          </span>
+          <button 
+            type="button"
+            onClick={() => setBillingPeriod(billingPeriod === 'monthly' ? 'yearly' : 'monthly')}
+            className="w-10 h-5 bg-slate-850 hover:bg-slate-800 border border-slate-800 rounded-full p-0.5 transition-all duration-300 relative focus:outline-none flex items-center"
+            aria-label="Toggle billing cycle"
+          >
+            <div className={`w-3.5 h-3.5 bg-orange-500 rounded-full shadow-md transition-transform duration-300 ${billingPeriod === 'yearly' ? 'translate-x-5' : 'translate-x-0'}`} />
+          </button>
+          <span className={`text-xs font-semibold tracking-wide transition-colors duration-200 ${billingPeriod === 'yearly' ? 'text-white font-bold' : 'text-slate-500'}`}>
+            Yearly
+          </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto items-stretch">
@@ -177,6 +200,11 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
           <div className={`bg-[#162035]/65 border rounded-2xl p-6 flex flex-col justify-between space-y-6 shadow-sm hover:shadow-md transition-shadow relative ${
             subscriptionInfo.plan === 'basic' && subscriptionInfo.hasPaidAccess ? 'ring-2 ring-emerald-500 border-transparent shadow-lg shadow-emerald-500/5' : 'border-slate-800'
           }`}>
+            {billingPeriod === 'yearly' && (
+              <span className="absolute -top-3 left-6 bg-emerald-600 text-white font-bold uppercase tracking-wider text-[8px] px-3 py-1 rounded-full shadow-lg">
+                2 Months Free
+              </span>
+            )}
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-md font-bold text-white">Basic</h3>
@@ -185,8 +213,12 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
                 )}
               </div>
               <div className="flex items-baseline space-x-1 gap-1">
-                <span className="text-3xl font-black text-white">$10</span>
-                <span className="text-slate-400 text-xs">/month</span>
+                <span className="text-3xl font-black text-white">
+                  {billingPeriod === 'monthly' ? '$10' : '$100'}
+                </span>
+                <span className="text-slate-400 text-xs">
+                  {billingPeriod === 'monthly' ? '/month' : '/year'}
+                </span>
               </div>
               <p className="text-xs text-slate-400">Perfect for single coffee shops or diners.</p>
               <div className="h-px bg-slate-800 w-full"></div>
@@ -207,7 +239,7 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
             </div>
 
             <button
-              onClick={() => handleCheckout('Basic', 10)}
+              onClick={() => handleCheckout('Basic', billingPeriod === 'monthly' ? 10 : 100)}
               disabled={loadingPlan !== null || (subscriptionInfo.plan === 'basic' && subscriptionInfo.hasPaidAccess)}
               className={`w-full font-bold text-xs py-3 px-4 rounded-xl transition-all shadow-sm flex items-center justify-center space-x-1.5 ${
                 subscriptionInfo.plan === 'basic' && subscriptionInfo.hasPaidAccess
@@ -221,7 +253,7 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
                   <span>Initiating checkout...</span>
                 </>
               ) : (
-                <span>{subscriptionInfo.plan === 'basic' && subscriptionInfo.hasPaidAccess ? 'Active Plan' : 'Select Basic Plan'}</span>
+                <span>{subscriptionInfo.plan === 'basic' && subscriptionInfo.hasPaidAccess ? 'Active Plan' : `Select Basic ${billingPeriod === 'monthly' ? 'Monthly' : 'Yearly'}`}</span>
               )}
             </button>
           </div>
@@ -236,6 +268,11 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
             <span className="absolute -top-3 right-6 bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 font-bold uppercase tracking-wider text-[8px] px-3 py-1 rounded-full shadow-lg shadow-orange-500/10">
               Popular
             </span>
+            {billingPeriod === 'yearly' && (
+              <span className="absolute -top-3 left-6 bg-emerald-600 text-white font-bold uppercase tracking-wider text-[8px] px-3 py-1 rounded-full shadow-lg">
+                2 Months Free
+              </span>
+            )}
 
             <div className="space-y-4">
               <div className="flex justify-between items-center">
@@ -248,10 +285,14 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
                 )}
               </div>
               <div className="flex items-baseline space-x-1 gap-1">
-                <span className="text-3xl font-black text-white">$20</span>
-                <span className="text-slate-400 text-xs">/month</span>
+                <span className="text-3xl font-black text-white">
+                  {billingPeriod === 'monthly' ? '$20' : '$200'}
+                </span>
+                <span className="text-slate-400 text-xs">
+                  {billingPeriod === 'monthly' ? '/month' : '/year'}
+                </span>
               </div>
-              <p className="text-xs text-slate-350">Perfect for growing bistros and bars.</p>
+              <p className="text-xs text-slate-355">Perfect for growing bistros and bars.</p>
               <div className="h-px bg-slate-800/80 w-full"></div>
               <ul className="space-y-2.5">
                 <li className="flex items-center space-x-2 gap-2 text-xs text-slate-200">
@@ -274,7 +315,7 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
             </div>
 
             <button
-              onClick={() => handleCheckout('Pro', 20)}
+              onClick={() => handleCheckout('Pro', billingPeriod === 'monthly' ? 20 : 200)}
               disabled={loadingPlan !== null || (subscriptionInfo.plan === 'pro' && subscriptionInfo.hasPaidAccess)}
               className={`w-full font-bold text-xs py-3 px-4 rounded-xl transition-all shadow-md flex items-center justify-center space-x-1.5 ${
                 subscriptionInfo.plan === 'pro' && subscriptionInfo.hasPaidAccess
@@ -288,7 +329,7 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
                   <span>Initiating checkout...</span>
                 </>
               ) : (
-                <span>{subscriptionInfo.plan === 'pro' && subscriptionInfo.hasPaidAccess ? 'Active Plan' : 'Select Pro Plan'}</span>
+                <span>{subscriptionInfo.plan === 'pro' && subscriptionInfo.hasPaidAccess ? 'Active Plan' : `Select Pro ${billingPeriod === 'monthly' ? 'Monthly' : 'Yearly'}`}</span>
               )}
             </button>
           </div>

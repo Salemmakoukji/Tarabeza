@@ -22,6 +22,12 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
   const [activeFilter] = useState('all'); // 'all' | 'chef' | 'bestseller' | 'new' | 'popular' | 'spicy'
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [lang, setLang] = useState(initialLang); // 'en' | 'ar'
+  
+  const formatPrice = (price) => {
+    const currency = profile.currency || '$';
+    const position = profile.customization?.currencyPosition || 'left';
+    return position === 'right' ? `${price} ${currency}` : `${currency} ${price}`;
+  };
 
   useEffect(() => {
     if (initialLang) {
@@ -494,7 +500,7 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
 
             <div className="flex items-center justify-between gap-1.5 pt-1.5 flex-wrap">
               <span className="font-bold text-[14px] text-[var(--accent)]">
-                {profile.currency || '$'}{item.price}
+                {formatPrice(item.price)}
               </span>
               {item.badge && renderBadge(item.badge)}
             </div>
@@ -518,7 +524,7 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
                 {displayName}
               </h4>
               <span className="font-bold text-[14px] text-[var(--accent)] shrink-0">
-                {profile.currency || '$'}{item.price}
+                {formatPrice(item.price)}
               </span>
             </div>
             {displayDesc && (
@@ -968,7 +974,7 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
 
                       <div className="flex justify-between items-center pt-1">
                         <span className="font-bold text-[14px] text-[var(--accent)]">
-                          {profile.currency || '$'}{item.price}
+                          {formatPrice(item.price)}
                         </span>
                         {item.badge && renderBadge(item.badge)}
                       </div>
@@ -1430,7 +1436,7 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
                   {isRtl && selectedItem.name_ar ? selectedItem.name_ar : selectedItem.name}
                 </h3>
                 <span className="font-bold text-lg text-[var(--accent)] bg-[var(--accent)]/10 px-3 py-1 rounded-xl whitespace-nowrap">
-                  {profile.currency || '$'}{selectedItem.price}
+                  {formatPrice(selectedItem.price)}
                 </span>
               </div>
 

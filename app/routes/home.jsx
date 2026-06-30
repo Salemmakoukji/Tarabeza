@@ -127,6 +127,10 @@ const content = {
     priceBasic: '$10',
     pricePro: '$20',
     perMonth: '/mo',
+    perYear: '/yr',
+    billingMonthly: 'Monthly',
+    billingYearly: 'Yearly',
+    saveTwoMonths: '2 Months Free',
     popular: 'Popular',
     feature1: '1 Restaurant profile',
     feature2: 'Up to 50 menu items',
@@ -195,6 +199,10 @@ const content = {
     priceBasic: '$10',
     pricePro: '$20',
     perMonth: '/شهرياً',
+    perYear: '/سنوياً',
+    billingMonthly: 'شهرياً',
+    billingYearly: 'سنوياً',
+    saveTwoMonths: 'شهران مجاناً',
     popular: 'الأكثر شعبية',
     feature1: 'ملف تعريف مطعم واحد',
     feature2: 'حتى 50 طبق وقسم',
@@ -222,6 +230,7 @@ export default function Home() {
   const [lang, setLang] = useState(initialLang || 'en');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [billingPeriod, setBillingPeriod] = useState('monthly'); // 'monthly' | 'yearly'
   const dropdownRef = useRef(null);
   
   const t = content[lang];
@@ -712,16 +721,43 @@ export default function Home() {
             <p className="text-slate-400 text-sm sm:text-base leading-relaxed">
               {t.pricingSubtitle}
             </p>
+
+            {/* Billing Period Toggle Toggle */}
+            <div className="flex justify-center items-center pt-4 gap-3">
+              <span className={`text-xs font-semibold tracking-wide transition-colors duration-200 ${billingPeriod === 'monthly' ? 'text-white font-bold' : 'text-slate-500'}`}>
+                {t.billingMonthly}
+              </span>
+              <button 
+                type="button"
+                onClick={() => setBillingPeriod(billingPeriod === 'monthly' ? 'yearly' : 'monthly')}
+                className="w-10 h-5 bg-slate-850 hover:bg-slate-800 border border-slate-800 rounded-full p-0.5 transition-all duration-300 relative focus:outline-none flex items-center"
+                aria-label="Toggle billing cycle"
+              >
+                <div className={`w-3.5 h-3.5 bg-orange-500 rounded-full shadow-md transition-transform duration-300 ${billingPeriod === 'yearly' ? 'translate-x-5' : 'translate-x-0'}`} />
+              </button>
+              <span className={`text-xs font-semibold tracking-wide transition-colors duration-200 ${billingPeriod === 'yearly' ? 'text-white font-bold' : 'text-slate-500'}`}>
+                {t.billingYearly}
+              </span>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch pt-4">
             {/* Basic Plan */}
             <div className="bg-slate-900/40 border border-slate-900 p-8 rounded-2xl flex flex-col justify-between space-y-8 hover:border-slate-800 transition-colors relative">
+              {billingPeriod === 'yearly' && (
+                <span className="absolute -top-3 left-6 bg-emerald-600 text-white font-bold uppercase tracking-wider text-[8px] px-3 py-1 rounded-full shadow-lg">
+                  {t.saveTwoMonths}
+                </span>
+              )}
               <div className="space-y-4">
                 <h3 className="text-xl font-bold text-slate-100">{t.planBasic}</h3>
                 <div className="flex items-baseline space-x-1 gap-1">
-                  <span className="text-4xl font-black text-white">{t.priceBasic}</span>
-                  <span className="text-slate-500 text-xs">{t.perMonth}</span>
+                  <span className="text-4xl font-black text-white">
+                    {billingPeriod === 'monthly' ? '$10' : '$100'}
+                  </span>
+                  <span className="text-slate-500 text-xs">
+                    {billingPeriod === 'monthly' ? t.perMonth : t.perYear}
+                  </span>
                 </div>
                 <div className="h-px bg-slate-900 w-full"></div>
                 <ul className="space-y-3">
@@ -748,6 +784,11 @@ export default function Home() {
               <span className="absolute -top-3 right-6 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold uppercase tracking-wider text-[8px] px-3 py-1 rounded-full shadow-lg shadow-orange-500/10">
                 {t.popular}
               </span>
+              {billingPeriod === 'yearly' && (
+                <span className="absolute -top-3 left-6 bg-emerald-600 text-white font-bold uppercase tracking-wider text-[8px] px-3 py-1 rounded-full shadow-lg">
+                  {t.saveTwoMonths}
+                </span>
+              )}
 
               <div className="space-y-4">
                 <h3 className="text-xl font-bold text-white flex items-center space-x-2 gap-2">
@@ -755,8 +796,12 @@ export default function Home() {
                   <Star className="h-4 w-4 text-orange-500 fill-orange-500 shrink-0" />
                 </h3>
                 <div className="flex items-baseline space-x-1 gap-1">
-                  <span className="text-4xl font-black text-white">{t.pricePro}</span>
-                  <span className="text-slate-400 text-xs">{t.perMonth}</span>
+                  <span className="text-4xl font-black text-white">
+                    {billingPeriod === 'monthly' ? '$20' : '$200'}
+                  </span>
+                  <span className="text-slate-400 text-xs">
+                    {billingPeriod === 'monthly' ? t.perMonth : t.perYear}
+                  </span>
                 </div>
                 <div className="h-px bg-slate-800 w-full"></div>
                 <ul className="space-y-3">

@@ -17,6 +17,13 @@ export async function action({ request }) {
   const theme = formData.get('theme');
   const main_color = formData.get('main_color');
   const font_family = formData.get('font_family');
+  const customizationString = formData.get('customization');
+  let customization = {};
+  if (customizationString) {
+    try {
+      customization = JSON.parse(customizationString);
+    } catch (e) {}
+  }
 
   const { error } = await supabase
     .from('restaurants')
@@ -28,6 +35,7 @@ export async function action({ request }) {
       theme,
       main_color,
       font_family,
+      customization,
       updated_at: new Date().toISOString()
     })
     .eq('id', profileId);
@@ -51,6 +59,7 @@ export default function CustomizeMenu() {
   const [mainColor, setMainColor] = useState(profile.main_color || '#f97316');
   const [customHex, setCustomHex] = useState(profile.main_color || '#f97316');
   const [fontFamily, setFontFamily] = useState(profile.font_family || 'Inter');
+  const [currencyPosition, setCurrencyPosition] = useState(profile.customization?.currencyPosition || 'left');
   const [toast, setToast] = useState(null);
 
   // Check for unsaved changes
@@ -61,7 +70,8 @@ export default function CustomizeMenu() {
     layoutStyle !== (profile.layout_style || 'classic') ||
     theme !== (profile.theme || 'light') ||
     mainColor !== (profile.main_color || '#f97316') ||
-    fontFamily !== (profile.font_family || 'Inter');
+    fontFamily !== (profile.font_family || 'Inter') ||
+    currencyPosition !== (profile.customization?.currencyPosition || 'left');
 
   // Sync custom hex input with mainColor state when swatch selected
   const handleSelectColor = (hex) => {
@@ -88,6 +98,12 @@ export default function CustomizeMenu() {
     formData.append('main_color', mainColor);
     formData.append('font_family', fontFamily);
 
+    const updatedCustomization = {
+      ...(profile.customization || {}),
+      currencyPosition
+    };
+    formData.append('customization', JSON.stringify(updatedCustomization));
+
     fetcher.submit(formData, { method: 'POST' });
     setToast({ type: 'saving', message: 'Saving changes...' });
   };
@@ -103,13 +119,15 @@ export default function CustomizeMenu() {
         profile.theme = theme;
         profile.main_color = mainColor;
         profile.font_family = fontFamily;
+        if (!profile.customization) profile.customization = {};
+        profile.customization.currencyPosition = currencyPosition;
       } else {
         setToast({ type: 'error', message: fetcher.data.error || 'Failed to save configuration' });
       }
       const timer = setTimeout(() => setToast(null), 3000);
       return () => clearTimeout(timer);
     }
-  }, [fetcher.state, fetcher.data]);
+  }, [fetcher.state, fetcher.data, currencyPosition]);
 
   // Color Swatch Swatches array
   const swatches = [
@@ -145,31 +163,7 @@ export default function CustomizeMenu() {
 
   return (
     <div className="max-w-4xl mx-auto bg-white text-slate-800 rounded-3xl p-6 md:p-8 shadow-xl border border-slate-200/60 relative select-none">
-      {/* Locked overlay */}
-      {isBasic && (
-        <div className="absolute inset-0 z-50 bg-[#0F1524]/60 backdrop-blur-md flex items-center justify-center p-6 rounded-3xl">
-          <div className="max-w-md w-full bg-[#162035]/90 border border-slate-800 rounded-3xl p-8 text-center space-y-6 shadow-2xl animate-scale-up">
-            <div className="h-16 w-16 mx-auto rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400">
-              <Star className="h-8 w-8 fill-orange-500/20 text-orange-500" />
-            </div>
-            <div className="space-y-2">
-              <h2 className="text-xl font-bold text-white">Premium Styling Customizer 🔒</h2>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Customizing menu templates, choosing premium fonts, applying color palettes, and creating dark theme layouts are Pro subscription features. Upgrade your plan to unlock the full styling studio!
-              </p>
-            </div>
-            <Link
-              to="/dashboard/billing"
-              className="w-full inline-flex items-center justify-center bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-slate-950 font-bold py-3 px-4 rounded-xl text-xs shadow-lg active:scale-98 transition-all gap-1.5 cursor-pointer"
-            >
-              <span>Upgrade to Pro</span>
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </div>
-      )}
-
-      <div className={isBasic ? "pointer-events-none select-none opacity-20 blur-[2px]" : ""}>
+      <div className="relative">
       {/* Font preloader for card preview renders */}
       <link 
         rel="stylesheet" 
@@ -228,66 +222,128 @@ export default function CustomizeMenu() {
           </div>
         </section>
 
-        {/* SECTION 2: IMAGE SIZE */}
+        {/* SECTION: CURRENCY POSITION */}
         <section className="space-y-4">
-          <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-            <span className="w-1.5 h-4 bg-orange-500 rounded-full" />
-            Image Size
-          </h2>
-          <div className="flex flex-wrap gap-3">
+          <div>
+            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+              <span className="w-1.5 h-4 bg-orange-500 rounded-full" />
+              Currency Display Position
+            </h2>
+            <p className="text-xs text-slate-500 mt-1">Select whether the currency symbol displays to the left or right of the price.</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 max-w-sm">
             {[
-              { id: 'XS', name: 'XS', val: '90px' },
-              { id: 'S', name: 'S', val: '120px' },
-              { id: 'M', name: 'M', val: '160px' },
-              { id: 'L', name: 'L', val: '200px' },
-              { id: 'XL', name: 'XL', val: '250px' }
+              { id: 'left', name: 'Left of Price', example: `${profile.currency || 'USD'} 10.00` },
+              { id: 'right', name: 'Right of Price', example: `10.00 ${profile.currency || 'USD'}` }
             ].map((opt) => {
-              const selected = imageSize === opt.id;
+              const selected = currencyPosition === opt.id;
               return (
                 <button
                   key={opt.id}
-                  onClick={() => setImageSize(opt.id)}
-                  className={`px-6 py-3.5 rounded-xl border-2 transition-all font-bold text-xs flex items-center gap-2 ${
+                  type="button"
+                  onClick={() => setCurrencyPosition(opt.id)}
+                  className={`p-4 text-start rounded-2xl border-2 transition-all relative cursor-pointer ${
                     selected 
-                      ? 'border-orange-500 bg-orange-50/10 text-orange-600' 
-                      : 'border-slate-100 bg-slate-50/50 hover:border-slate-200 text-slate-600'
+                      ? 'border-orange-500 bg-orange-50/10' 
+                      : 'border-slate-100 hover:border-slate-200 bg-slate-50/50 hover:bg-slate-50'
                   }`}
                 >
-                  <span>{opt.name}</span>
-                  <span className="opacity-60 text-[10px] font-normal">({opt.val})</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-slate-800">{opt.name}</span>
+                    {selected && <Check className="h-4 w-4 text-orange-500 stroke-[3]" />}
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1 font-mono">{opt.example}</p>
                 </button>
               );
             })}
           </div>
         </section>
 
+        {/* SECTION 2: IMAGE SIZE */}
+        <section className="space-y-4 relative">
+          {isBasic && (
+            <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-between px-6 py-2 rounded-2xl z-10 select-none">
+              <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                🔒 Image Size is a Pro feature
+              </span>
+              <Link to="/dashboard/billing" className="text-xs font-bold text-orange-500 hover:underline">
+                Upgrade to Pro
+              </Link>
+            </div>
+          )}
+          <div className={isBasic ? "opacity-30 pointer-events-none select-none" : ""}>
+            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+              <span className="w-1.5 h-4 bg-orange-500 rounded-full" />
+              Image Size
+            </h2>
+            <div className="flex flex-wrap gap-3 mt-4">
+              {[
+                { id: 'XS', name: 'XS', val: '90px' },
+                { id: 'S', name: 'S', val: '120px' },
+                { id: 'M', name: 'M', val: '160px' },
+                { id: 'L', name: 'L', val: '200px' },
+                { id: 'XL', name: 'XL', val: '250px' }
+              ].map((opt) => {
+                const selected = imageSize === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    onClick={() => setImageSize(opt.id)}
+                    className={`px-6 py-3.5 rounded-xl border-2 transition-all font-bold text-xs flex items-center gap-2 ${
+                      selected 
+                        ? 'border-orange-500 bg-orange-50/10 text-orange-600' 
+                        : 'border-slate-100 bg-slate-50/50 hover:border-slate-200 text-slate-600'
+                    }`}
+                  >
+                    <span>{opt.name}</span>
+                    <span className="opacity-60 text-[10px] font-normal">({opt.val})</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
         {/* SECTION 3: FONT SIZE */}
-        <section className="space-y-4">
-          <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-            <span className="w-1.5 h-4 bg-orange-500 rounded-full" />
-            Font Size
-          </h2>
-          <div className="flex gap-3">
-            {[
-              { id: 'S', name: 'S - Small' },
-              { id: 'M', name: 'M - Medium' },
-              { id: 'L', name: 'L - Large' }
-            ].map((opt) => {
-              const selected = fontSize === opt.id;
-              return (
-                <button
-                  key={opt.id}
-                  onClick={() => setFontSize(opt.id)}
-                  className={`px-6 py-3.5 rounded-xl border-2 transition-all font-bold text-xs ${
-                    selected 
-                      ? 'border-orange-500 bg-orange-50/10 text-orange-600' 
-                      : 'border-slate-100 bg-slate-50/50 hover:border-slate-200 text-slate-600'
-                  }`}
-                >
-                  {opt.name}
-                </button>
-              );
-            })}
+        <section className="space-y-4 relative">
+          {isBasic && (
+            <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-between px-6 py-2 rounded-2xl z-10 select-none">
+              <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                🔒 Font Size is a Pro feature
+              </span>
+              <Link to="/dashboard/billing" className="text-xs font-bold text-orange-500 hover:underline">
+                Upgrade to Pro
+              </Link>
+            </div>
+          )}
+          <div className={isBasic ? "opacity-30 pointer-events-none select-none" : ""}>
+            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+              <span className="w-1.5 h-4 bg-orange-500 rounded-full" />
+              Font Size
+            </h2>
+            <div className="flex gap-3 mt-4">
+              {[
+                { id: 'S', name: 'S - Small' },
+                { id: 'M', name: 'M - Medium' },
+                { id: 'L', name: 'L - Large' }
+              ].map((opt) => {
+                const selected = fontSize === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    onClick={() => setFontSize(opt.id)}
+                    className={`px-6 py-3.5 rounded-xl border-2 transition-all font-bold text-xs ${
+                      selected 
+                        ? 'border-orange-500 bg-orange-50/10 text-orange-600' 
+                        : 'border-slate-100 bg-slate-50/50 hover:border-slate-200 text-slate-600'
+                    }`}
+                  >
+                    {opt.name}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </section>
 
@@ -309,18 +365,27 @@ export default function CustomizeMenu() {
               { id: 'grid', name: 'Grid', desc: '2-column card grid', badge: 'Free' }
             ].map((opt) => {
               const selected = layoutStyle === opt.id;
+              const isProLayout = opt.badge === 'Pro';
+              const disabled = isBasic && isProLayout;
               return (
                 <button
                   key={opt.id}
+                  disabled={disabled}
                   onClick={() => setLayoutStyle(opt.id)}
                   className={`flex flex-col items-center p-3 rounded-2xl border-2 transition-all text-start relative group cursor-pointer ${
                     selected 
                       ? 'border-orange-500 bg-orange-50/5' 
                       : 'border-slate-100 hover:border-slate-200 bg-slate-50/30'
-                  }`}
+                  } ${disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
                 >
+                  {disabled && (
+                    <div className="absolute inset-0 bg-slate-100/50 backdrop-blur-[0.5px] rounded-2xl flex flex-col items-center justify-center p-4 z-20 text-center select-none">
+                      <span className="text-[10px] font-black text-slate-500 flex items-center gap-1">🔒 PRO</span>
+                      <Link to="/dashboard/billing" className="text-[8px] text-orange-500 hover:underline mt-1 pointer-events-auto">Upgrade</Link>
+                    </div>
+                  )}
                   {/* Selected checkmark */}
-                  {selected && (
+                  {selected && !disabled && (
                     <div className="absolute top-2 right-2 bg-emerald-500 text-white rounded-full p-0.5 z-10">
                       <Check className="h-3.5 w-3.5 stroke-[4]" />
                     </div>
@@ -528,74 +593,94 @@ export default function CustomizeMenu() {
             </div>
 
             {/* Custom hex input */}
-            <div className="max-w-xs">
-              <label className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1.5">Custom HEX Color</label>
-              <div className="flex items-center gap-2">
-                <div 
-                  className="w-10 h-10 rounded-xl border border-slate-200 shrink-0 shadow-inner"
-                  style={{ backgroundColor: mainColor }}
-                />
-                <input
-                  type="text"
-                  value={customHex}
-                  onChange={handleCustomHexChange}
-                  placeholder="#f97316"
-                  maxLength={7}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 transition-all uppercase"
-                />
+            <div className="max-w-xs relative">
+              {isBasic && (
+                <div className="absolute inset-0 bg-white/75 flex items-center justify-between px-3 rounded-xl z-10 select-none">
+                  <span className="text-[10px] font-bold text-slate-400">🔒 Custom HEX (Pro)</span>
+                  <Link to="/dashboard/billing" className="text-[10px] font-bold text-orange-500 hover:underline">Upgrade</Link>
+                </div>
+              )}
+              <div className={isBasic ? "opacity-35 pointer-events-none select-none" : ""}>
+                <label className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1.5">Custom HEX Color</label>
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="w-10 h-10 rounded-xl border border-slate-200 shrink-0 shadow-inner"
+                    style={{ backgroundColor: mainColor }}
+                  />
+                  <input
+                    type="text"
+                    value={customHex}
+                    onChange={handleCustomHexChange}
+                    placeholder="#f97316"
+                    maxLength={7}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500 transition-all uppercase"
+                  />
+                </div>
               </div>
             </div>
           </div>
         </section>
 
         {/* SECTION 7: CHOOSE FONT */}
-        <section className="space-y-4">
-          <div>
-            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-              <span className="w-1.5 h-4 bg-orange-500 rounded-full" />
-              Choose Font
-            </h2>
-            <p className="text-xs text-slate-500 mt-1">Select the typography style for your heading and menu text.</p>
-          </div>
+        <section className="space-y-4 relative">
+          {isBasic && (
+            <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-between px-6 py-2 rounded-2xl z-10 select-none">
+              <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+                🔒 Font Customization is a Pro feature
+              </span>
+              <Link to="/dashboard/billing" className="text-xs font-bold text-orange-500 hover:underline">
+                Upgrade to Pro
+              </Link>
+            </div>
+          )}
+          <div className={isBasic ? "opacity-30 pointer-events-none select-none" : ""}>
+            <div>
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <span className="w-1.5 h-4 bg-orange-500 rounded-full" />
+                Choose Font
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">Select the typography style for your heading and menu text.</p>
+            </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
-            {fonts.map((f) => {
-              const selected = fontFamily === f.name;
-              return (
-                <button
-                  key={f.name}
-                  onClick={() => setFontFamily(f.name)}
-                  className={`p-4 rounded-xl border-2 transition-all text-start flex flex-col justify-between h-28 relative cursor-pointer ${
-                    selected 
-                      ? 'border-orange-500 bg-orange-50/5' 
-                      : 'border-slate-100 hover:border-slate-200 bg-slate-50/30'
-                  }`}
-                >
-                  <div className="flex justify-between items-start w-full gap-1">
-                    <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">{f.name}</span>
-                    {f.arabic && (
-                      <span className="bg-emerald-50 text-emerald-700 text-[8px] font-extrabold px-1.5 py-0.5 rounded border border-emerald-100">
-                        ARABIC
-                      </span>
-                    )}
-                  </div>
-                  
-                  {/* Large visual rendering of font name in its own family */}
-                  <span 
-                    style={{ fontFamily: `"${f.name}", sans-serif` }}
-                    className="text-lg font-bold text-slate-800 leading-tight block w-full mt-2"
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 mt-4">
+              {fonts.map((f) => {
+                const selected = fontFamily === f.name;
+                return (
+                  <button
+                    key={f.name}
+                    onClick={() => setFontFamily(f.name)}
+                    className={`p-4 rounded-xl border-2 transition-all text-start flex flex-col justify-between h-28 relative cursor-pointer ${
+                      selected 
+                        ? 'border-orange-500 bg-orange-50/5' 
+                        : 'border-slate-100 hover:border-slate-200 bg-slate-50/30'
+                    }`}
                   >
-                    {f.name}
-                  </span>
-
-                  {selected && (
-                    <div className="absolute bottom-3 right-3 bg-emerald-500 text-white rounded-full p-0.5">
-                      <Check className="h-3 w-3 stroke-[4]" />
+                    <div className="flex justify-between items-start w-full gap-1">
+                      <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">{f.name}</span>
+                      {f.arabic && (
+                        <span className="bg-emerald-50 text-emerald-700 text-[8px] font-extrabold px-1.5 py-0.5 rounded border border-emerald-100">
+                          ARABIC
+                        </span>
+                      )}
                     </div>
-                  )}
-                </button>
-              );
-            })}
+                    
+                    {/* Large visual rendering of font name in its own family */}
+                    <span 
+                      style={{ fontFamily: `"${f.name}", sans-serif` }}
+                      className="text-lg font-bold text-slate-800 leading-tight block w-full mt-2"
+                    >
+                      {f.name}
+                    </span>
+
+                    {selected && (
+                      <div className="absolute bottom-3 right-3 bg-emerald-500 text-white rounded-full p-0.5">
+                        <Check className="h-3 w-3 stroke-[4]" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </section>
       </div>

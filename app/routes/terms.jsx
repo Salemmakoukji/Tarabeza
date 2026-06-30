@@ -13,7 +13,7 @@ export default function TermsPage() {
       backHome: 'Back to Home',
       sections: [
         { title: '1. Acceptance of Terms', text: 'By signing up or using the Tarapeza platform, you agree to comply with and be bound by these Terms of Service. If you do not agree to these terms, please do not use the application.' },
-        { title: '2. Subscription Plans & Billing', text: 'We offer 14-Day Free Trials for all new restaurant profiles. After the trial period, merchants must choose a subscription plan (Basic or Pro) billed monthly. Subscriptions are handled securely via third-party checkout integrations.' },
+        { title: '2. Subscription Plans & Billing', text: 'We offer 14-Day Free Trials for all new restaurant profiles. After the trial period, merchants must choose a subscription plan (Basic or Pro) billed monthly or annually. Subscriptions are handled securely via third-party checkout integrations.' },
         { title: '3. Acceptable Content', text: 'Restaurants are solely responsible for all images, menu item titles, prices, descriptions, and translations uploaded. Tarapeza reserves the right to moderate and remove inappropriate or illicit content from public menus.' },
         { title: '4. Service Availability', text: 'We strive to maintain 99.9% uptime for public restaurant menu routes. However, we are not liable for transient network disruptions, ISP DNS issues, or database outages beyond our control.' }
       ]
@@ -24,7 +24,7 @@ export default function TermsPage() {
       backHome: 'العودة للرئيسية',
       sections: [
         { title: '١. قبول الشروط', text: 'بتسجيلك أو استخدامك لمنصة طربيزة، فإنك توافق على الالتزام بشروط الخدمة هذه. إذا كنت لا توافق على هذه الشروط، يرجى التوقف عن استخدام البرنامج.' },
-        { title: '٢. خطط الاشتراكات والفوترة', text: 'نقدم تجربة مجانية لمدة ١٤ يوماً لجميع ملفات تعريف المطاعم الجديدة. بعد انتهاء التجربة، يجب على أصحاب المطاعم اختيار خطة اشتراك (الأساسية أو الاحترافية) تدفع شهرياً. تتم معالجة المدفوعات بشكل آمن.' },
+        { title: '٢. خطط الاشتراكات والفوترة', text: 'نقدم تجربة مجانية لمدة ١٤ يوماً لجميع ملفات تعريف المطاعم الجديدة. بعد انتهاء التجربة، يجب على أصحاب المطاعم اختيار خطة اشتراك (الأساسية أو الاحترافية) تدفع شهرياً أو سنوياً. تتم معالجة المدفوعات بشكل آمن.' },
         { title: '٣. المحتوى المقبول', text: 'يتحمل أصحاب المطاعم المسؤولية الكاملة عن الصور، وأسماء الأطباق، والأسعار، والأوصاف المرفوعة. وتحتفظ إدارة طربيزة بالحق الكامل في تعديل أو حذف أي محتوى غير لائق.' },
         { title: '٤. توافر الخدمة والضمان', text: 'نعمل جاهدين لضمان بقاء القوائم متاحة بنسبة ٩٩.٩٪. ومع ذلك، نحن لا نتحمل المسؤولية عن أي انقطاع مؤقت في شبكات الاتصال أو الأعطال الخارجة عن إرادتنا.' }
       ]
