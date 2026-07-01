@@ -67,9 +67,24 @@ export function meta({ data, location }) {
   if (!data?.post) return [{ title: 'Post Not Found' }];
   const lang = new URLSearchParams(location?.search).get('lang') || 'en';
   const post = data.post;
+  const baseUrl = "https://tarapeza.com";
+  const url = `${baseUrl}/blog/${post.slug}${lang === 'ar' ? '?lang=ar' : ''}`;
+  const title = `${post.title[lang]} — Tarabeza Blog`;
+  const keywords = Array.isArray(post.tags[lang]) ? post.tags[lang].join(', ') : '';
   return [
-    { title: `${post.title[lang]} — Tarabeza Blog` },
+    { title },
     { name: "description", content: post.description[lang] },
+    { name: "keywords", content: keywords },
+    { property: "og:type", content: "article" },
+    { property: "og:url", content: url },
+    { property: "og:title", content: title },
+    { property: "og:description", content: post.description[lang] },
+    { property: "og:image", content: `${baseUrl}/og-image.png` },
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:url", content: url },
+    { name: "twitter:title", content: title },
+    { name: "twitter:description", content: post.description[lang] },
+    { name: "twitter:image", content: `${baseUrl}/og-image.png` },
   ];
 }
 

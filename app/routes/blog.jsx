@@ -9,15 +9,38 @@ export async function loader() {
 
 export function meta({ data, params, location }) {
   const lang = new URLSearchParams(location?.search).get('lang') || 'en';
+  const baseUrl = "https://tarapeza.com";
   if (lang === 'ar') {
     return [
       { title: "مدونة طربيزة — أدلة ونصائح تكنولوجيا المطاعم" },
       { name: "description", content: "تعرف على قوائم QR وإدارة المطاعم الرقمية والطلب من الطاولة وإدارة الطاولات. أدلة ونصائح خبراء لأصحاب المطاعم العصرية." },
+      { name: "keywords", content: "مدونة مطاعم, قوائم QR, إدارة مطاعم رقمية, تكنولوجيا المطاعم, نصائح مطاعم, طلب من الطاولة, إدارة الطاولات" },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: `${baseUrl}/blog?lang=ar` },
+      { property: "og:title", content: "مدونة طربيزة — أدلة ونصائح تكنولوجيا المطاعم" },
+      { property: "og:description", content: "تعرف على قوائم QR وإدارة المطاعم الرقمية والطلب من الطاولة وإدارة الطاولات. أدلة ونصائح خبراء لأصحاب المطاعم العصرية." },
+      { property: "og:image", content: `${baseUrl}/og-image.png` },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:url", content: `${baseUrl}/blog?lang=ar` },
+      { name: "twitter:title", content: "مدونة طربيزة — أدلة ونصائح تكنولوجيا المطاعم" },
+      { name: "twitter:description", content: "تعرف على قوائم QR وإدارة المطاعم الرقمية والطلب من الطاولة وإدارة الطاولات. أدلة ونصائح خبراء لأصحاب المطاعم العصرية." },
+      { name: "twitter:image", content: `${baseUrl}/og-image.png` },
     ];
   }
   return [
     { title: "Tarabeza Blog — Restaurant Technology Guides & Tips" },
     { name: "description", content: "Learn about QR code menus, digital restaurant management, dine-in ordering, table management, and more. Expert guides for modern restaurant owners." },
+    { name: "keywords", content: "restaurant blog, QR code menus, digital restaurant management, restaurant technology, hospitality guides, dine-in ordering, table management" },
+    { property: "og:type", content: "website" },
+    { property: "og:url", content: `${baseUrl}/blog` },
+    { property: "og:title", content: "Tarabeza Blog — Restaurant Technology Guides & Tips" },
+    { property: "og:description", content: "Learn about QR code menus, digital restaurant management, dine-in ordering, table management, and more. Expert guides for modern restaurant owners." },
+    { property: "og:image", content: `${baseUrl}/og-image.png` },
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:url", content: `${baseUrl}/blog` },
+    { name: "twitter:title", content: "Tarabeza Blog — Restaurant Technology Guides & Tips" },
+    { name: "twitter:description", content: "Learn about QR code menus, digital restaurant management, dine-in ordering, table management, and more. Expert guides for modern restaurant owners." },
+    { name: "twitter:image", content: `${baseUrl}/og-image.png` },
   ];
 }
 

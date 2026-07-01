@@ -4,22 +4,25 @@ export async function loader({ request }) {
   const supabase = await createClient(request);
   const baseUrl = "https://tarapeza.com";
 
-  // Fetch all restaurants to generate dynamic menu paths
   const { data: restaurants } = await supabase
     .from("restaurants")
     .select("slug, updated_at");
 
   const today = new Date().toISOString();
 
-  const restaurantEntries = (restaurants || []).map((r) => `
+  const restaurantEntries = (restaurants || []).map((r) => {
+    const lastmod = r.updated_at ? new Date(r.updated_at).toISOString() : today;
+    return `
   <url>
     <loc>${baseUrl}/menu/${r.slug}</loc>
-    <lastmod>${r.updated_at ? new Date(r.updated_at).toISOString() : today}</lastmod>
+    <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-  </url>`).join("");
+  </url>`;
+  }).join("");
 
-  const staticUrls = [
+  // Pages with bilingual (EN/AR) support
+  const bilingualPages = [
     { loc: "", changefreq: "daily", priority: "1.0" },
     { loc: "/restaurants", changefreq: "daily", priority: "0.9" },
     { loc: "/about", changefreq: "monthly", priority: "0.7" },
@@ -33,36 +36,34 @@ export async function loader({ request }) {
     { loc: "/blog", changefreq: "weekly", priority: "0.8" },
   ];
 
-  // Arabic lang variants for key pages
-  const langArUrls = [
-    { loc: "?lang=ar", changefreq: "daily", priority: "0.9" },
-    { loc: "/blog?lang=ar", changefreq: "weekly", priority: "0.7" },
-  ];
-
-  const staticEntries = [...staticUrls, ...langArUrls].map((entry) => `
+  const staticEntries = bilingualPages.map((page) => {
+    const enUrl = `${baseUrl}${page.loc}`;
+    const arUrl = `${baseUrl}${page.loc}?lang=ar`;
+    return `
   <url>
-    <loc>${baseUrl}${entry.loc}</loc>
+    <loc>${enUrl}</loc>
     <lastmod>${today}</lastmod>
-    <changefreq>${entry.changefreq}</changefreq>
-    <priority>${entry.priority}</priority>
-  </url>`).join("");
+    <changefreq>${page.changefreq}</changefreq>
+    <priority>${page.priority}</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="${enUrl}" />
+    <xhtml:link rel="alternate" hreflang="ar" href="${arUrl}" />
+  </url>`;
+  }).join("");
 
-  // Blog post entries (dynamic from blog-posts data)
+  // Blog post entries with hreflang
   const { posts } = await import("../lib/blog-posts");
   const blogEntries = posts.map((post) => {
     const lastmod = new Date(post.date).toISOString();
+    const enUrl = `${baseUrl}/blog/${post.slug}`;
+    const arUrl = `${baseUrl}/blog/${post.slug}?lang=ar`;
     return `
   <url>
-    <loc>${baseUrl}/blog/${post.slug}</loc>
+    <loc>${enUrl}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>${baseUrl}/blog/${post.slug}?lang=ar</loc>
-    <lastmod>${lastmod}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="${enUrl}" />
+    <xhtml:link rel="alternate" hreflang="ar" href="${arUrl}" />
   </url>`;
   }).join("");
 
