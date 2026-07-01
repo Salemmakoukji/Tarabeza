@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router';
 import { Clock, CheckCircle, ChefHat, Bell, X, Loader2, Eye, ShoppingBag } from 'lucide-react';
 import { supabase } from '../lib/supabase/client';
 import { cn } from '../lib/utils';
+import { playNotificationSound } from '../lib/notification-sound';
 
 const ORDER_STATUSES = [
   { value: 'pending', label: 'Pending', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
@@ -37,6 +38,7 @@ export default function DashboardOrders() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderItems, setOrderItems] = useState([]);
   const [actionLoading, setActionLoading] = useState(null);
+  const [newOrderToast, setNewOrderToast] = useState(null);
 
   const fetchOrders = async () => {
     if (!profile?.id) return;
@@ -61,8 +63,16 @@ export default function DashboardOrders() {
     const subscription = supabase
       .channel('orders-realtime')
       .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'orders', filter: `restaurant_id=eq.${profile.id}` },
-        () => fetchOrders()
+        { event: 'INSERT', schema: 'public', table: 'orders', filter: `restaurant_id=eq.${profile.id}` },
+        (payload) => {
+          const newOrder = payload.new;
+          fetchOrders();
+          if (newOrder.status === 'pending') {
+            setNewOrderToast(newOrder);
+            playNotificationSound();
+            setTimeout(() => setNewOrderToast(null), 5000);
+          }
+        }
       )
       .subscribe();
     return () => { supabase.removeChannel(subscription); };
@@ -288,6 +298,30 @@ export default function DashboardOrders() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {newOrderToast && (
+        <div className="fixed bottom-6 left-[50%] translate-x-[-50%] z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl px-5 py-4 flex items-center gap-4 min-w-[320px]">
+            <div className="h-10 w-10 rounded-full bg-orange-500/10 flex items-center justify-center shrink-0">
+              <ShoppingBag className="h-5 w-5 text-orange-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-white">New Order</p>
+              <p className="text-xs text-slate-400">
+                {newOrderToast.customer_name
+                  ? `${newOrderToast.customer_name} — $${Number(newOrderToast.total_amount).toFixed(2)}`
+                  : `$${Number(newOrderToast.total_amount).toFixed(2)}`}
+              </p>
+            </div>
+            <button
+              onClick={() => setNewOrderToast(null)}
+              className="h-8 w-8 rounded-full bg-slate-700/50 flex items-center justify-center hover:bg-slate-700 transition-colors shrink-0"
+            >
+              <X className="h-4 w-4 text-slate-400" />
+            </button>
           </div>
         </div>
       )}

@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router';
 import { Bell, BellRing, CheckCircle, Clock, Loader2, Phone, CreditCard, HelpCircle, X } from 'lucide-react';
 import { supabase } from '../lib/supabase/client';
 import { cn } from '../lib/utils';
+import { playNotificationSound } from '../lib/notification-sound';
 
 const CALL_TYPES = { service: 'Service', bill: 'Bill', help: 'Help' };
 const CALL_ICONS = { service: Bell, bill: CreditCard, help: HelpCircle };
@@ -19,7 +20,6 @@ export default function DashboardCalls() {
   const [statusFilter, setStatusFilter] = useState('pending');
   const [actionLoading, setActionLoading] = useState(null);
   const [newCallToast, setNewCallToast] = useState(null);
-  const audioRef = useRef(null);
 
   const fetchCalls = async () => {
     if (!profile?.id) return;
@@ -53,7 +53,8 @@ export default function DashboardCalls() {
           fetchCalls();
           if (newCall.status === 'pending') {
             setNewCallToast(newCall);
-            try { audioRef.current?.play(); } catch (e) {}
+            playNotificationSound();
+            setTimeout(() => setNewCallToast(null), 5000);
           }
         }
       )
@@ -90,7 +91,6 @@ export default function DashboardCalls() {
 
   return (
     <div className="space-y-6">
-      <audio ref={audioRef} src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACAf39/f4B/f3+AgH9/f3+AgH9/f3+AgH+AgH9/f3+AgH9/f3+AgH9/f3+AgH9/f3+AgH+AgH9/f3+AgH9/f3+AgH9/f3+Af4CAf39/f4CAf39/f4B/f39/gIB/f39/gIB/f39/gICAf39/gIB/f39/gICAf39/gICAf39/gICAf39/gIB/f39/gIB/f39/gIB/f39/gIB/f39/gIB/f39/gIB/f39/gIB/f39/gIB/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gIB/f39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf4B/f3+AgH9/f3+Af4B/f3+AgH+AgH9/f3+AgH9/f3+Af4B/f3+AgH9/f3+AgH9/f3+Af4B/f3+AgH+AgH9/f3+AgH9/f39/gICAf39/gICAf39/gIB/f39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICAf39/gICA" preload="none" />
 
       <div className="flex items-center justify-between">
         <div>
