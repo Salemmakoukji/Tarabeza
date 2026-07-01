@@ -2,12 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { supabase } from '../lib/supabase/client';
 import { 
-  Loader2, User, Heart, Star, Sparkles, LogOut, Check, X,
-  AlertCircle, Coffee, Compass, Trash2, Calendar, MessageSquare,
+  Loader2, User, Heart, Star, Sparkles, LogOut,
+  Coffee, Compass, Trash2, Calendar, MessageSquare,
   Edit, Share2, Copy, ExternalLink
 } from 'lucide-react';
 import Logo from '../components/logo';
 import QRCode from 'qrcode';
+import { useToast, ToastContainer } from '../components/dashboard/toast';
+import { CardSkeleton } from '../components/dashboard/skeleton';
 
 const DIETARY_OPTIONS = [
   { id: 'vegetarian', label: 'Vegetarian' },
@@ -64,20 +66,7 @@ export default function CustomerDashboardPage() {
     }
   }, [selectedLoyaltyReward]);
 
-  // Toast notifications state
-  const [toasts, setToasts] = useState([]);
-
-  const removeToast = useCallback((id) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
-
-  const showNotification = useCallback((type, text) => {
-    const id = Math.random().toString(36).substring(2, 9);
-    setToasts((prev) => [...prev, { id, type, text }]);
-    setTimeout(() => {
-      removeToast(id);
-    }, 5000);
-  }, [removeToast]);
+  const { toasts, addToast: showNotification, removeToast } = useToast();
 
   const toggleDietaryPreference = (prefId) => {
     setNewDietaryPreferences((prev) =>
@@ -401,8 +390,20 @@ export default function CustomerDashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen bg-slate-950 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+      <div className="min-h-screen bg-slate-950 p-6 space-y-6">
+        <div className="flex items-center gap-4">
+          <div className="h-12 w-12 rounded-full bg-slate-800/50 animate-pulse" />
+          <div className="space-y-2">
+            <div className="h-5 w-40 bg-slate-800/50 animate-pulse rounded-lg" />
+            <div className="h-3 w-24 bg-slate-800/50 animate-pulse rounded-lg" />
+          </div>
+        </div>
+        <div className="flex gap-2">
+          {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-10 w-24 bg-slate-800/50 animate-pulse rounded-xl" />)}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)}
+        </div>
       </div>
     );
   }
@@ -413,38 +414,7 @@ export default function CustomerDashboardPage() {
       <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-orange-500/5 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Floating Toast Notifications */}
-      <div className="fixed bottom-5 right-5 z-[9999] flex flex-col gap-3 max-w-sm w-full pointer-events-none">
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            className="pointer-events-auto flex items-start justify-between p-4 rounded-xl border bg-slate-900 shadow-2xl transition-all duration-300 animate-slide-up border-slate-800 text-slate-100"
-            style={{ borderLeftWidth: '5px', borderLeftColor: toast.type === 'error' ? '#ef4444' : '#6366f1' }}
-          >
-            <div className="flex items-start space-x-3 gap-3">
-              {toast.type === 'error' ? (
-                <AlertCircle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
-              ) : (
-                <Check className="h-5 w-5 text-indigo-500 shrink-0 mt-0.5" />
-              )}
-              <div>
-                <p className="font-bold text-xs text-white">
-                  {toast.type === 'error' ? 'Error' : 'Success'}
-                </p>
-                <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
-                  {toast.text}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => removeToast(toast.id)}
-              className="text-slate-500 hover:text-slate-300 transition-colors ml-4 shrink-0"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        ))}
-      </div>
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
 
       {/* Navigation Top Header */}
       <header className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-900">

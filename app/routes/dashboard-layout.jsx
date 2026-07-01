@@ -92,6 +92,7 @@ export default function DashboardLayout() {
   const [announcements, setAnnouncements] = useState([]);
   const [currentAnnouncementIdx, setCurrentAnnouncementIdx] = useState(0);
   const [pendingCallCount, setPendingCallCount] = useState(0);
+  const [lang, setLang] = useState('en');
 
   useEffect(() => {
     if (profile?.id) {
@@ -102,20 +103,25 @@ export default function DashboardLayout() {
         .order('created_at', { ascending: false })
         .then(({ data }) => {
           if (data) setAnnouncements(data);
-        });
+        })
+        .catch(() => {});
 
       const countPending = async () => {
-        const { count: callCount } = await browserSupabase
-          .from('waiter_calls')
-          .select('id', { count: 'exact', head: true })
-          .eq('restaurant_id', profile.id)
-          .eq('status', 'pending');
-        const { count: orderCount } = await browserSupabase
-          .from('orders')
-          .select('id', { count: 'exact', head: true })
-          .eq('restaurant_id', profile.id)
-          .eq('status', 'pending');
-        setPendingCallCount((callCount || 0) + (orderCount || 0));
+        try {
+          const { count: callCount } = await browserSupabase
+            .from('waiter_calls')
+            .select('id', { count: 'exact', head: true })
+            .eq('restaurant_id', profile.id)
+            .eq('status', 'pending');
+          const { count: orderCount } = await browserSupabase
+            .from('orders')
+            .select('id', { count: 'exact', head: true })
+            .eq('restaurant_id', profile.id)
+            .eq('status', 'pending');
+          setPendingCallCount((callCount || 0) + (orderCount || 0));
+        } catch (e) {
+          /* silently ignore — badge count will update on next channel event */
+        }
       };
       countPending();
 
@@ -136,12 +142,12 @@ export default function DashboardLayout() {
   }, [profile?.id]);
 
   if (isBlocked) {
-    return <BillingBlocker profile={profile} subscriptionInfo={subscriptionInfo} />;
+    return <BillingBlocker profile={profile} subscriptionInfo={subscriptionInfo} lang={lang} />;
   }
 
   return (
-    <div className="flex h-screen w-screen bg-[#0F1524] overflow-hidden text-[#FEFEFE]">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} pendingCallCount={pendingCallCount} />
+    <div className="flex h-screen w-screen bg-[#0F1524] overflow-hidden text-[#FEFEFE]" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} pendingCallCount={pendingCallCount} lang={lang} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Navbar 
           onMenuToggle={() => setSidebarOpen(true)} 
@@ -149,6 +155,8 @@ export default function DashboardLayout() {
           user={user}
           subscriptionInfo={subscriptionInfo}
           pendingCallCount={pendingCallCount}
+          lang={lang}
+          onLangToggle={() => setLang(lang === 'en' ? 'ar' : 'en')}
         />
         {announcements.length > 0 && announcements[currentAnnouncementIdx] && (
           <div className="bg-gradient-to-r from-orange-500/10 to-amber-500/10 border-b border-orange-500/20 px-6 py-3.5 flex items-center justify-between text-xs text-orange-300">
@@ -171,7 +179,7 @@ export default function DashboardLayout() {
         )}
         <main className="flex-1 overflow-y-auto p-6 md:p-8">
           <div className="mx-auto max-w-7xl">
-            <Outlet context={{ profile, user, subscriptionInfo }} />
+            <Outlet context={{ profile, user, subscriptionInfo, lang, setLang }} />
           </div>
         </main>
       </div>

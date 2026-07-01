@@ -7,6 +7,7 @@ import {
   Building, Phone, Globe, Wifi, Clock, Image as ImageIcon, 
   Save, Check, X, Edit, Eye, EyeOff, Plus, Trash2, ExternalLink
 } from 'lucide-react';
+import { useToast, ToastContainer } from '../components/dashboard/toast';
 
 export async function action({ request }) {
   const supabase = await createClient(request);
@@ -130,7 +131,7 @@ export default function RestaurantInformationPage() {
 
   const [businessHours, setBusinessHours] = useState(getInitialBusinessHours);
   const [initialBusinessHoursSnapshot] = useState(getInitialBusinessHours);
-  const [toast, setToast] = useState(null);
+  const { toasts, addToast, removeToast } = useToast();
 
   // Unsaved Changes Dirty Verification
   const isDirty = 
@@ -178,9 +179,9 @@ export default function RestaurantInformationPage() {
         .getPublicUrl(filePath);
 
       setLogoUrl(publicUrl);
-      setToast({ type: 'success', message: 'Logo uploaded and compressed!' });
+      addToast('success', 'Logo uploaded and compressed!');
     } catch (err) {
-      setToast({ type: 'error', message: `Logo upload failed: ${err.message}` });
+      addToast('error', `Logo upload failed: ${err.message}`);
     } finally {
       setUploadingLogo(false);
     }
@@ -222,9 +223,9 @@ export default function RestaurantInformationPage() {
       }
 
       setCoverUrl(finalPublicUrl);
-      setToast({ type: 'success', message: 'Cover banner uploaded and compressed!' });
+      addToast('success', 'Cover banner uploaded and compressed!');
     } catch (err) {
-      setToast({ type: 'error', message: `Cover upload failed: ${err.message}` });
+      addToast('error', `Cover upload failed: ${err.message}`);
     } finally {
       setUploadingCover(false);
     }
@@ -291,7 +292,7 @@ export default function RestaurantInformationPage() {
     // Slug validation
     const slugRegex = /^[a-z0-9-]+$/;
     if (!slugRegex.test(slug.toLowerCase())) {
-      setToast({ type: 'error', message: 'Slug can only contain lowercase letters, numbers, and hyphens.' });
+      addToast('error', 'Slug can only contain lowercase letters, numbers, and hyphens.');
       return;
     }
 
@@ -319,13 +320,13 @@ export default function RestaurantInformationPage() {
     formData.append('temporarily_closed', temporarilyClosed ? 'true' : 'false');
 
     fetcher.submit(formData, { method: 'POST' });
-    setToast({ type: 'saving', message: 'Saving changes...' });
+    addToast('saving', 'Saving changes...');
   };
 
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data) {
       if (fetcher.data.success) {
-        setToast({ type: 'success', message: 'Restaurant details saved successfully!' });
+        addToast('success', 'Restaurant details saved successfully!');
         
         // Inline layout context sync
         profile.name = restaurantName;
@@ -351,10 +352,8 @@ export default function RestaurantInformationPage() {
 
         setIsEditingSlug(false);
       } else {
-        setToast({ type: 'error', message: fetcher.data.error || 'Failed to save configuration' });
+        addToast('error', fetcher.data.error || 'Failed to save configuration');
       }
-      const timer = setTimeout(() => setToast(null), 3000);
-      return () => clearTimeout(timer);
     }
   }, [fetcher.state, fetcher.data]);
 
@@ -421,6 +420,7 @@ export default function RestaurantInformationPage() {
                   onClick={() => setCoverUrl('')}
                   className="absolute top-2 right-2 bg-slate-950/70 hover:bg-rose-600 text-white rounded-full p-1 shadow-md transition-all active:scale-90"
                   title="Remove Image"
+                  aria-label="Remove cover image"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -553,6 +553,7 @@ export default function RestaurantInformationPage() {
                       ? 'border-emerald-500 bg-emerald-50 text-emerald-600' 
                       : 'border-slate-200 hover:border-slate-350 text-slate-550'
                   }`}
+                  aria-label="Edit menu URL slug"
                 >
                   <Edit className="h-4 w-4" />
                 </button>
@@ -705,6 +706,7 @@ export default function RestaurantInformationPage() {
                   type="button"
                   onClick={() => setShowWifiPassword(!showWifiPassword)}
                   className="absolute right-3 text-slate-450 hover:text-slate-650 cursor-pointer"
+                  aria-label="Toggle WiFi password visibility"
                 >
                   {showWifiPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -795,6 +797,7 @@ export default function RestaurantInformationPage() {
                                 type="button"
                                 onClick={() => removePeriod(day, idx)}
                                 className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg active:scale-90 transition-all cursor-pointer"
+                                aria-label="Remove time period"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
@@ -853,21 +856,7 @@ export default function RestaurantInformationPage() {
         </button>
       </div>
 
-      {/* Toast Alert Notification */}
-      {toast && (
-        <div className="fixed bottom-24 right-8 z-50 animate-slide-up">
-          <div className={`px-4 py-3 rounded-xl shadow-2xl border text-xs font-bold flex items-center gap-2.5 ${
-            toast.type === 'success' 
-              ? 'bg-emerald-950 border-emerald-800 text-emerald-300' 
-              : toast.type === 'error' 
-                ? 'bg-rose-950 border-rose-800 text-rose-300' 
-                : 'bg-slate-900 border-slate-800 text-orange-400'
-          }`}>
-            {toast.type === 'saving' && <span className="animate-spin h-4 w-4 border-2 border-orange-400 border-t-transparent rounded-full shrink-0" />}
-            <span>{toast.message}</span>
-          </div>
-        </div>
-      )}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
 
     </div>
   );

@@ -1,32 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useRevalidator } from 'react-router';
 import { supabase } from '../../lib/supabase/client';
-import { 
-  Check, 
-  Loader2, 
-  Star, 
-  ShieldCheck, 
-  AlertTriangle,
-  Zap,
-  CheckCircle2,
-  X 
-} from 'lucide-react';
+import { Check, Loader2, Star, ShieldCheck, Zap } from 'lucide-react';
+import { useToast, ToastContainer } from '../../components/dashboard/toast';
 
 export default function BillingPortal({ profile, subscriptionInfo, isBlocker = false }) {
   const navigate = useNavigate();
   const revalidator = useRevalidator();
   const [loadingPlan, setLoadingPlan] = useState(null);
-  const [toasts, setToasts] = useState([]);
+  const { toasts, addToast, removeToast } = useToast();
   const [billingPeriod, setBillingPeriod] = useState('monthly'); // 'monthly' | 'yearly'
   const [paddleLoaded, setPaddleLoaded] = useState(false);
-
-  const addToast = useCallback((type, text) => {
-    const id = Math.random().toString(36).substring(2, 9);
-    setToasts((prev) => [...prev, { id, type, text }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 5000);
-  }, []);
 
   // Dynamically load Paddle SDK if client token exists
   useEffect(() => {
@@ -336,38 +320,7 @@ export default function BillingPortal({ profile, subscriptionInfo, isBlocker = f
         </div>
       </div>
 
-      {/* Toast Alert stack */}
-      <div className="fixed bottom-5 right-5 z-[9999] flex flex-col gap-3 max-w-sm w-full pointer-events-none">
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            className="pointer-events-auto flex items-start justify-between p-4 rounded-xl border bg-[#111A2E]/95 border-slate-800 shadow-2xl transition-all duration-300 animate-slide-up text-white"
-            style={{ borderLeftWidth: '5px', borderLeftColor: toast.type === 'error' ? '#ef4444' : '#10b981' }}
-          >
-            <div className="flex items-start space-x-3 gap-3">
-              {toast.type === 'error' ? (
-                <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
-              ) : (
-                <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
-              )}
-              <div>
-                <p className="font-bold text-xs text-white">
-                  {toast.type === 'error' ? 'Error' : 'Success'}
-                </p>
-                <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
-                  {toast.text}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}
-              className="text-slate-400 hover:text-slate-200 transition-colors ml-4 shrink-0"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        ))}
-      </div>
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   );
 }

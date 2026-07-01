@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useOutletContext, useFetcher, Link } from 'react-router';
 import { createClient } from '../lib/supabase/server';
-import { Check, ExternalLink, ArrowRight, Eye, Star } from 'lucide-react';
+import { Check, ExternalLink, ArrowRight, Star } from 'lucide-react';
+import { useToast, ToastContainer } from '../components/dashboard/toast';
 
 export async function action({ request }) {
   const supabase = await createClient(request);
@@ -60,7 +61,7 @@ export default function CustomizeMenu() {
   const [customHex, setCustomHex] = useState(profile.main_color || '#f97316');
   const [fontFamily, setFontFamily] = useState(profile.font_family || 'Inter');
   const [currencyPosition, setCurrencyPosition] = useState(profile.customization?.currencyPosition || 'left');
-  const [toast, setToast] = useState(null);
+  const { toasts, addToast, removeToast } = useToast();
 
   // Check for unsaved changes
   const isDirty = 
@@ -105,13 +106,13 @@ export default function CustomizeMenu() {
     formData.append('customization', JSON.stringify(updatedCustomization));
 
     fetcher.submit(formData, { method: 'POST' });
-    setToast({ type: 'saving', message: 'Saving changes...' });
+    addToast('saving', 'Saving changes...');
   };
 
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data) {
       if (fetcher.data.success) {
-        setToast({ type: 'success', message: 'Appearance saved successfully!' });
+        addToast('success', 'Appearance saved successfully!');
         profile.display_mode = displayMode;
         profile.image_size = imageSize;
         profile.font_size = fontSize;
@@ -122,10 +123,8 @@ export default function CustomizeMenu() {
         if (!profile.customization) profile.customization = {};
         profile.customization.currencyPosition = currencyPosition;
       } else {
-        setToast({ type: 'error', message: fetcher.data.error || 'Failed to save configuration' });
+        addToast('error', fetcher.data.error || 'Failed to save configuration');
       }
-      const timer = setTimeout(() => setToast(null), 3000);
-      return () => clearTimeout(timer);
     }
   }, [fetcher.state, fetcher.data, currencyPosition]);
 
@@ -716,21 +715,7 @@ export default function CustomizeMenu() {
         </button>
       </div>
 
-      {/* Toast Alert Notification */}
-      {toast && (
-        <div className="fixed bottom-24 right-8 z-50 animate-slide-up">
-          <div className={`px-4 py-3 rounded-xl shadow-2xl border text-xs font-bold flex items-center gap-2.5 ${
-            toast.type === 'success' 
-              ? 'bg-emerald-950 border-emerald-800 text-emerald-300' 
-              : toast.type === 'error' 
-                ? 'bg-rose-950 border-rose-800 text-rose-300' 
-                : 'bg-slate-900 border-slate-800 text-orange-400'
-          }`}>
-            {toast.type === 'saving' && <Eye className="h-4 w-4 animate-spin" />}
-            <span>{toast.message}</span>
-          </div>
-        </div>
-      )}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
 
       </div>
     </div>

@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router';
 import { Plus, Trash2, QrCode, Table2, Loader2, Download, Check } from 'lucide-react';
+import { CardSkeleton } from '../components/dashboard/skeleton';
 import { supabase } from '../lib/supabase/client';
 import { cn } from '../lib/utils';
+import { useFocusTrap } from '../lib/accessibility';
 
 export async function action({ request }) {
   const formData = await request.formData();
@@ -53,21 +55,32 @@ export default function DashboardTables() {
   const [newTableNum, setNewTableNum] = useState('');
   const [newTableName, setNewTableName] = useState('');
   const [newCapacity, setNewCapacity] = useState(2);
+  const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [qrModalTable, setQrModalTable] = useState(null);
   const [copiedQr, setCopiedQr] = useState(false);
+  const addModalRef = useFocusTrap(showAddModal);
+  const deleteModalRef = useFocusTrap(!!deleteConfirm);
+  const qrModalRef = useFocusTrap(!!qrModalTable);
 
   const fetchTables = async () => {
     if (!profile?.id) return;
     setLoading(true);
-    const { data } = await supabase
-      .from('restaurant_tables')
-      .select('*')
-      .eq('restaurant_id', profile.id)
-      .order('table_number', { ascending: true });
-    if (data) setTables(data);
-    setLoading(false);
+    setError(null);
+    try {
+      const { data, error: err } = await supabase
+        .from('restaurant_tables')
+        .select('*')
+        .eq('restaurant_id', profile.id)
+        .order('table_number', { ascending: true });
+      if (err) throw err;
+      setTables(data || []);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { fetchTables(); }, [profile?.id]);
@@ -76,31 +89,48 @@ export default function DashboardTables() {
     e.preventDefault();
     if (!newTableNum.trim()) return;
     setSubmitting(true);
-    const { error } = await supabase.from('restaurant_tables').insert({
-      restaurant_id: profile.id,
-      table_number: newTableNum.trim(),
-      table_name: newTableName.trim() || null,
-      capacity: newCapacity
-    });
-    setSubmitting(false);
-    if (error) { alert(error.message); return; }
-    setNewTableNum('');
-    setNewTableName('');
-    setNewCapacity(2);
-    setShowAddModal(false);
-    fetchTables();
+    setError(null);
+    try {
+      const { error: err } = await supabase.from('restaurant_tables').insert({
+        restaurant_id: profile.id,
+        table_number: newTableNum.trim(),
+        table_name: newTableName.trim() || null,
+        capacity: newCapacity
+      });
+      if (err) throw err;
+      setNewTableNum('');
+      setNewTableName('');
+      setNewCapacity(2);
+      setShowAddModal(false);
+      fetchTables();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleDelete = async (id) => {
-    const { error } = await supabase.from('restaurant_tables').delete().eq('id', id);
-    if (error) { alert(error.message); return; }
-    setDeleteConfirm(null);
-    fetchTables();
+    setError(null);
+    try {
+      const { error: err } = await supabase.from('restaurant_tables').delete().eq('id', id);
+      if (err) throw err;
+      setDeleteConfirm(null);
+      fetchTables();
+    } catch (e) {
+      setError(e.message);
+    }
   };
 
   const handleToggle = async (id, currentActive) => {
-    await supabase.from('restaurant_tables').update({ is_active: !currentActive }).eq('id', id);
-    fetchTables();
+    setError(null);
+    try {
+      const { error: err } = await supabase.from('restaurant_tables').update({ is_active: !currentActive }).eq('id', id);
+      if (err) throw err;
+      fetchTables();
+    } catch (e) {
+      setError(e.message);
+    }
   };
 
   const getTableUrl = (table) => {
@@ -157,6 +187,11 @@ export default function DashboardTables() {
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
+          <span className="font-medium">Error:</span> {error}
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Table Management</h1>
@@ -183,8 +218,8 @@ export default function DashboardTables() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)}
         </div>
       ) : tables.length === 0 ? (
         <div className="text-center py-20 bg-slate-900/50 border border-slate-800 rounded-2xl">
@@ -256,6 +291,7 @@ export default function DashboardTables() {
                   onClick={() => setQrModalTable(table)}
                   className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold transition-all duration-200"
                   title="View QR"
+                  aria-label="View QR code"
                 >
                   <QrCode className="h-3.5 w-3.5" />
                 </button>
@@ -273,6 +309,7 @@ export default function DashboardTables() {
                 <button
                   onClick={() => setDeleteConfirm(table.id)}
                   className="px-3 py-2 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 rounded-lg text-xs font-semibold transition-all duration-200"
+                  aria-label="Delete table"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
@@ -284,7 +321,7 @@ export default function DashboardTables() {
 
       {/* Add Table Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" ref={addModalRef}>
           <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl">
             <h2 className="text-lg font-bold text-white mb-4">Add New Table</h2>
             <form onSubmit={handleAdd} className="space-y-4">
@@ -344,7 +381,7 @@ export default function DashboardTables() {
 
       {/* QR Code Modal */}
       {qrModalTable && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" ref={qrModalRef}>
           <div className="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl text-center">
             <h3 className="text-lg font-bold text-white mb-1">Table {qrModalTable.table_number}</h3>
             {qrModalTable.table_name && (
@@ -378,7 +415,7 @@ export default function DashboardTables() {
 
       {/* Delete Confirmation */}
       {deleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" ref={deleteModalRef}>
           <div className="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-2xl text-center">
             <h3 className="text-lg font-bold text-white mb-2">Delete Table?</h3>
             <p className="text-sm text-slate-400 mb-6">This action cannot be undone.</p>

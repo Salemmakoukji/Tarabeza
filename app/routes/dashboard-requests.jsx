@@ -5,6 +5,8 @@ import { supabase } from '../lib/supabase/client';
 import { cn, formatPrice } from '../lib/utils';
 import { playNotificationSound } from '../lib/notification-sound';
 import { useEffect } from 'react';
+import { RequestItemSkeleton } from '../components/dashboard/skeleton';
+import { useFocusTrap } from '../lib/accessibility';
 
 const PAGE_SIZE = 20;
 
@@ -73,29 +75,37 @@ function CallsView({ profile }) {
   const [statusFilter, setStatusFilter] = useState('pending');
   const [actionLoading, setActionLoading] = useState(null);
   const [newCallToast, setNewCallToast] = useState(null);
+  const [error, setError] = useState(null);
 
   const fetchCalls = async (pageNum = 0, append = false) => {
     if (!profile?.id) return;
+    setError(null);
     const from = pageNum * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
-    let query = supabase
-      .from('waiter_calls')
-      .select('*, restaurant_tables!left(table_number, table_name)')
-      .eq('restaurant_id', profile.id)
-      .order('created_at', { ascending: false })
-      .range(from, to);
-    if (statusFilter !== 'all') query = query.eq('status', statusFilter);
-    const { data } = await query;
-    if (data) {
-      if (append) {
-        setCalls(prev => [...prev, ...data]);
-      } else {
-        setCalls(data);
+    try {
+      let query = supabase
+        .from('waiter_calls')
+        .select('*, restaurant_tables!left(table_number, table_name)')
+        .eq('restaurant_id', profile.id)
+        .order('created_at', { ascending: false })
+        .range(from, to);
+      if (statusFilter !== 'all') query = query.eq('status', statusFilter);
+      const { data, error: err } = await query;
+      if (err) throw err;
+      if (data) {
+        if (append) {
+          setCalls(prev => [...prev, ...data]);
+        } else {
+          setCalls(data);
+        }
+        setHasMore(data.length === PAGE_SIZE);
       }
-      setHasMore(data.length === PAGE_SIZE);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
     }
-    setLoading(false);
-    setLoadingMore(false);
   };
 
   useEffect(() => {
@@ -127,11 +137,18 @@ function CallsView({ profile }) {
 
   const handleUpdateStatus = async (callId, newStatus) => {
     setActionLoading(callId);
+    setError(null);
     const update = { status: newStatus };
     if (newStatus === 'resolved') update.resolved_at = new Date().toISOString();
-    await supabase.from('waiter_calls').update(update).eq('id', callId);
-    setActionLoading(null);
-    setCalls(prev => prev.map(c => c.id === callId ? { ...c, ...update } : c));
+    try {
+      const { error: err } = await supabase.from('waiter_calls').update(update).eq('id', callId);
+      if (err) throw err;
+      setCalls(prev => prev.map(c => c.id === callId ? { ...c, ...update } : c));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const getTimeAgo = (dateStr) => {
@@ -153,6 +170,11 @@ function CallsView({ profile }) {
 
   return (
     <div className="space-y-4">
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm">
+          {error}
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-white">Waiter Calls</h2>
         {pendingCount > 0 && (
@@ -181,8 +203,8 @@ function CallsView({ profile }) {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+        <div className="space-y-4">
+          {Array.from({ length: 5 }).map((_, i) => <RequestItemSkeleton key={i} />)}
         </div>
       ) : calls.length === 0 ? (
         <div className="text-center py-20 bg-slate-900/50 border border-slate-800 rounded-2xl">
@@ -291,7 +313,7 @@ function CallsView({ profile }) {
                   {CALL_TYPES[newCallToast.call_type]} request from Table {newCallToast.restaurant_tables?.table_number || 'Unknown'}
                 </p>
               </div>
-              <button onClick={() => setNewCallToast(null)} className="text-slate-500 hover:text-white transition-colors">
+              <button onClick={() => setNewCallToast(null)} className="text-slate-500 hover:text-white transition-colors" aria-label="Dismiss notification">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -346,29 +368,38 @@ function OrdersView({ profile }) {
   const [orderItems, setOrderItems] = useState([]);
   const [actionLoading, setActionLoading] = useState(null);
   const [newOrderToast, setNewOrderToast] = useState(null);
+  const [error, setError] = useState(null);
+  const orderModalRef = useFocusTrap(!!selectedOrder);
 
   const fetchOrders = async (pageNum = 0, append = false) => {
     if (!profile?.id) return;
+    setError(null);
     const from = pageNum * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
-    let query = supabase
-      .from('orders')
-      .select('*, restaurant_tables!left(table_number, table_name)')
-      .eq('restaurant_id', profile.id)
-      .order('created_at', { ascending: false })
-      .range(from, to);
-    if (statusFilter !== 'all') query = query.eq('status', statusFilter);
-    const { data } = await query;
-    if (data) {
-      if (append) {
-        setOrders(prev => [...prev, ...data]);
-      } else {
-        setOrders(data);
+    try {
+      let query = supabase
+        .from('orders')
+        .select('*, restaurant_tables!left(table_number, table_name)')
+        .eq('restaurant_id', profile.id)
+        .order('created_at', { ascending: false })
+        .range(from, to);
+      if (statusFilter !== 'all') query = query.eq('status', statusFilter);
+      const { data, error: err } = await query;
+      if (err) throw err;
+      if (data) {
+        if (append) {
+          setOrders(prev => [...prev, ...data]);
+        } else {
+          setOrders(data);
+        }
+        setHasMore(data.length === PAGE_SIZE);
       }
-      setHasMore(data.length === PAGE_SIZE);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
     }
-    setLoading(false);
-    setLoadingMore(false);
   };
 
   useEffect(() => {
@@ -400,18 +431,31 @@ function OrdersView({ profile }) {
 
   const handleUpdateStatus = async (orderId, newStatus) => {
     setActionLoading(orderId);
-    await supabase.from('orders').update({ status: newStatus, updated_at: new Date().toISOString() }).eq('id', orderId);
-    setActionLoading(null);
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
-    if (selectedOrder?.id === orderId) {
-      setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
+    setError(null);
+    try {
+      const { error: err } = await supabase.from('orders').update({ status: newStatus, updated_at: new Date().toISOString() }).eq('id', orderId);
+      if (err) throw err;
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
+      }
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setActionLoading(null);
     }
   };
 
   const handleViewOrder = async (order) => {
     setSelectedOrder(order);
-    const { data } = await supabase.from('order_items').select('*').eq('order_id', order.id);
-    setOrderItems(data || []);
+    setError(null);
+    try {
+      const { data, error: err } = await supabase.from('order_items').select('*').eq('order_id', order.id);
+      if (err) throw err;
+      setOrderItems(data || []);
+    } catch (e) {
+      setError(e.message);
+    }
   };
 
   const getTimeAgo = (dateStr) => {
@@ -435,6 +479,11 @@ function OrdersView({ profile }) {
 
   return (
     <div className="space-y-4">
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm">
+          {error}
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-white">Orders</h2>
         {pendingCount > 0 && (
@@ -463,8 +512,8 @@ function OrdersView({ profile }) {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+        <div className="space-y-4">
+          {Array.from({ length: 5 }).map((_, i) => <RequestItemSkeleton key={i} />)}
         </div>
       ) : orders.length === 0 ? (
         <div className="text-center py-20 bg-slate-900/50 border border-slate-800 rounded-2xl">
@@ -550,7 +599,7 @@ function OrdersView({ profile }) {
       )}
 
       {selectedOrder && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" ref={orderModalRef}>
           <div className="w-full max-w-lg bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl max-h-[80vh] flex flex-col">
             <div className="flex items-center justify-between p-6 border-b border-slate-800 shrink-0">
               <div>
@@ -560,7 +609,7 @@ function OrdersView({ profile }) {
                   {selectedOrder.customer_name && ` — ${selectedOrder.customer_name}`}
                 </p>
               </div>
-              <button onClick={() => setSelectedOrder(null)} className="text-slate-500 hover:text-white"><X className="h-5 w-5" /></button>
+              <button onClick={() => setSelectedOrder(null)} className="text-slate-500 hover:text-white" aria-label="Close order details"><X className="h-5 w-5" /></button>
             </div>
 
             <div className="p-6 overflow-y-auto flex-1 space-y-4">
@@ -634,7 +683,7 @@ function OrdersView({ profile }) {
                   : formatPrice(newOrderToast.total_amount, profile?.currency || 'USD')}
               </p>
             </div>
-            <button onClick={() => setNewOrderToast(null)} className="h-8 w-8 rounded-full bg-slate-700/50 flex items-center justify-center hover:bg-slate-700 transition-colors shrink-0">
+            <button onClick={() => setNewOrderToast(null)} className="h-8 w-8 rounded-full bg-slate-700/50 flex items-center justify-center hover:bg-slate-700 transition-colors shrink-0" aria-label="Dismiss notification">
               <X className="h-4 w-4 text-slate-400" />
             </button>
           </div>

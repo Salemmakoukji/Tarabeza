@@ -1,16 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useOutletContext } from 'react-router';
 import { supabase } from '../lib/supabase/client';
-import {
-  Save,
-  Loader2,
-  Lock,
-  CheckCircle2,
-  XCircle,
-  X,
-  Megaphone,
-  Settings
-} from 'lucide-react';
+import { Save, Loader2, Lock, Megaphone, Settings } from 'lucide-react';
+import { useToast, ToastContainer } from '../components/dashboard/toast';
 
 export default function DashboardSettingsPage() {
   const navigate = useNavigate();
@@ -35,20 +27,7 @@ export default function DashboardSettingsPage() {
   // Tab selection state
   const [activeTab, setActiveTab] = useState('general');
 
-  // Stackable toasts
-  const [toasts, setToasts] = useState([]);
-
-  const removeToast = useCallback((id) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
-
-  const addToast = useCallback((type, text) => {
-    const id = Math.random().toString(36).substring(2, 9);
-    setToasts((prev) => [...prev, { id, type, text }]);
-    setTimeout(() => {
-      removeToast(id);
-    }, 5000);
-  }, [removeToast]);
+  const { toasts, addToast, removeToast } = useToast();
 
   const handleSaveSettings = async (e) => {
     e.preventDefault();
@@ -418,38 +397,7 @@ export default function DashboardSettingsPage() {
         )}
       </div>
 
-      {/* Floating Stackable Toast Notifications */}
-      <div className="fixed bottom-5 right-5 z-55 flex flex-col gap-3 max-w-sm w-full pointer-events-none">
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            className={`pointer-events-auto flex items-start justify-between p-4 rounded-xl border border-slate-800 bg-[#111A2E] shadow-2xl transition-all duration-300 animate-slide-up text-slate-200`}
-            style={{ borderLeftWidth: '5px', borderLeftColor: toast.type === 'error' ? '#f97316' : '#10b981' }}
-          >
-            <div className="flex items-start space-x-3">
-              {toast.type === 'error' ? (
-                <XCircle className="h-5 w-5 text-orange-555 shrink-0 mt-0.5" />
-              ) : (
-                <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
-              )}
-              <div>
-                <p className="font-bold text-xs text-white">
-                  {toast.type === 'error' ? 'Error occurred' : 'Action successful'}
-                </p>
-                <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
-                  {toast.text}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => removeToast(toast.id)}
-              className="text-slate-400 hover:text-white transition-colors ml-4 shrink-0 cursor-pointer"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        ))}
-      </div>
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   );
 }

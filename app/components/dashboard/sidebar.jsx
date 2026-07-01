@@ -3,11 +3,21 @@ import { LayoutGrid, UtensilsCrossed, QrCode, Settings, LogOut, X, CreditCard, P
 import { cn } from '../../lib/utils';
 import Logo from '../logo';
 
-export default function Sidebar({ isOpen, onClose, pendingCallCount }) {
+export default function Sidebar({ isOpen, onClose, pendingCallCount, lang = 'en' }) {
   const location = useLocation();
   const pathname = location.pathname;
 
-  const menuItems = [
+  const menuItems = lang === 'ar' ? [
+    { name: 'نظرة عامة', href: '/dashboard', icon: LayoutGrid },
+    { name: 'بناء القائمة', href: '/dashboard/menu', icon: UtensilsCrossed },
+    { name: 'تخصيص القائمة', href: '/dashboard/customize', icon: Palette },
+    { name: 'معلومات المطعم', href: '/dashboard/information', icon: Info },
+    { name: 'رمز QR', href: '/dashboard/qr', icon: QrCode },
+    { name: 'الطاولات', href: '/dashboard/tables', icon: Table2 },
+    { name: 'الطلبات', href: '/dashboard/requests', icon: BellRing, badge: pendingCallCount },
+    { name: 'الفواتير', href: '/dashboard/billing', icon: CreditCard },
+    { name: 'الإعدادات', href: '/dashboard/settings', icon: Settings },
+  ] : [
     { name: 'Overview', href: '/dashboard', icon: LayoutGrid },
     { name: 'Menu Builder', href: '/dashboard/menu', icon: UtensilsCrossed },
     { name: 'Customize Menu', href: '/dashboard/customize', icon: Palette },
@@ -61,7 +71,7 @@ export default function Sidebar({ isOpen, onClose, pendingCallCount }) {
                   if (typeof window !== 'undefined' && window.innerWidth < 1024) onClose();
                 }}
                 className={cn(
-                  "flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 group relative",
+                  "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 group relative",
                   isActive
                     ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/10"
                     : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
@@ -69,13 +79,13 @@ export default function Sidebar({ isOpen, onClose, pendingCallCount }) {
               >
                 <item.icon
                   className={cn(
-                    "h-5 w-5 transition-colors duration-200",
+                    "h-5 w-5 shrink-0 transition-colors duration-200",
                     isActive ? "text-white" : "text-slate-400 group-hover:text-slate-200"
                   )}
                 />
                 <span>{item.name}</span>
                 {item.badge > 0 && (
-                  <span className="ml-auto bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                  <span className={cn("bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center", lang === 'ar' ? 'mr-auto' : 'ml-auto')}>
                     {item.badge > 99 ? '99+' : item.badge}
                   </span>
                 )}
@@ -88,10 +98,10 @@ export default function Sidebar({ isOpen, onClose, pendingCallCount }) {
         <div className="p-4 border-t border-slate-800">
           <Link
             to="/auth/logout"
-            className="flex items-center space-x-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-rose-400 hover:bg-rose-950/20 transition-all duration-200"
+            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-rose-400 hover:bg-rose-950/20 transition-all duration-200"
           >
             <LogOut className="h-5 w-5" />
-            <span>Sign Out</span>
+            <span>{lang === 'ar' ? 'تسجيل الخروج' : 'Sign Out'}</span>
           </Link>
         </div>
       </aside>

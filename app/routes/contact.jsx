@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { supabase } from '../lib/supabase/client';
 import { ArrowLeft, Mail, Phone, MapPin, Send, Loader2 } from 'lucide-react';
 import Logo from '../components/logo';
+import { useToast, ToastContainer } from '../components/dashboard/toast';
 
 export default function ContactPage() {
   const [lang, setLang] = useState('ar');
@@ -11,7 +12,7 @@ export default function ContactPage() {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [toast, setToast] = useState(null);
+  const { toasts, addToast, removeToast } = useToast(4000);
 
   const content = {
     en: {
@@ -62,11 +63,6 @@ export default function ContactPage() {
 
   const t = content[lang];
 
-  const showToast = (type, text) => {
-    setToast({ type, text });
-    setTimeout(() => setToast(null), 4000);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (submitting) return;
@@ -85,7 +81,7 @@ export default function ContactPage() {
 
       if (error) throw error;
 
-      showToast('success', t.successMsg);
+      addToast('success', t.successMsg);
       setName('');
       setEmail('');
       setSubject('');
@@ -94,7 +90,7 @@ export default function ContactPage() {
       console.warn('Failed to insert support ticket. Falling back to local success simulation:', err.message);
       
       // Fallback preview mode simulation
-      showToast('success', t.successMsg + ' (Preview Mode)');
+      addToast('success', t.successMsg + ' (Preview Mode)');
       setName('');
       setEmail('');
       setSubject('');
@@ -110,14 +106,7 @@ export default function ContactPage() {
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#F97316]/10 rounded-full mix-blend-multiply filter blur-[100px] opacity-10 animate-pulse pointer-events-none"></div>
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/10 rounded-full mix-blend-multiply filter blur-[100px] opacity-10 animate-pulse pointer-events-none" style={{ animationDelay: '2s' }}></div>
 
-      {/* Toast Alert */}
-      {toast && (
-        <div className={`fixed bottom-5 right-5 z-55 flex items-center px-4 py-3 border shadow-xl animate-fade-in text-xs font-bold ${
-          toast.type === 'success' ? 'bg-emerald-950/80 border-emerald-850 text-emerald-200' : 'bg-red-950/80 border-red-850 text-red-200'
-        }`}>
-          <span>{toast.text}</span>
-        </div>
-      )}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
 
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[#0F1524]/80 backdrop-blur-md border-b border-slate-900">

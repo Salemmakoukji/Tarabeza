@@ -3,12 +3,15 @@ import { useLoaderData, useOutletContext } from 'react-router';
 import { supabase as browserSupabase } from '../lib/supabase/client';
 import { 
   Plus, Edit2, Trash2, Loader2, Image as ImageIcon, 
-  AlertCircle, FolderPlus, Utensils, Tag, Info, Check, Sparkles, Move, X, Copy,
+  FolderPlus, Utensils, Tag, Info, Sparkles, Move, Copy,
   Upload, Download
 } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 import { createClient } from '../lib/supabase/server';
 import Logo from '../components/logo';
+import { useToast, ToastContainer } from '../components/dashboard/toast';
+import { CardSkeleton } from '../components/dashboard/skeleton';
+import { useFocusTrap } from '../lib/accessibility';
 
 export async function loader({ request }) {
   const supabase = await createClient(request);
@@ -65,18 +68,19 @@ export default function MenuBuilder() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [importingCsv, setImportingCsv] = useState(false);
   
-  // Stackable toasts
-  const [toasts, setToasts] = useState([]);
+  const { toasts, addToast: showNotification, removeToast } = useToast();
   
   // Modals state
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [categoryModalMode, setCategoryModalMode] = useState('add'); // 'add' | 'edit'
   const [editingCategory, setEditingCategory] = useState(null);
+  const categoryModalRef = useFocusTrap(showCategoryModal);
   const [categoryName, setCategoryName] = useState('');
   
   const [showItemModal, setShowItemModal] = useState(false);
   const [itemModalMode, setItemModalMode] = useState('add'); // 'add' | 'edit'
   const [editingItem, setEditingItem] = useState(null);
+  const itemModalRef = useFocusTrap(showItemModal);
   
   // Menu Item form state
   const [itemName, setItemName] = useState('');
@@ -98,18 +102,6 @@ export default function MenuBuilder() {
   const [draggedItemIndex, setDraggedItemIndex] = useState(null);
 
   const allergenOptions = ['Gluten', 'Nuts', 'Dairy', 'Vegan', 'Vegetarian', 'Spicy', 'Seafood'];
-
-  const removeToast = useCallback((id) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
-
-  const showNotification = useCallback((type, text) => {
-    const id = Math.random().toString(36).substring(2, 9);
-    setToasts((prev) => [...prev, { id, type, text }]);
-    setTimeout(() => {
-      removeToast(id);
-    }, 5000);
-  }, [removeToast]);
 
   // Set default selected category
   useEffect(() => {
@@ -805,8 +797,16 @@ export default function MenuBuilder() {
 
   if (loading) {
     return (
-      <div className="flex h-[50vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="h-7 w-48 bg-slate-800/50 animate-pulse rounded-lg" />
+            <div className="h-4 w-64 bg-slate-800/50 animate-pulse rounded-lg" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)}
+        </div>
       </div>
     );
   }
@@ -865,38 +865,7 @@ export default function MenuBuilder() {
         </div>
       </div>
 
-      {/* Floating Stackable Toast Notifications */}
-      <div className="fixed bottom-5 right-5 z-[9999] flex flex-col gap-3 max-w-sm w-full pointer-events-none">
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            className="pointer-events-auto flex items-start justify-between p-4 rounded-xl border border-slate-800 bg-[#111A2E] shadow-2xl transition-all duration-300 animate-slide-up text-slate-200"
-            style={{ borderLeftWidth: '5px', borderLeftColor: toast.type === 'error' ? '#f97316' : '#10b981' }}
-          >
-            <div className="flex items-start space-x-3 gap-3">
-              {toast.type === 'error' ? (
-                <AlertCircle className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" />
-              ) : (
-                <Check className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
-              )}
-              <div>
-                <p className="font-bold text-xs text-white">
-                  {toast.type === 'error' ? 'Error' : 'Success'}
-                </p>
-                <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
-                  {toast.text}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => removeToast(toast.id)}
-              className="text-slate-400 hover:text-white transition-colors ml-4 shrink-0 cursor-pointer"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        ))}
-      </div>
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
 
       {/* Main Grid */}
       {categories.length === 0 ? (
@@ -975,6 +944,7 @@ export default function MenuBuilder() {
                         onClick={() => openEditCategory(cat)}
                         className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white cursor-pointer"
                         title="Edit Category Name"
+                        aria-label="Edit category"
                       >
                         <Edit2 className="h-3 w-3" />
                       </button>
@@ -982,6 +952,7 @@ export default function MenuBuilder() {
                         onClick={() => handleDeleteCategory(cat.id)}
                         className="p-1 rounded hover:bg-rose-950/40 text-rose-455 hover:text-rose-300 cursor-pointer"
                         title="Delete Category"
+                        aria-label="Delete category"
                       >
                         <Trash2 className="h-3 w-3" />
                       </button>
@@ -1138,18 +1109,21 @@ export default function MenuBuilder() {
                             onClick={() => handleDuplicateItem(item)}
                             className="p-1.5 rounded-lg border border-slate-800 hover:bg-[#0B0F19] hover:border-slate-700 text-slate-400 hover:text-white transition-all cursor-pointer"
                             title="Duplicate Item"
+                            aria-label="Duplicate item"
                           >
                             <Copy className="h-3.5 w-3.5" />
                           </button>
                           <button
                             onClick={() => openEditItem(item)}
                             className="p-1.5 rounded-lg border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white transition-all cursor-pointer"
+                            aria-label="Edit item"
                           >
                             <Edit2 className="h-3.5 w-3.5" />
                           </button>
                           <button
                             onClick={() => handleDeleteItem(item.id)}
                             className="p-1.5 rounded-lg border border-slate-800 hover:bg-rose-950/40 hover:border-rose-900/60 text-rose-450 hover:text-rose-350 transition-all cursor-pointer"
+                            aria-label="Delete item"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
@@ -1166,7 +1140,7 @@ export default function MenuBuilder() {
 
       {/* CATEGORY MODAL */}
       {showCategoryModal && (
-        <div className="fixed inset-0 z-55 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+        <div ref={categoryModalRef} className="fixed inset-0 z-55 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
           <div className="bg-[#111A2E] rounded-2xl border border-slate-800 shadow-2xl w-full max-w-sm overflow-hidden animate-slide-up">
             <div className="p-5 border-b border-slate-800/80 flex items-center justify-between">
               <h3 className="font-bold text-white text-base">
@@ -1176,6 +1150,7 @@ export default function MenuBuilder() {
                 type="button"
                 onClick={() => setShowCategoryModal(false)}
                 className="text-slate-400 hover:text-white cursor-pointer"
+                aria-label="Close category modal"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -1235,7 +1210,7 @@ export default function MenuBuilder() {
 
       {/* MENU ITEM MODAL */}
       {showItemModal && (
-        <div className="fixed inset-0 z-55 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+        <div ref={itemModalRef} className="fixed inset-0 z-55 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
           <div className="bg-[#111A2E] rounded-2xl border border-slate-800 shadow-2xl w-full max-w-lg overflow-hidden max-h-[90vh] flex flex-col animate-slide-up">
             <div className="p-5 border-b border-slate-800/80 flex items-center justify-between shrink-0">
               <h3 className="font-bold text-white text-base">
@@ -1245,6 +1220,7 @@ export default function MenuBuilder() {
                 type="button"
                 onClick={() => setShowItemModal(false)}
                 className="text-slate-400 hover:text-white cursor-pointer"
+                aria-label="Close item modal"
               >
                 <X className="h-4 w-4" />
               </button>

@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { Menu, ExternalLink, Bell } from 'lucide-react';
+import { Menu, ExternalLink, Bell, Globe } from 'lucide-react';
 import { Link } from 'react-router';
 import UserAvatar from '../user-avatar';
 
-export default function Navbar({ onMenuToggle, profile, user, subscriptionInfo, pendingCallCount }) {
+export default function Navbar({ onMenuToggle, profile, user, subscriptionInfo, pendingCallCount, lang = 'en', onLangToggle }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -60,7 +60,7 @@ export default function Navbar({ onMenuToggle, profile, user, subscriptionInfo, 
             className="relative flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 border border-orange-500/30 rounded-lg text-xs font-bold text-orange-400 hover:bg-orange-500/20 transition-all"
           >
             <Bell className="h-4 w-4 animate-pulse" />
-            <span className="hidden sm:inline">Calls</span>
+            <span className="hidden sm:inline">{lang === 'ar' ? 'الطلبات' : 'Calls'}</span>
             <span className="bg-orange-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-tight">
               {pendingCallCount > 99 ? '99+' : pendingCallCount}
             </span>
@@ -72,8 +72,8 @@ export default function Navbar({ onMenuToggle, profile, user, subscriptionInfo, 
             to="/dashboard/billing"
             className="flex items-center space-x-1.5 px-3 py-1.5 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 hover:border-orange-500 rounded-lg text-xs font-bold text-orange-400 hover:text-orange-300 transition-all shadow-sm"
           >
-            <span>Trial: {subscriptionInfo.trialDaysLeft} days left</span>
-            <span className="hidden md:inline font-normal opacity-80">| Upgrade Now</span>
+            <span>{lang === 'ar' ? `تجربة: ${subscriptionInfo.trialDaysLeft} يوم متبقي` : `Trial: ${subscriptionInfo.trialDaysLeft} days left`}</span>
+            <span className="hidden md:inline font-normal opacity-80">{lang === 'ar' ? '| ترقية الآن' : '| Upgrade Now'}</span>
           </Link>
         )}
 
@@ -84,10 +84,18 @@ export default function Navbar({ onMenuToggle, profile, user, subscriptionInfo, 
             rel="noopener noreferrer"
             className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-slate-800 hover:border-orange-500 hover:text-orange-500 text-xs font-semibold text-slate-350 hover:bg-slate-900 transition-all"
           >
-            <span>View Menu</span>
+            <span>{lang === 'ar' ? 'عرض القائمة' : 'View Menu'}</span>
             <ExternalLink className="h-3.5 w-3.5" />
           </Link>
         )}
+        <button
+          onClick={onLangToggle}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-800 hover:border-orange-500 text-xs font-semibold text-slate-400 hover:text-orange-400 transition-all"
+          aria-label={lang === 'ar' ? 'التبديل إلى الإنجليزية' : 'Switch to Arabic'}
+        >
+          <Globe className="h-3.5 w-3.5" />
+          <span>{lang === 'ar' ? 'EN' : 'AR'}</span>
+        </button>
         <div className="h-8 w-px bg-slate-800" />
 
         {/* User profile picture and dropdown menu */}
@@ -103,7 +111,7 @@ export default function Navbar({ onMenuToggle, profile, user, subscriptionInfo, 
               <span className="text-xs font-semibold text-slate-200 leading-tight">
                 {user?.user_metadata?.full_name || profile?.name || 'Owner'}
               </span>
-              <span className="text-[10px] text-slate-500 font-medium">Logged In</span>
+              <span className="text-[10px] text-slate-500 font-medium">{lang === 'ar' ? 'مسجل الدخول' : 'Logged In'}</span>
             </div>
           </button>
 
@@ -127,7 +135,7 @@ export default function Navbar({ onMenuToggle, profile, user, subscriptionInfo, 
                   onClick={() => setDropdownOpen(false)}
                 >
                   <span>🏠</span>
-                  <span>Landing Page</span>
+                  <span>{lang === 'ar' ? 'الصفحة الرئيسية' : 'Landing Page'}</span>
                 </Link>
                 <Link
                   to="/dashboard"
@@ -135,7 +143,7 @@ export default function Navbar({ onMenuToggle, profile, user, subscriptionInfo, 
                   onClick={() => setDropdownOpen(false)}
                 >
                   <span>📊</span>
-                  <span>Dashboard</span>
+                  <span>{lang === 'ar' ? 'لوحة التحكم' : 'Dashboard'}</span>
                 </Link>
                 <Link
                   to="/dashboard/settings"
@@ -143,7 +151,7 @@ export default function Navbar({ onMenuToggle, profile, user, subscriptionInfo, 
                   onClick={() => setDropdownOpen(false)}
                 >
                   <span>⚙️</span>
-                  <span>Settings</span>
+                  <span>{lang === 'ar' ? 'الإعدادات' : 'Settings'}</span>
                 </Link>
               </div>
               {/* Action Link */}
@@ -154,7 +162,7 @@ export default function Navbar({ onMenuToggle, profile, user, subscriptionInfo, 
                   onClick={() => setDropdownOpen(false)}
                 >
                   <span>🚪</span>
-                  <span>Sign Out</span>
+                  <span>{lang === 'ar' ? 'تسجيل الخروج' : 'Sign Out'}</span>
                 </Link>
               </div>
             </div>

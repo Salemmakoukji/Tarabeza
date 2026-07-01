@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { ArrowLeft, Briefcase, MapPin, Clock, Sparkles } from 'lucide-react';
 import Logo from '../components/logo';
+import { useToast, ToastContainer } from '../components/dashboard/toast';
 
 export default function CareersPage() {
   const [lang, setLang] = useState('ar');
-  const [appliedRole, setAppliedRole] = useState(null);
+  const { toasts, addToast, removeToast } = useToast(4000);
 
   const content = {
     en: {
@@ -42,9 +43,8 @@ export default function CareersPage() {
 
   const t = content[lang];
 
-  const handleApply = (roleTitle) => {
-    setAppliedRole(roleTitle);
-    setTimeout(() => setAppliedRole(null), 4000);
+  const handleApply = () => {
+    addToast('success', t.appSuccess);
   };
 
   return (
@@ -53,12 +53,7 @@ export default function CareersPage() {
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#F97316]/10 rounded-full mix-blend-multiply filter blur-[100px] opacity-10 animate-pulse pointer-events-none"></div>
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/10 rounded-full mix-blend-multiply filter blur-[100px] opacity-10 animate-pulse pointer-events-none" style={{ animationDelay: '2s' }}></div>
 
-      {/* Toast popup */}
-      {appliedRole && (
-        <div className="fixed bottom-5 right-5 z-55 flex items-center px-4 py-3 bg-emerald-950 border border-emerald-800 text-emerald-200 rounded-xl shadow-xl animate-fade-in text-xs font-bold">
-          {t.appSuccess}
-        </div>
-      )}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
 
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[#0F1524]/80 backdrop-blur-md border-b border-slate-900">
