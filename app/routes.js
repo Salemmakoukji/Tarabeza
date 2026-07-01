@@ -38,6 +38,10 @@ export default [
   route("contact", "routes/contact.jsx"),
   route("privacy", "routes/privacy.jsx"),
   route("terms", "routes/terms.jsx"),
+  
+  // Blog
+  route("blog", "routes/blog.jsx"),
+  route("blog/:slug", "routes/blog-post.jsx"),
 
   // SEO dynamic resource routes
   route("sitemap.xml", "routes/sitemap.jsx"),

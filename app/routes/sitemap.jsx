@@ -27,6 +27,7 @@ export async function loader({ request }) {
     { loc: "/privacy", changefreq: "monthly", priority: "0.5" },
     { loc: "/login", changefreq: "monthly", priority: "0.5" },
     { loc: "/register", changefreq: "monthly", priority: "0.5" },
+    { loc: "/blog", changefreq: "weekly", priority: "0.8" },
   ];
 
   const staticEntries = staticUrls.map((entry) => `
@@ -37,10 +38,21 @@ export async function loader({ request }) {
     <priority>${entry.priority}</priority>
   </url>`).join("");
 
+  // Blog post entries (dynamic from blog-posts data)
+  const { posts } = await import("../lib/blog-posts");
+  const blogEntries = posts.map((post) => `
+  <url>
+    <loc>${baseUrl}/blog/${post.slug}</loc>
+    <lastmod>${new Date(post.date).toISOString()}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>`).join("");
+
   const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${staticEntries}
 ${restaurantEntries}
+${blogEntries}
 </urlset>`;
 
   return new Response(xmlContent, {

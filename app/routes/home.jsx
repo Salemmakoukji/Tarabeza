@@ -14,7 +14,12 @@ import {
   Shield, 
   Star,
   Menu,
-  X
+  X,
+  Table2,
+  ShoppingBag,
+  Bell,
+  Plus,
+  Minus
 } from 'lucide-react';
 import Logo from '../components/logo';
 import UserAvatar from '../components/user-avatar';
@@ -46,8 +51,8 @@ export function meta({ data }) {
   if (lang === 'ar') {
     return [
       { title: "طربيزة | نظام إدارة المطاعم والكافيهات الذكي والـ POS" },
-      { name: "description", content: "رقمن مطعمك أو مقهاك مع طربيزة. نظام كاشير سحابي (POS)، منيو باركود QR تفاعلي، إدارة الطاولات، تتبع المخزون، وتقارير مالية مباشرة وسهلة." },
-      { name: "keywords", content: "نظام إدارة مطاعم, منيو باركود QR, كاشير سحابي, نظام نقاط البيع, إدارة الطاولات, تتبع المخزون, رقمنة المطاعم" },
+      { name: "description", content: "رقمن مطعمك أو مقهاك مع طربيزة. نظام كاشير سحابي (POS)، منيو باركود QR تفاعلي، إدارة الطاولات، الطلب من الطاولة، استدعاء الخدمة، تتبع المخزون، وتقارير مالية مباشرة وسهلة." },
+      { name: "keywords", content: "نظام إدارة مطاعم, منيو باركود QR, كاشير سحابي, نظام نقاط البيع, الطلب من الطاولة, استدعاء الخدمة, إدارة الطاولات, تتبع المخزون, رقمنة المطاعم" },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://tarapeza.com?lang=ar" },
       { property: "og:title", content: "طربيزة | نظام إدارة المطاعم والكافيهات الذكي والـ POS" },
@@ -62,9 +67,9 @@ export function meta({ data }) {
   }
 
   return [
-    { title: "Tarabeza | Cloud Restaurant Management System & POS" },
-    { name: "description", content: "Digitize your restaurant or cafe with Tarabeza. Cloud POS, interactive QR code menus, table management, inventory tracking, & real-time financial reports." },
-    { name: "keywords", content: "restaurant management system, cloud POS, QR code menu, digital ordering, inventory tracking, table management, hospitality SaaS" },
+      { title: "Tarabeza | Cloud Restaurant Management System & POS" },
+    { name: "description", content: "Digitize your restaurant or cafe with Tarabeza. Cloud POS, interactive QR code menus, table management, dine-in ordering, call waiter, inventory tracking, & real-time financial reports." },
+    { name: "keywords", content: "restaurant management system, cloud POS, QR code menu, digital ordering, table ordering, call waiter, table management, inventory tracking, hospitality SaaS" },
     { property: "og:type", content: "website" },
     { property: "og:url", content: "https://tarapeza.com" },
     { property: "og:title", content: "Tarabeza | Cloud Restaurant Management System & POS" },
@@ -87,7 +92,7 @@ const content = {
     exploreDirectory: 'Explore Directory',
     heroBadge: 'Interactive QR Menu SaaS',
     heroTitle: 'Beautiful Digital Menus For Modern Restaurants',
-    heroSubtitle: 'Allow your customers to scan, view, and search your menu instantly from their phone. No app downloads required. Set up your brand style in minutes.',
+    heroSubtitle: 'Allow your customers to scan, view, and order from your menu instantly from their phone. Customers can call for service or request the bill with one tap. No app downloads required.',
     startTrial: 'Start Free Trial',
     merchantSignIn: 'Merchant Sign In',
     mockupBurgerName: 'Signature Smoked Burger',
@@ -98,28 +103,29 @@ const content = {
     mockupActiveCategory: 'Mains',
     mockupCategory2: 'Sides',
     mockupCategory3: 'Drinks',
+    mockupAdd: 'Add',
     howItWorksTitle: 'How It Works',
-    howItWorksSubtitle: 'Get your digital menu up and running in three simple steps',
-    step1Title: '1. Create Menu',
-    step1Desc: 'Add categories and items with high-res images, pricing, and allergen tags.',
-    step2Title: '2. Get QR Code',
-    step2Desc: 'Customize code colors, add your logo, and export print-ready table flyers.',
-    step3Title: '3. Customers Scan',
-    step3Desc: 'Patrons scan the QR to view your fast, mobile-friendly menu on their phone.',
-    featuresTitle: 'Everything you need for table-side dining',
-    featuresSubtitle: 'Ditch printing expensive physical menus. Manage operations digitally with a system built for speed and visual excellence.',
+    howItWorksSubtitle: 'Get your digital restaurant up and running in three simple steps',
+    step1Title: '1. Create & Organize',
+    step1Desc: 'Add menu items, set up tables, and customize your brand style in minutes.',
+    step2Title: '2. Deploy QR Codes',
+    step2Desc: 'Generate per-table QR codes, customize colors, and export print-ready flyers.',
+    step3Title: '3. Serve & Monitor',
+    step3Desc: 'Customers scan to view, order, and call for service. You receive everything in real time.',
+    featuresTitle: 'Everything you need for modern dining',
+    featuresSubtitle: 'From menu creation to table-side ordering and service requests — manage it all digitally in one platform.',
     feature1Title: 'Digital Menu Builder',
-    feature1Desc: 'Easily add, edit, and organize menu items. Update descriptions and pricing in real time.',
-    feature2Title: 'Custom QR Codes',
-    feature2Desc: 'Download customized high-res PNG or PDF flyers matching your restaurant theme.',
-    feature3Title: 'Fast Load Speeds',
-    feature3Desc: 'Client-side image optimizer compresses photos automatically to load in milliseconds.',
-    feature4Title: 'Bilingual Support',
-    feature4Desc: 'Supports Arabic RTL and English LTR layouts automatically to delight all guests.',
-    feature5Title: 'Live Analytics',
-    feature5Desc: 'Track menu views and scan counts directly from your interactive merchant dashboard.',
-    feature6Title: 'Brand Accent Styling',
-    feature6Desc: 'Personalize accents and color schemes to match your physical restaurant design.',
+    feature1Desc: 'Easily add, edit, and organize menu items with high-res images, pricing, and tags. Updates sync instantly.',
+    feature2Title: 'Table Management',
+    feature2Desc: 'Organize your venue with table groups, assign numbers and names, and toggle availability per table.',
+    feature3Title: 'Per-Table QR Codes',
+    feature3Desc: 'Generate unique QR codes per table. Customers are automatically linked to their table when they scan.',
+    feature4Title: 'Dine-in Ordering',
+    feature4Desc: 'Customers build and submit orders from their phone. Cart, quantities, and special instructions included.',
+    feature5Title: 'Call Waiter',
+    feature5Desc: 'Service, bill, or help requests sent directly to staff in real time. No waving or shouting needed.',
+    feature6Title: 'Real-time Dashboard',
+    feature6Desc: 'Track incoming orders and service calls as they happen with live notifications and status workflows.',
     pricingTitle: 'Simple, transparent pricing',
     pricingSubtitle: 'Choose the perfect plan for your business. No hidden fees.',
     planBasic: 'Basic',
@@ -134,13 +140,15 @@ const content = {
     popular: 'Popular',
     feature1: '1 Restaurant profile',
     feature2: 'Up to 50 menu items',
-    feature3: 'Standard QR Code generator',
+    feature3: 'Table management (up to 10 tables)',
     feature4: 'Unlimited menu items',
-    feature5: 'Premium styling customizer',
-    feature6: 'Full analytics & views counter',
-    feature7: '24/7 Priority support',
+    feature5: 'Unlimited table management',
+    feature6: 'Dine-in ordering & call waiter',
+    feature7: 'Premium styling customizer',
+    feature8: 'Real-time analytics & reports',
+    feature9: '24/7 Priority support',
     choosePlan: 'Choose Plan',
-    footerDesc: 'Modernize your restaurant dining experience with interactive digital QR menus.',
+    footerDesc: 'Modernize your restaurant dining experience with interactive digital QR menus, table ordering, and service management.',
     product: 'Product',
     company: 'Company',
     legal: 'Legal',
@@ -159,7 +167,7 @@ const content = {
     exploreDirectory: 'استكشف المطاعم',
     heroBadge: 'نظام إدارة قوائم الطعام الرقمية QR',
     heroTitle: 'قوائم طعام رقمية أنيقة للمطاعم العصرية',
-    heroSubtitle: 'اسمح لزبائنك بمسح الرمز واستعراض قائمة طعامك والبحث فيها فوراً من هواتفهم. لا حاجة لتحميل أي تطبيق. أنشئ هويتك الخاصة في دقائق معدودة.',
+    heroSubtitle: 'اسمح لزبائنك بمسح الرمز واستعراض وطلب الطعام مباشرة من هواتفهم. يمكنهم استدعاء الخدمة أو طلب الفاتورة بنقرة واحدة. لا حاجة لتحميل أي تطبيق.',
     startTrial: 'ابدأ التجربة المجانية',
     merchantSignIn: 'بوابة المطاعم',
     mockupBurgerName: 'برجر مدخن مميز',
@@ -170,28 +178,29 @@ const content = {
     mockupActiveCategory: 'الرئيسية',
     mockupCategory2: 'الجانبية',
     mockupCategory3: 'المشروبات',
+    mockupAdd: 'إضافة',
     howItWorksTitle: 'كيف يعمل البرنامج',
-    howItWorksSubtitle: 'ابدأ تشغيل قائمة طعامك الرقمية في ثلاث خطوات بسيطة',
-    step1Title: '١. أنشئ قائمة طعامك',
-    step1Desc: 'أضف الأقسام والأطباق مع صور عالية الدقة والأسعار ومسببات الحساسية.',
-    step2Title: '٢. احصل على رمز QR',
-    step2Desc: 'خصص ألوان الرمز، أضف شعارك، وقم بتحميل مطبوعات الطاولات الجاهزة.',
-    step3Title: '٣. الزبائن يمسحون الرمز',
-    step3Desc: 'يمسح الزبائن الرمز لمشاهدة قائمة طعامك السريعة والمتوافقة مع الهواتف.',
-    featuresTitle: 'كل ما تحتاجه لتجربة طعام ممتازة',
-    featuresSubtitle: 'تخلص من تكاليف طباعة القوائم الورقية الباهظة. أدر عملياتك رقمياً بنظام مصمم للسرعة والأناقة.',
+    howItWorksSubtitle: 'ابدأ تشغيل مطعمك الرقمي في ثلاث خطوات بسيطة',
+    step1Title: '١. أنشئ ونظم',
+    step1Desc: 'أضف الأصناف وأنشئ الطاولات وخصص هوية مطعمك في دقائق.',
+    step2Title: '٢. انشر رموز QR',
+    step2Desc: 'أنشئ رموز QR لكل طاولة، خصص الألوان، وحمّل منشورات جاهزة للطباعة.',
+    step3Title: '٣. قدّم وراقب',
+    step3Desc: 'يمسح الزبائن الرمز لاستعراض القائمة والطلب واستدعاء الخدمة. كل شيء يصل إليك مباشرة.',
+    featuresTitle: 'كل ما تحتاجه للمطاعم العصرية',
+    featuresSubtitle: 'من إنشاء القوائم إلى الطلب من الطاولة واستدعاء الخدمة — أدر كل شيء رقمياً في منصة واحدة.',
     feature1Title: 'منشئ القائمة الرقمي',
-    feature1Desc: 'أضف الأقسام والأطباق وعدلها بسهولة. حدّث الأسعار والوصف في الوقت الفعلي.',
-    feature2Title: 'رموز QR مخصصة',
-    feature2Desc: 'حمّل منشورات طاولة عالية الدقة بصيغة PNG أو PDF متوافقة مع هويتك.',
-    feature3Title: 'تحميل فائق السرعة',
-    feature3Desc: 'يقوم ضاغط الصور التلقائي بضغط صور الأطباق لضمان التحميل في أجزاء من الثانية.',
-    feature4Title: 'دعم ثنائي اللغة',
-    feature4Desc: 'يدعم القراءة باللغتين العربية والإنجليزية لتقديم أفضل تجربة لجميع الزبائن.',
-    feature5Title: 'تحليلات مباشرة',
-    feature5Desc: 'تتبع مشاهدات القائمة وعدد عمليات المسح مباشرة من لوحة التحكم التفاعلية.',
-    feature6Title: 'ألوان الهوية المخصصة',
-    feature6Desc: 'اضبط ألوان القائمة واللمسات الجمالية لتناسب الهوية البصرية لمطعمك.',
+    feature1Desc: 'أضف الأقسام والأطباق بسهولة مع صور عالية الدقة والأسعار. التحديثات متزامنة فوراً.',
+    feature2Title: 'إدارة الطاولات',
+    feature2Desc: 'نظم طاولات مطعمك في مجموعات، خصص أرقاماً وأسماء، وتحكم بحالة كل طاولة.',
+    feature3Title: 'رموز QR لكل طاولة',
+    feature3Desc: 'أنشئ رموز QR فريدة لكل طاولة. يرتبط الزبائن بطاولتهم تلقائياً عند المسح.',
+    feature4Title: 'الطلب من الطاولة',
+    feature4Desc: 'يبني الزبائن طلباتهم ويرسلونها من هواتفهم. مع سلة التسوق والكميات والملاحظات.',
+    feature5Title: 'استدعاء الخدمة',
+    feature5Desc: 'طلبات الخدمة أو الفاتورة أو المساعدة ترسل مباشرة إلى الموظفين في الوقت الفعلي.',
+    feature6Title: 'لوحة تحكم مباشرة',
+    feature6Desc: 'تتبع الطلبات وطلبات الخدمة فور حدوثها مع إشعارات مباشرة وحالات عمل.',
     pricingTitle: 'خطط أسعار بسيطة وشفافة',
     pricingSubtitle: 'اختر الخطة المثالية لعملك. بدون رسوم خفية.',
     planBasic: 'الأساسية',
@@ -206,13 +215,15 @@ const content = {
     popular: 'الأكثر شعبية',
     feature1: 'ملف تعريف مطعم واحد',
     feature2: 'حتى 50 طبق وقسم',
-    feature3: 'منشئ رموز QR قياسي',
+    feature3: 'إدارة الطاولات (حتى 10 طاولات)',
     feature4: 'أطباق وأقسام غير محدودة',
-    feature5: 'تخصيص كامل للألوان والتصميم',
-    feature6: 'إحصائيات كاملة للمشاهدات والزيارات',
-    feature7: 'دعم فني ذو أولوية على مدار الساعة',
+    feature5: 'إدارة طاولات غير محدودة',
+    feature6: 'الطلب من الطاولة واستدعاء الخدمة',
+    feature7: 'تخصيص كامل للألوان والتصميم',
+    feature8: 'تقارير وإحصائيات مباشرة',
+    feature9: 'دعم فني ذو أولوية على مدار الساعة',
     choosePlan: 'اختر الخطة',
-    footerDesc: 'عصرن تجربة زوار مطعمك من خلال قوائم الطعام الرقمية التفاعلية برموز الاستجابة السريعة.',
+    footerDesc: 'عصرن تجربة زوار مطعمك من خلال قوائم طعام رقمية تفاعلية مع الطلب من الطاولة وإدارة الخدمة.',
     product: 'المنتج',
     company: 'الشركة',
     legal: 'قانوني',
@@ -263,16 +274,16 @@ export default function Home() {
 
   const planFeatures = {
     basic: [t.feature1, t.feature2, t.feature3],
-    pro: [t.feature4, t.feature5, t.feature6, t.feature7]
+    pro: [t.feature4, t.feature5, t.feature6, t.feature7, t.feature8, t.feature9]
   };
 
   const featureCards = [
     { title: t.feature1Title, desc: t.feature1Desc, icon: UtensilsCrossed, color: 'from-orange-500 to-amber-500' },
-    { title: t.feature2Title, desc: t.feature2Desc, icon: QrCode, color: 'from-blue-500 to-indigo-500' },
-    { title: t.feature3Title, desc: t.feature3Desc, icon: Sparkles, color: 'from-emerald-500 to-teal-500' },
-    { title: t.feature4Title, desc: t.feature4Desc, icon: Globe, color: 'from-violet-500 to-purple-500' },
-    { title: t.feature5Title, desc: t.feature5Desc, icon: BarChart3, color: 'from-pink-500 to-rose-500' },
-    { title: t.feature6Title, desc: t.feature6Desc, icon: Palette, color: 'from-yellow-500 to-amber-500' },
+    { title: t.feature2Title, desc: t.feature2Desc, icon: Table2, color: 'from-blue-500 to-indigo-500' },
+    { title: t.feature3Title, desc: t.feature3Desc, icon: QrCode, color: 'from-emerald-500 to-teal-500' },
+    { title: t.feature4Title, desc: t.feature4Desc, icon: ShoppingBag, color: 'from-violet-500 to-purple-500' },
+    { title: t.feature5Title, desc: t.feature5Desc, icon: Bell, color: 'from-pink-500 to-rose-500' },
+    { title: t.feature6Title, desc: t.feature6Desc, icon: BarChart3, color: 'from-yellow-500 to-amber-500' },
   ];
 
   return (
@@ -591,6 +602,9 @@ export default function Home() {
                     <div className="space-y-1">
                       <div className="flex justify-between items-center">
                         <span className="font-bold text-slate-100">{t.mockupBurgerName}</span>
+                        <button className="h-7 w-7 rounded-lg bg-orange-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/20 hover:bg-orange-400 transition-colors">
+                          <Plus className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                       <p className="text-[9px] text-slate-400 leading-normal line-clamp-2">
                         {t.mockupBurgerDesc}
@@ -612,6 +626,9 @@ export default function Home() {
                     <div className="space-y-1">
                       <div className="flex justify-between items-center">
                         <span className="font-bold text-slate-100">{t.mockupFriesName}</span>
+                        <button className="h-7 w-7 rounded-lg bg-orange-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/20 hover:bg-orange-400 transition-colors">
+                          <Plus className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                       <p className="text-[9px] text-slate-400 leading-normal line-clamp-2">
                         {t.mockupFriesDesc}
@@ -620,15 +637,20 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Simulated Floating QR Scanning Overlay */}
-                <div className="px-4 py-2 mt-auto border-t border-slate-900/50 bg-slate-950/90 backdrop-blur flex items-center justify-between">
-                  <div className="flex items-center space-x-2 gap-2 text-[10px] text-slate-400">
-                    <QrCode className="h-4 w-4 text-orange-500" />
-                    <span>{lang === 'ar' ? 'مشغل بواسطة طربيزة' : 'Powered by Tarapeza'}</span>
+                {/* Simulated Bottom Action Bar */}
+                <div className="px-4 py-3 mt-auto border-t border-slate-900/50 bg-slate-950/90 backdrop-blur flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <button className="h-9 w-9 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:border-orange-500 hover:text-orange-400 transition-all">
+                      <Bell className="h-4 w-4" />
+                    </button>
+                    <span className="text-[9px] text-slate-500">{lang === 'ar' ? 'استدعاء الخدمة' : 'Call Waiter'}</span>
                   </div>
-                  <span className="bg-slate-900 border border-slate-800 text-[9px] px-2.5 py-1 rounded-md text-slate-300 font-medium">
-                    EN / AR
-                  </span>
+                  <div className="relative">
+                    <button className="h-10 w-10 rounded-full bg-orange-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/20">
+                      <ShoppingBag className="h-4 w-4" />
+                    </button>
+                    <span className="absolute -top-1 -right-1 h-4 w-4 bg-white text-orange-500 rounded-full text-[8px] font-bold flex items-center justify-center">2</span>
+                  </div>
                 </div>
 
               </div>
@@ -841,6 +863,7 @@ export default function Home() {
             <h4 className="text-white text-xs font-bold uppercase tracking-wider mb-4">{t.product}</h4>
             <ul className="space-y-2 text-xs text-slate-500">
               <li><Link to="/restaurants" className="hover:text-orange-400 transition-colors">{t.exploreDirectory}</Link></li>
+              <li><Link to="/blog" className="hover:text-orange-400 transition-colors">Blog</Link></li>
               <li><Link to="#features" className="hover:text-orange-400 transition-colors">{t.featuresTitle}</Link></li>
               <li><Link to="#pricing" className="hover:text-orange-400 transition-colors">{t.pricingTitle}</Link></li>
             </ul>
