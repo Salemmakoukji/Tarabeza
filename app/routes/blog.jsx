@@ -2,6 +2,7 @@ import { Link, useLoaderData, useSearchParams } from 'react-router';
 import { Calendar, Clock, ArrowRight, ArrowLeft, Globe } from 'lucide-react';
 import Logo from '../components/logo';
 import { posts } from '../lib/blog-posts';
+import { getStoredLang, setStoredLang } from '../lib/language';
 
 export async function loader() {
   return { posts };
@@ -47,10 +48,12 @@ export function meta({ data, params, location }) {
 export default function BlogIndex() {
   const { posts } = useLoaderData();
   const [searchParams, setSearchParams] = useSearchParams();
-  const lang = searchParams.get('lang') || 'en';
+  const lang = searchParams.get('lang') || getStoredLang('en');
   const isRtl = lang === 'ar';
 
   const toggleLang = () => {
+    const next = lang === 'ar' ? 'en' : 'ar';
+    setStoredLang(next);
     if (lang === 'ar') {
       setSearchParams({});
     } else {

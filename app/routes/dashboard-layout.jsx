@@ -5,6 +5,7 @@ import Sidebar from '../components/dashboard/sidebar';
 import Navbar from '../components/dashboard/navbar';
 import BillingBlocker from '../components/dashboard/billing-blocker';
 import { supabase as browserSupabase } from '../lib/supabase/client';
+import { getStoredLang, setStoredLang } from '../lib/language';
 
 export async function loader({ request }) {
   const supabase = await createClient(request);
@@ -92,7 +93,7 @@ export default function DashboardLayout() {
   const [announcements, setAnnouncements] = useState([]);
   const [currentAnnouncementIdx, setCurrentAnnouncementIdx] = useState(0);
   const [pendingCallCount, setPendingCallCount] = useState(0);
-  const [lang, setLang] = useState('en');
+  const [lang, setLang] = useState(getStoredLang('en'));
 
   useEffect(() => {
     if (profile?.id) {
@@ -156,7 +157,7 @@ export default function DashboardLayout() {
           subscriptionInfo={subscriptionInfo}
           pendingCallCount={pendingCallCount}
           lang={lang}
-          onLangToggle={() => setLang(lang === 'en' ? 'ar' : 'en')}
+          onLangToggle={() => { const next = lang === 'en' ? 'ar' : 'en'; setLang(next); setStoredLang(next); }}
         />
         {announcements.length > 0 && announcements[currentAnnouncementIdx] && (
           <div className="bg-gradient-to-r from-orange-500/10 to-amber-500/10 border-b border-orange-500/20 px-6 py-3.5 flex items-center justify-between text-xs text-orange-300">
