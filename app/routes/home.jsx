@@ -126,6 +126,10 @@ const content = {
     feature5Desc: 'Service, bill, or help requests sent directly to staff in real time. No waving or shouting needed.',
     feature6Title: 'Real-time Dashboard',
     feature6Desc: 'Track incoming orders and service calls as they happen with live notifications and status workflows.',
+    navBlog: 'Blog',
+    navHowItWorks: 'How It Works',
+    navFeatures: 'Features',
+    navPricing: 'Pricing',
     pricingTitle: 'Simple, transparent pricing',
     pricingSubtitle: 'Choose the perfect plan for your business. No hidden fees.',
     planBasic: 'Basic',
@@ -201,6 +205,10 @@ const content = {
     feature5Desc: 'طلبات الخدمة أو الفاتورة أو المساعدة ترسل مباشرة إلى الموظفين في الوقت الفعلي.',
     feature6Title: 'لوحة تحكم مباشرة',
     feature6Desc: 'تتبع الطلبات وطلبات الخدمة فور حدوثها مع إشعارات مباشرة وحالات عمل.',
+    navBlog: 'المدونة',
+    navHowItWorks: 'كيف يعمل',
+    navFeatures: 'المميزات',
+    navPricing: 'الأسعار',
     pricingTitle: 'خطط أسعار بسيطة وشفافة',
     pricingSubtitle: 'اختر الخطة المثالية لعملك. بدون رسوم خفية.',
     planBasic: 'الأساسية',
@@ -317,6 +325,33 @@ export default function Home() {
             >
               {t.exploreDirectory}
             </Link>
+            <Link
+              to="#how-it-works"
+              onClick={(e) => { e.preventDefault(); document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' }); }}
+              className="text-sm font-semibold text-slate-400 hover:text-white transition-colors"
+            >
+              {t.navHowItWorks}
+            </Link>
+            <Link
+              to="#features"
+              onClick={(e) => { e.preventDefault(); document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }); }}
+              className="text-sm font-semibold text-slate-400 hover:text-white transition-colors"
+            >
+              {t.navFeatures}
+            </Link>
+            <Link
+              to="#pricing"
+              onClick={(e) => { e.preventDefault(); document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' }); }}
+              className="text-sm font-semibold text-slate-400 hover:text-white transition-colors"
+            >
+              {t.navPricing}
+            </Link>
+            <Link
+              to="/blog"
+              className="text-sm font-semibold text-slate-400 hover:text-white transition-colors"
+            >
+              {t.navBlog}
+            </Link>
             {user ? (
               <>
                 <Link
@@ -432,6 +467,35 @@ export default function Home() {
                 className="text-base font-semibold text-slate-300 hover:text-white py-2 border-b border-slate-900/50 transition-colors flex items-center justify-between"
               >
                 <span>{t.exploreDirectory}</span>
+                <ArrowRight className={`h-4 w-4 text-slate-500 transition-transform ${isRtl ? 'rotate-180' : ''}`} />
+              </Link>
+              <button
+                onClick={() => { setMobileMenuOpen(false); setTimeout(() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' }), 100); }}
+                className="text-base font-semibold text-slate-300 hover:text-white py-2 border-b border-slate-900/50 transition-colors flex items-center justify-between w-full text-left"
+              >
+                <span>{t.navHowItWorks}</span>
+                <ArrowRight className={`h-4 w-4 text-slate-500 transition-transform ${isRtl ? 'rotate-180' : ''}`} />
+              </button>
+              <button
+                onClick={() => { setMobileMenuOpen(false); setTimeout(() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }), 100); }}
+                className="text-base font-semibold text-slate-300 hover:text-white py-2 border-b border-slate-900/50 transition-colors flex items-center justify-between w-full text-left"
+              >
+                <span>{t.navFeatures}</span>
+                <ArrowRight className={`h-4 w-4 text-slate-500 transition-transform ${isRtl ? 'rotate-180' : ''}`} />
+              </button>
+              <button
+                onClick={() => { setMobileMenuOpen(false); setTimeout(() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' }), 100); }}
+                className="text-base font-semibold text-slate-300 hover:text-white py-2 border-b border-slate-900/50 transition-colors flex items-center justify-between w-full text-left"
+              >
+                <span>{t.navPricing}</span>
+                <ArrowRight className={`h-4 w-4 text-slate-500 transition-transform ${isRtl ? 'rotate-180' : ''}`} />
+              </button>
+              <Link
+                to="/blog"
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-base font-semibold text-slate-300 hover:text-white py-2 border-b border-slate-900/50 transition-colors flex items-center justify-between"
+              >
+                <span>{t.navBlog}</span>
                 <ArrowRight className={`h-4 w-4 text-slate-500 transition-transform ${isRtl ? 'rotate-180' : ''}`} />
               </Link>
               {user ? (
