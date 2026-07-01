@@ -105,25 +105,30 @@ export default function DashboardLayout() {
           if (data) setAnnouncements(data);
         });
 
-      browserSupabase
-        .from('waiter_calls')
-        .select('id', { count: 'exact', head: true })
-        .eq('restaurant_id', profile.id)
-        .eq('status', 'pending')
-        .then(({ count }) => setPendingCallCount(count || 0));
+      const countPending = async () => {
+        const { count: callCount } = await browserSupabase
+          .from('waiter_calls')
+          .select('id', { count: 'exact', head: true })
+          .eq('restaurant_id', profile.id)
+          .eq('status', 'pending');
+        const { count: orderCount } = await browserSupabase
+          .from('orders')
+          .select('id', { count: 'exact', head: true })
+          .eq('restaurant_id', profile.id)
+          .eq('status', 'pending');
+        setPendingCallCount((callCount || 0) + (orderCount || 0));
+      };
+      countPending();
 
       const channel = browserSupabase
-        .channel('layout-waiter-calls')
+        .channel('layout-requests')
         .on('postgres_changes',
           { event: '*', schema: 'public', table: 'waiter_calls', filter: `restaurant_id=eq.${profile.id}` },
-          () => {
-            browserSupabase
-              .from('waiter_calls')
-              .select('id', { count: 'exact', head: true })
-              .eq('restaurant_id', profile.id)
-              .eq('status', 'pending')
-              .then(({ count }) => setPendingCallCount(count || 0));
-          }
+          () => countPending()
+        )
+        .on('postgres_changes',
+          { event: '*', schema: 'public', table: 'orders', filter: `restaurant_id=eq.${profile.id}` },
+          () => countPending()
         )
         .subscribe();
 

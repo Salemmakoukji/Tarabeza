@@ -1,5 +1,5 @@
 import { useLocation, Link } from 'react-router';
-import { LayoutGrid, UtensilsCrossed, QrCode, Settings, LogOut, X, CreditCard, Palette, Info, Table2, Bell, ShoppingBag } from 'lucide-react';
+import { LayoutGrid, UtensilsCrossed, QrCode, Settings, LogOut, X, CreditCard, Palette, Info, Table2, BellRing, ShoppingBag } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Logo from '../logo';
 
@@ -14,8 +14,7 @@ export default function Sidebar({ isOpen, onClose, pendingCallCount }) {
     { name: 'Restaurant Info', href: '/dashboard/information', icon: Info },
     { name: 'QR Code', href: '/dashboard/qr', icon: QrCode },
     { name: 'Tables', href: '/dashboard/tables', icon: Table2 },
-    { name: 'Waiter Calls', href: '/dashboard/calls', icon: Bell, badge: pendingCallCount },
-    { name: 'Orders', href: '/dashboard/orders', icon: ShoppingBag },
+    { name: 'Requests', href: '/dashboard/requests', icon: BellRing, badge: pendingCallCount },
     { name: 'Billing', href: '/dashboard/billing', icon: CreditCard },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ];

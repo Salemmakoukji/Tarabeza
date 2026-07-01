@@ -56,7 +56,7 @@ export default function Navbar({ onMenuToggle, profile, user, subscriptionInfo, 
       <div className="flex items-center space-x-4 gap-2">
         {pendingCallCount > 0 && (
           <Link
-            to="/dashboard/calls"
+            to="/dashboard/requests"
             className="relative flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 border border-orange-500/30 rounded-lg text-xs font-bold text-orange-400 hover:bg-orange-500/20 transition-all"
           >
             <Bell className="h-4 w-4 animate-pulse" />
