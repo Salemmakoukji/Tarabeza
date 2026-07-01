@@ -148,6 +148,29 @@ CREATE TABLE public.subscriptions (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
+-- 11. RESTAURANT TABLES (TABLE MANAGEMENT)
+CREATE TABLE public.restaurant_tables (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    restaurant_id UUID NOT NULL REFERENCES public.restaurants(id) ON DELETE CASCADE,
+    table_number TEXT NOT NULL,
+    table_name TEXT,
+    capacity INTEGER DEFAULT 2,
+    is_active BOOLEAN DEFAULT true NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    UNIQUE(restaurant_id, table_number)
+);
+
+-- 12. WAITER CALLS
+CREATE TABLE public.waiter_calls (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    restaurant_id UUID NOT NULL REFERENCES public.restaurants(id) ON DELETE CASCADE,
+    table_id UUID REFERENCES public.restaurant_tables(id) ON DELETE SET NULL,
+    call_type TEXT DEFAULT 'service' NOT NULL CHECK (call_type IN ('service', 'bill', 'help')),
+    status TEXT DEFAULT 'pending' NOT NULL CHECK (status IN ('pending', 'acknowledged', 'resolved')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    resolved_at TIMESTAMP WITH TIME ZONE
+);
+
 -- ==========================================
 -- INDEXES FOR PERFORMANCE OPTIMIZATION
 -- ==========================================
@@ -161,6 +184,9 @@ CREATE INDEX idx_favorites_customer ON public.customer_favorites(customer_id);
 CREATE INDEX idx_loyalty_customer ON public.customer_loyalty(customer_id);
 CREATE INDEX idx_scans_restaurant ON public.scans_log(restaurant_id);
 CREATE INDEX idx_subscriptions_restaurant ON public.subscriptions(restaurant_id);
+CREATE INDEX idx_restaurant_tables_restaurant ON public.restaurant_tables(restaurant_id);
+CREATE INDEX idx_waiter_calls_restaurant ON public.waiter_calls(restaurant_id);
+CREATE INDEX idx_waiter_calls_status ON public.waiter_calls(status);
 
 -- ==========================================
 -- ROW LEVEL SECURITY (RLS) HELPERS
@@ -175,6 +201,8 @@ ALTER TABLE public.customer_loyalty ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.scans_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.support_tickets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.restaurant_tables ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.waiter_calls ENABLE ROW LEVEL SECURITY;
 
 -- EXAMPLE RLS POLICIES (Can be modified based on requirements)
 
@@ -204,6 +232,30 @@ CREATE POLICY "Owners can manage their categories" ON public.categories
 
 CREATE POLICY "Menu items are viewable by everyone" ON public.menu_items
     FOR SELECT USING (true);
+-- Restaurant Tables: owners can CRUD, public can view (for QR linking)
+CREATE POLICY "Tables are viewable by everyone" ON public.restaurant_tables
+    FOR SELECT USING (true);
+CREATE POLICY "Owners can manage their tables" ON public.restaurant_tables
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.restaurants
+            WHERE public.restaurants.id = public.restaurant_tables.restaurant_id
+            AND public.restaurants.owner_id = auth.uid()
+        )
+    );
+
+-- Waiter Calls: anyone can insert, owners can manage
+CREATE POLICY "Anyone can call waiter" ON public.waiter_calls
+    FOR INSERT WITH CHECK (true);
+CREATE POLICY "Owners can view and manage calls" ON public.waiter_calls
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.restaurants
+            WHERE public.restaurants.id = public.waiter_calls.restaurant_id
+            AND public.restaurants.owner_id = auth.uid()
+        )
+    );
+
 CREATE POLICY "Owners can manage their menu items" ON public.menu_items
     FOR ALL USING (
         EXISTS (

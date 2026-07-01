@@ -12,6 +12,7 @@ export async function loader({ request, params }) {
     const previewTemplate = url.searchParams.get('template');
     const previewAccent = url.searchParams.get('accent');
     const lang = url.searchParams.get('lang') || 'en';
+    const tableId = url.searchParams.get('table') || null;
 
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
@@ -199,13 +200,14 @@ export async function loader({ request, params }) {
       mergedCustomization,
       cssStyles,
       fontUrl,
-      lang
+      lang,
+      tableId
     };
   } catch (err) {
     console.error('[menu-loader] Unexpected error:', err);
     return {
       profile: null, categories: [], menuItems: [], ratings: [],
-      mergedCustomization: null, cssStyles: '', fontUrl: '', lang: 'en'
+      mergedCustomization: null, cssStyles: '', fontUrl: '', lang: 'en', tableId: null
     };
   }
 }
@@ -261,7 +263,7 @@ export function meta({ data }) {
 
 
 export default function PublicMenuPage() {
-  const { profile, categories, menuItems, ratings, mergedCustomization, cssStyles, fontUrl, lang } = useLoaderData();
+  const { profile, categories, menuItems, ratings, mergedCustomization, cssStyles, fontUrl, lang, tableId } = useLoaderData();
 
   if (!profile) {
     return (
@@ -402,6 +404,7 @@ export default function PublicMenuPage() {
         initialRatings={ratings}
         customization={mergedCustomization}
         initialLang={lang}
+        tableId={tableId}
       />
     </>
   );

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, MapPin, Phone, Sparkles, Globe, Star, X, Loader2, Share2, Check, Heart, Clock, Wifi, Eye, EyeOff } from 'lucide-react';
+import { Search, MapPin, Phone, Sparkles, Globe, Star, X, Loader2, Share2, Check, Heart, Clock, Wifi, Eye, EyeOff, Bell, PhoneCall, CreditCard, HelpCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase/client';
 
 const translateDay = (day) => {
@@ -17,7 +17,7 @@ const translateDay = (day) => {
   return mapping[day] || day;
 };
 
-export default function MenuViewClient({ profile, categories = [], menuItems = [], initialRatings = [], initialLang = 'en' }) {
+export default function MenuViewClient({ profile, categories = [], menuItems = [], initialRatings = [], initialLang = 'en', tableId = null }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter] = useState('all'); // 'all' | 'chef' | 'bestseller' | 'new' | 'popular' | 'spicy'
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -67,6 +67,29 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
   const [selectedItem, setSelectedItem] = useState(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [showSocialPopup, setShowSocialPopup] = useState(false);
+
+  // Call Waiter state
+  const [showCallWaiterModal, setShowCallWaiterModal] = useState(false);
+  const [selectedCallType, setSelectedCallType] = useState(null);
+  const [submittingCall, setSubmittingCall] = useState(false);
+  const [callSuccess, setCallSuccess] = useState(false);
+  const [callError, setCallError] = useState('');
+
+  // Fetch table info
+  const [tableInfo, setTableInfo] = useState(null);
+  useEffect(() => {
+    if (tableId && profile?.id) {
+      supabase
+        .from('restaurant_tables')
+        .select('table_number, table_name')
+        .eq('id', tableId)
+        .eq('restaurant_id', profile.id)
+        .single()
+        .then(({ data }) => {
+          if (data) setTableInfo(data);
+        });
+    }
+  }, [tableId, profile?.id]);
 
   // Diner client auth state
   const [customerUser, setCustomerUser] = useState(null);
@@ -1110,6 +1133,17 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
         )}
       </main>
 
+      {/* Call Waiter FAB — visible when diner scans a table QR */}
+      {tableId && (
+        <button
+          onClick={() => setShowCallWaiterModal(true)}
+          className="fixed bottom-20 right-4 z-40 h-14 w-14 rounded-full bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/30 flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-200 animate-bounce"
+          style={{ backgroundColor: 'var(--accent)' }}
+        >
+          <Bell className="h-6 w-6" />
+        </button>
+      )}
+
       {/* Fixed Bottom Bar */}
       <footer className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] h-14 bg-[var(--bg)]/95 backdrop-blur-md border-t border-[var(--border)] px-4 py-2 flex items-center justify-between z-50">
         <button
@@ -1485,6 +1519,128 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
                   </form>
                 )}
               </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Call Waiter Modal */}
+      {showCallWaiterModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="w-full max-w-sm rounded-[24px] bg-[var(--card)] border border-[var(--border)] p-6 relative text-[var(--text)] shadow-2xl animate-[scaleUp_200ms_ease-out_forwards]">
+            <button
+              onClick={() => { setShowCallWaiterModal(false); setCallSuccess(false); setCallError(''); setSelectedCallType(null); }}
+              className={`absolute top-4 ${isRtl ? 'left-4' : 'right-4'} text-[var(--text-2)] hover:text-[var(--text)] transition-colors duration-200`}
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            {callSuccess ? (
+              <div className="text-center py-8 space-y-3">
+                <div className="mx-auto h-14 w-14 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                  <Check className="h-7 w-7 text-emerald-500" />
+                </div>
+                <h3 className="text-lg font-bold">{isRtl ? 'تم إرسال الطلب!' : 'Request Sent!'}</h3>
+                <p className="text-sm text-[var(--text-2)]">
+                  {isRtl
+                    ? 'تم إبلاغ النادل بطلبك. سيتم الرد عليك قريباً.'
+                    : 'The waiter has been notified. You will be attended to shortly.'}
+                </p>
+                {tableInfo && (
+                  <p className="text-xs font-bold text-[var(--accent)]">
+                    {isRtl ? `طاولة ${tableInfo.table_number}` : `Table ${tableInfo.table_number}`}
+                  </p>
+                )}
+                <button
+                  onClick={() => { setShowCallWaiterModal(false); setCallSuccess(false); }}
+                  className="mt-4 w-full font-bold text-xs py-3 px-4 rounded-xl bg-[var(--text)] text-[var(--bg)] hover:opacity-90 active:scale-[0.98] transition-all duration-200"
+                >
+                  <span>{isRtl ? 'إغلاق' : 'Close'}</span>
+                </button>
+              </div>
+            ) : (
+              <>
+                <h3 className="text-sm font-bold tracking-widest text-center mb-2 mt-2 uppercase">
+                  {isRtl ? 'استدعاء النادل' : 'Call Waiter'}
+                </h3>
+                {tableInfo && (
+                  <p className="text-center text-xs text-[var(--text-2)] mb-4">
+                    {isRtl ? `طاولة ${tableInfo.table_number}` : `Table ${tableInfo.table_number}`}
+                    {tableInfo.table_name && ` — ${tableInfo.table_name}`}
+                  </p>
+                )}
+
+                {callError && (
+                  <p className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 text-[11px] text-rose-600 font-bold mb-4 text-center">
+                    {callError}
+                  </p>
+                )}
+
+                <div className="space-y-3">
+                  {[
+                    { type: 'service', icon: PhoneCall, labelEn: 'Service', labelAr: 'خدمة', descEn: 'General assistance', descAr: 'مساعدة عامة' },
+                    { type: 'bill', icon: CreditCard, labelEn: 'Bill', labelAr: 'الفاتورة', descEn: 'Request the check', descAr: 'طلب الفاتورة' },
+                    { type: 'help', icon: HelpCircle, labelEn: 'Help', labelAr: 'مساعدة', descEn: 'Urgent assistance needed', descAr: 'بحاجة لمساعدة عاجلة' },
+                  ].map((opt) => {
+                    const Icon = opt.icon;
+                    const isSelected = selectedCallType === opt.type;
+                    return (
+                      <button
+                        key={opt.type}
+                        onClick={() => setSelectedCallType(opt.type)}
+                        className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-200 text-start ${
+                          isSelected
+                            ? 'border-[var(--accent)] bg-[var(--accent)]/5'
+                            : 'border-[var(--border)] hover:border-[var(--accent)]/30'
+                        }`}
+                      >
+                        <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
+                          isSelected ? 'bg-[var(--accent)] text-white' : 'bg-[var(--card)] text-[var(--text-2)] border border-[var(--border)]'
+                        }`}>
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <span className="font-bold text-sm block">{isRtl ? opt.labelAr : opt.labelEn}</span>
+                          <span className="text-xs text-[var(--text-2)]">{isRtl ? opt.descAr : opt.descEn}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  onClick={async () => {
+                    if (!selectedCallType) return;
+                    setSubmittingCall(true);
+                    setCallError('');
+                    try {
+                      const { error } = await supabase.from('waiter_calls').insert({
+                        restaurant_id: profile.id,
+                        table_id: tableId,
+                        call_type: selectedCallType,
+                        status: 'pending'
+                      });
+                      if (error) throw error;
+                      setCallSuccess(true);
+                    } catch (err) {
+                      setCallError(err.message || (isRtl ? 'فشل إرسال الطلب' : 'Failed to send request'));
+                    } finally {
+                      setSubmittingCall(false);
+                    }
+                  }}
+                  disabled={!selectedCallType || submittingCall}
+                  className="mt-6 w-full font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 bg-[var(--accent)] text-white hover:opacity-90 active:scale-[0.98] transition-all duration-200 disabled:opacity-50"
+                >
+                  {submittingCall ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>{isRtl ? 'جاري الإرسال...' : 'Sending...'}</span>
+                    </>
+                  ) : (
+                    <span>{isRtl ? 'إرسال' : 'Send Request'}</span>
+                  )}
+                </button>
+              </>
             )}
           </div>
         </div>

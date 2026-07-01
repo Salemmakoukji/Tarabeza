@@ -1,9 +1,9 @@
 import { useLocation, Link } from 'react-router';
-import { LayoutGrid, UtensilsCrossed, QrCode, Settings, LogOut, X, CreditCard, Palette, Info } from 'lucide-react';
+import { LayoutGrid, UtensilsCrossed, QrCode, Settings, LogOut, X, CreditCard, Palette, Info, Table2, Bell } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import Logo from '../logo';
 
-export default function Sidebar({ isOpen, onClose }) {
+export default function Sidebar({ isOpen, onClose, pendingCallCount }) {
   const location = useLocation();
   const pathname = location.pathname;
 
@@ -13,6 +13,8 @@ export default function Sidebar({ isOpen, onClose }) {
     { name: 'Customize Menu', href: '/dashboard/customize', icon: Palette },
     { name: 'Restaurant Info', href: '/dashboard/information', icon: Info },
     { name: 'QR Code', href: '/dashboard/qr', icon: QrCode },
+    { name: 'Tables', href: '/dashboard/tables', icon: Table2 },
+    { name: 'Waiter Calls', href: '/dashboard/calls', icon: Bell, badge: pendingCallCount },
     { name: 'Billing', href: '/dashboard/billing', icon: CreditCard },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ];
@@ -59,7 +61,7 @@ export default function Sidebar({ isOpen, onClose }) {
                   if (typeof window !== 'undefined' && window.innerWidth < 1024) onClose();
                 }}
                 className={cn(
-                  "flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 group",
+                  "flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 group relative",
                   isActive
                     ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/10"
                     : "text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
@@ -72,6 +74,11 @@ export default function Sidebar({ isOpen, onClose }) {
                   )}
                 />
                 <span>{item.name}</span>
+                {item.badge > 0 && (
+                  <span className="ml-auto bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                    {item.badge > 99 ? '99+' : item.badge}
+                  </span>
+                )}
               </Link>
             );
           })}
