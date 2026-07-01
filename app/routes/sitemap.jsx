@@ -9,10 +9,12 @@ export async function loader({ request }) {
     .from("restaurants")
     .select("slug, updated_at");
 
+  const today = new Date().toISOString();
+
   const restaurantEntries = (restaurants || []).map((r) => `
   <url>
     <loc>${baseUrl}/menu/${r.slug}</loc>
-    <lastmod>${r.updated_at ? new Date(r.updated_at).toISOString() : new Date().toISOString()}</lastmod>
+    <lastmod>${r.updated_at ? new Date(r.updated_at).toISOString() : today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>`).join("");
@@ -27,29 +29,46 @@ export async function loader({ request }) {
     { loc: "/privacy", changefreq: "monthly", priority: "0.5" },
     { loc: "/login", changefreq: "monthly", priority: "0.5" },
     { loc: "/register", changefreq: "monthly", priority: "0.5" },
+    { loc: "/reset-password", changefreq: "monthly", priority: "0.3" },
     { loc: "/blog", changefreq: "weekly", priority: "0.8" },
   ];
 
-  const staticEntries = staticUrls.map((entry) => `
+  // Arabic lang variants for key pages
+  const langArUrls = [
+    { loc: "?lang=ar", changefreq: "daily", priority: "0.9" },
+    { loc: "/blog?lang=ar", changefreq: "weekly", priority: "0.7" },
+  ];
+
+  const staticEntries = [...staticUrls, ...langArUrls].map((entry) => `
   <url>
     <loc>${baseUrl}${entry.loc}</loc>
-    <lastmod>${new Date().toISOString()}</lastmod>
+    <lastmod>${today}</lastmod>
     <changefreq>${entry.changefreq}</changefreq>
     <priority>${entry.priority}</priority>
   </url>`).join("");
 
   // Blog post entries (dynamic from blog-posts data)
   const { posts } = await import("../lib/blog-posts");
-  const blogEntries = posts.map((post) => `
+  const blogEntries = posts.map((post) => {
+    const lastmod = new Date(post.date).toISOString();
+    return `
   <url>
     <loc>${baseUrl}/blog/${post.slug}</loc>
-    <lastmod>${new Date(post.date).toISOString()}</lastmod>
+    <lastmod>${lastmod}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-  </url>`).join("");
+  </url>
+  <url>
+    <loc>${baseUrl}/blog/${post.slug}?lang=ar</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>`;
+  }).join("");
 
   const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${staticEntries}
 ${restaurantEntries}
 ${blogEntries}
