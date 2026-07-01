@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useOutletContext } from 'react-router';
-import { BellRing, ShoppingBag, Phone, CreditCard, HelpCircle, Bell, CheckCircle, Clock, Loader2, Eye, X, ChefHat } from 'lucide-react';
+import { BellRing, ShoppingBag, Phone, CreditCard, HelpCircle, Bell, CheckCircle, Clock, Loader2, Eye, X, ChefHat, ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabase/client';
 import { cn, formatPrice } from '../lib/utils';
 import { playNotificationSound } from '../lib/notification-sound';
 import { useEffect } from 'react';
+
+const PAGE_SIZE = 20;
 
 const TABS = [
   { value: 'calls', label: 'Waiter Calls', icon: BellRing },
@@ -65,24 +67,43 @@ const CALL_COLORS = {
 function CallsView({ profile }) {
   const [calls, setCalls] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
   const [statusFilter, setStatusFilter] = useState('pending');
   const [actionLoading, setActionLoading] = useState(null);
   const [newCallToast, setNewCallToast] = useState(null);
 
-  const fetchCalls = async () => {
+  const fetchCalls = async (pageNum = 0, append = false) => {
     if (!profile?.id) return;
+    const from = pageNum * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
     let query = supabase
       .from('waiter_calls')
       .select('*, restaurant_tables!left(table_number, table_name)')
       .eq('restaurant_id', profile.id)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(from, to);
     if (statusFilter !== 'all') query = query.eq('status', statusFilter);
     const { data } = await query;
-    if (data) setCalls(data);
+    if (data) {
+      if (append) {
+        setCalls(prev => [...prev, ...data]);
+      } else {
+        setCalls(data);
+      }
+      setHasMore(data.length === PAGE_SIZE);
+    }
     setLoading(false);
+    setLoadingMore(false);
   };
 
-  useEffect(() => { fetchCalls(); }, [profile?.id, statusFilter]);
+  useEffect(() => {
+    setPage(0);
+    setCalls([]);
+    setHasMore(true);
+    fetchCalls(0);
+  }, [profile?.id, statusFilter]);
 
   useEffect(() => {
     if (!profile?.id) return;
@@ -92,7 +113,7 @@ function CallsView({ profile }) {
         { event: 'INSERT', schema: 'public', table: 'waiter_calls', filter: `restaurant_id=eq.${profile.id}` },
         (payload) => {
           const newCall = payload.new;
-          fetchCalls();
+          setCalls(prev => [newCall, ...prev]);
           if (newCall.status === 'pending') {
             setNewCallToast(newCall);
             playNotificationSound();
@@ -110,7 +131,7 @@ function CallsView({ profile }) {
     if (newStatus === 'resolved') update.resolved_at = new Date().toISOString();
     await supabase.from('waiter_calls').update(update).eq('id', callId);
     setActionLoading(null);
-    fetchCalls();
+    setCalls(prev => prev.map(c => c.id === callId ? { ...c, ...update } : c));
   };
 
   const getTimeAgo = (dateStr) => {
@@ -241,6 +262,24 @@ function CallsView({ profile }) {
         </div>
       )}
 
+      {hasMore && !loading && calls.length > 0 && (
+        <div className="text-center pt-2">
+          <button
+            onClick={() => {
+              setLoadingMore(true);
+              const nextPage = page + 1;
+              setPage(nextPage);
+              fetchCalls(nextPage, true);
+            }}
+            disabled={loadingMore}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-semibold text-slate-300 transition-all disabled:opacity-50"
+          >
+            {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : <ChevronDown className="h-4 w-4" />}
+            Load More
+          </button>
+        </div>
+      )}
+
       {newCallToast && (
         <div className="fixed bottom-6 right-6 z-50 animate-[slideUp_0.3s_ease-out]">
           <div className="bg-slate-900 border border-orange-500/30 rounded-2xl p-4 shadow-2xl shadow-orange-500/10 max-w-sm">
@@ -299,26 +338,45 @@ const STATUS_ACTIONS = {
 function OrdersView({ profile }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
   const [statusFilter, setStatusFilter] = useState('pending');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderItems, setOrderItems] = useState([]);
   const [actionLoading, setActionLoading] = useState(null);
   const [newOrderToast, setNewOrderToast] = useState(null);
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (pageNum = 0, append = false) => {
     if (!profile?.id) return;
+    const from = pageNum * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
     let query = supabase
       .from('orders')
       .select('*, restaurant_tables!left(table_number, table_name)')
       .eq('restaurant_id', profile.id)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(from, to);
     if (statusFilter !== 'all') query = query.eq('status', statusFilter);
     const { data } = await query;
-    if (data) setOrders(data);
+    if (data) {
+      if (append) {
+        setOrders(prev => [...prev, ...data]);
+      } else {
+        setOrders(data);
+      }
+      setHasMore(data.length === PAGE_SIZE);
+    }
     setLoading(false);
+    setLoadingMore(false);
   };
 
-  useEffect(() => { fetchOrders(); }, [profile?.id, statusFilter]);
+  useEffect(() => {
+    setPage(0);
+    setOrders([]);
+    setHasMore(true);
+    fetchOrders(0);
+  }, [profile?.id, statusFilter]);
 
   useEffect(() => {
     if (!profile?.id) return;
@@ -328,7 +386,7 @@ function OrdersView({ profile }) {
         { event: 'INSERT', schema: 'public', table: 'orders', filter: `restaurant_id=eq.${profile.id}` },
         (payload) => {
           const newOrder = payload.new;
-          fetchOrders();
+          setOrders(prev => [newOrder, ...prev]);
           if (newOrder.status === 'pending') {
             setNewOrderToast(newOrder);
             playNotificationSound();
@@ -344,10 +402,10 @@ function OrdersView({ profile }) {
     setActionLoading(orderId);
     await supabase.from('orders').update({ status: newStatus, updated_at: new Date().toISOString() }).eq('id', orderId);
     setActionLoading(null);
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
     if (selectedOrder?.id === orderId) {
       setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
     }
-    fetchOrders();
   };
 
   const handleViewOrder = async (order) => {
@@ -541,6 +599,24 @@ function OrdersView({ profile }) {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {hasMore && !loading && orders.length > 0 && (
+        <div className="text-center pt-2">
+          <button
+            onClick={() => {
+              setLoadingMore(true);
+              const nextPage = page + 1;
+              setPage(nextPage);
+              fetchOrders(nextPage, true);
+            }}
+            disabled={loadingMore}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-semibold text-slate-300 transition-all disabled:opacity-50"
+          >
+            {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : <ChevronDown className="h-4 w-4" />}
+            Load More
+          </button>
         </div>
       )}
 

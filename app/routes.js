@@ -46,4 +46,7 @@ export default [
   // SEO dynamic resource routes
   route("sitemap.xml", "routes/sitemap.jsx"),
   route("robots.txt", "routes/robots.jsx"),
+
+  // 404 catch-all (must be last)
+  route("*", "routes/$.jsx"),
 ];

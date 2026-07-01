@@ -18,7 +18,6 @@ export async function loader({ request, params }) {
     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-      console.error('[menu-loader] Missing Supabase credentials');
       return {
         profile: null, categories: [], menuItems: [], ratings: [],
         mergedCustomization: null, cssStyles: '', fontUrl: ''

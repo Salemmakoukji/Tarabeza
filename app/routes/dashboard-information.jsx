@@ -129,6 +129,7 @@ export default function RestaurantInformationPage() {
   };
 
   const [businessHours, setBusinessHours] = useState(getInitialBusinessHours);
+  const [initialBusinessHoursSnapshot] = useState(getInitialBusinessHours);
   const [toast, setToast] = useState(null);
 
   // Unsaved Changes Dirty Verification
@@ -152,7 +153,7 @@ export default function RestaurantInformationPage() {
     wifiSsid !== (profile.wifi_ssid || '') ||
     wifiPassword !== (profile.wifi_password || '') ||
     temporarilyClosed !== (profile.temporarily_closed || false) ||
-    JSON.stringify(businessHours) !== JSON.stringify(getInitialBusinessHours());
+    JSON.stringify(businessHours) !== JSON.stringify(initialBusinessHoursSnapshot);
 
   // Image Upload Handler
   const handleLogoUpload = async (e) => {

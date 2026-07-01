@@ -4,7 +4,6 @@ import { createClient } from '../lib/supabase/server';
 import Sidebar from '../components/dashboard/sidebar';
 import Navbar from '../components/dashboard/navbar';
 import BillingBlocker from '../components/dashboard/billing-blocker';
-import WaiterCallToast from '../components/dashboard/waiter-call-toast';
 import { supabase as browserSupabase } from '../lib/supabase/client';
 
 export async function loader({ request }) {
@@ -151,7 +150,6 @@ export default function DashboardLayout() {
           subscriptionInfo={subscriptionInfo}
           pendingCallCount={pendingCallCount}
         />
-        <WaiterCallToast restaurantId={profile?.id} />
         {announcements.length > 0 && announcements[currentAnnouncementIdx] && (
           <div className="bg-gradient-to-r from-orange-500/10 to-amber-500/10 border-b border-orange-500/20 px-6 py-3.5 flex items-center justify-between text-xs text-orange-300">
             <div className="flex items-center gap-2">

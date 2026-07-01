@@ -109,8 +109,14 @@ CREATE POLICY "Anyone can place orders" ON public.orders
     FOR INSERT WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Anyone can view orders" ON public.orders;
-CREATE POLICY "Anyone can view orders" ON public.orders
-    FOR SELECT USING (true);
+CREATE POLICY "Owners can view their orders" ON public.orders
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM public.restaurants
+            WHERE public.restaurants.id = public.orders.restaurant_id
+            AND public.restaurants.owner_id = auth.uid()
+        )
+    );
 
 DROP POLICY IF EXISTS "Owners can manage orders" ON public.orders;
 CREATE POLICY "Owners can manage orders" ON public.orders
@@ -128,8 +134,15 @@ CREATE POLICY "Anyone can add order items" ON public.order_items
     FOR INSERT WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Anyone can view order items" ON public.order_items;
-CREATE POLICY "Anyone can view order items" ON public.order_items
-    FOR SELECT USING (true);
+CREATE POLICY "Owners can view their order items" ON public.order_items
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM public.orders
+            JOIN public.restaurants ON public.restaurants.id = public.orders.restaurant_id
+            WHERE public.orders.id = public.order_items.order_id
+            AND public.restaurants.owner_id = auth.uid()
+        )
+    );
 
 -- 12. ENABLE REALTIME (for live waiter call + new order notifications)
 DO $$

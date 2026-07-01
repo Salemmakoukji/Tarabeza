@@ -61,6 +61,26 @@ CREATE TABLE public.restaurants (
     theme TEXT DEFAULT 'light',
     main_color TEXT DEFAULT '#f97316',
     font_family TEXT DEFAULT 'Inter',
+    -- QR Code customization columns
+    qr_fg_color TEXT DEFAULT '#000000',
+    qr_fg_color2 TEXT DEFAULT '#f97316',
+    qr_bg_color TEXT DEFAULT '#ffffff',
+    qr_style_type TEXT DEFAULT 'solid',
+    qr_gradient_direction TEXT DEFAULT 'diagonal',
+    qr_dot_style TEXT DEFAULT 'square',
+    qr_eye_style TEXT DEFAULT 'square',
+    qr_eye_color TEXT,
+    qr_show_logo BOOLEAN DEFAULT false,
+    qr_logo_style TEXT DEFAULT 'square',
+    qr_font_family TEXT DEFAULT 'Inter',
+    -- Promo banner customization columns
+    promo_banner_active BOOLEAN DEFAULT false,
+    promo_banner_text TEXT,
+    promo_banner_text_ar TEXT,
+    promo_banner_color TEXT DEFAULT 'accent',
+    promo_banner_scroll BOOLEAN DEFAULT false,
+    -- WiFi
+    wifi_encryption TEXT DEFAULT 'WPA',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
@@ -71,7 +91,7 @@ CREATE TABLE public.categories (
     restaurant_id UUID NOT NULL REFERENCES public.restaurants(id) ON DELETE CASCADE,
     name_en TEXT NOT NULL,
     name_ar TEXT NOT NULL,
-    sort_order INTEGER DEFAULT 0 NOT NULL,
+    order_index INTEGER DEFAULT 0 NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
@@ -79,6 +99,7 @@ CREATE TABLE public.categories (
 CREATE TABLE public.menu_items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     category_id UUID NOT NULL REFERENCES public.categories(id) ON DELETE CASCADE,
+    restaurant_id UUID NOT NULL REFERENCES public.restaurants(id) ON DELETE CASCADE,
     name_en TEXT NOT NULL,
     name_ar TEXT NOT NULL,
     description_en TEXT,
@@ -86,7 +107,8 @@ CREATE TABLE public.menu_items (
     price NUMERIC(10, 2) NOT NULL,
     image_url TEXT,
     allergens TEXT[] DEFAULT '{}'::TEXT[] NOT NULL,
-    is_available BOOLEAN DEFAULT TRUE NOT NULL,
+    available BOOLEAN DEFAULT TRUE NOT NULL,
+    order_index INTEGER DEFAULT 0 NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
@@ -203,8 +225,10 @@ CREATE TABLE public.order_items (
 CREATE INDEX idx_restaurants_owner ON public.restaurants(owner_id);
 CREATE INDEX idx_restaurants_slug ON public.restaurants(slug);
 CREATE INDEX idx_categories_restaurant ON public.categories(restaurant_id);
-CREATE INDEX idx_categories_order ON public.categories(sort_order);
+CREATE INDEX idx_categories_order ON public.categories(order_index);
 CREATE INDEX idx_menu_items_category ON public.menu_items(category_id);
+CREATE INDEX idx_menu_items_restaurant ON public.menu_items(restaurant_id);
+CREATE INDEX idx_menu_items_order ON public.menu_items(order_index);
 CREATE INDEX idx_ratings_restaurant ON public.ratings(restaurant_id);
 CREATE INDEX idx_favorites_customer ON public.customer_favorites(customer_id);
 CREATE INDEX idx_loyalty_customer ON public.customer_loyalty(customer_id);
@@ -288,13 +312,19 @@ CREATE POLICY "Owners can view and manage calls" ON public.waiter_calls
         )
     );
 
--- Orders: anyone can insert (diner ordering), owners manage
+-- Orders: anyone can insert (diner ordering), owners manage and view
 DROP POLICY IF EXISTS "Anyone can place orders" ON public.orders;
 CREATE POLICY "Anyone can place orders" ON public.orders
     FOR INSERT WITH CHECK (true);
 DROP POLICY IF EXISTS "Anyone can view orders" ON public.orders;
-CREATE POLICY "Anyone can view orders" ON public.orders
-    FOR SELECT USING (true);
+CREATE POLICY "Owners can view their orders" ON public.orders
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM public.restaurants
+            WHERE public.restaurants.id = public.orders.restaurant_id
+            AND public.restaurants.owner_id = auth.uid()
+        )
+    );
 DROP POLICY IF EXISTS "Owners can manage orders" ON public.orders;
 CREATE POLICY "Owners can manage orders" ON public.orders
     FOR UPDATE USING (
@@ -310,15 +340,21 @@ DROP POLICY IF EXISTS "Anyone can add order items" ON public.order_items;
 CREATE POLICY "Anyone can add order items" ON public.order_items
     FOR INSERT WITH CHECK (true);
 DROP POLICY IF EXISTS "Anyone can view order items" ON public.order_items;
-CREATE POLICY "Anyone can view order items" ON public.order_items
-    FOR SELECT USING (true);
+CREATE POLICY "Owners can view their order items" ON public.order_items
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM public.orders
+            JOIN public.restaurants ON public.restaurants.id = public.orders.restaurant_id
+            WHERE public.orders.id = public.order_items.order_id
+            AND public.restaurants.owner_id = auth.uid()
+        )
+    );
 
 CREATE POLICY "Owners can manage their menu items" ON public.menu_items
     FOR ALL USING (
         EXISTS (
-            SELECT 1 FROM public.categories
-            JOIN public.restaurants ON public.restaurants.id = public.categories.restaurant_id
-            WHERE public.categories.id = public.menu_items.category_id
+            SELECT 1 FROM public.restaurants
+            WHERE public.restaurants.id = public.menu_items.restaurant_id
             AND public.restaurants.owner_id = auth.uid()
         )
     );

@@ -50,7 +50,7 @@ export default function ResetPasswordPage() {
       if (error) throw error;
 
       setSuccessMsg(
-        window.navigator.language.startsWith('ar') || true // Default to Arabic as requested by user
+        window.navigator.language.startsWith('ar')
           ? 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني بنجاح.'
           : 'Password reset link has been successfully sent to your email.'
       );
@@ -71,7 +71,7 @@ export default function ResetPasswordPage() {
 
     if (password !== confirmPassword) {
       setErrorMsg(
-        window.navigator.language.startsWith('ar') || true
+        window.navigator.language.startsWith('ar')
           ? 'كلمات المرور غير متطابقة.'
           : 'Passwords do not match.'
       );
@@ -81,7 +81,7 @@ export default function ResetPasswordPage() {
 
     if (password.length < 6) {
       setErrorMsg(
-        window.navigator.language.startsWith('ar') || true
+        window.navigator.language.startsWith('ar')
           ? 'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل.'
           : 'Password must be at least 6 characters long.'
       );
@@ -95,7 +95,7 @@ export default function ResetPasswordPage() {
       if (error) throw error;
 
       setSuccessMsg(
-        window.navigator.language.startsWith('ar') || true
+        window.navigator.language.startsWith('ar')
           ? 'تم تحديث كلمة المرور الخاصة بك بنجاح! يتم الآن إعادة توجيهك...'
           : 'Your password has been updated successfully! Redirecting...'
       );

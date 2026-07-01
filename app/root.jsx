@@ -1,4 +1,4 @@
-import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, isRouteErrorResponse, useRouteError, Link } from "react-router";
 import "./app.css";
 
 export function meta() {
@@ -34,6 +34,43 @@ export function links() {
     { rel: "shortcut icon", href: "/favicon.ico" },
     { rel: "apple-touch-icon", href: "/Logo - Orange - Square.png" },
   ];
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError();
+  const is404 = isRouteErrorResponse(error) && error.status === 404;
+
+  return (
+    <html lang="en">
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>{is404 ? 'Page Not Found — Tarabeza' : 'Something Went Wrong — Tarabeza'}</title>
+        <Meta />
+        <Links />
+      </head>
+      <body className="antialiased bg-slate-950 text-white min-h-screen flex items-center justify-center px-6">
+        <div className="text-center max-w-md">
+          <div className="text-5xl mb-6">{is404 ? '404' : '!'}</div>
+          <h1 className="text-2xl font-black text-white mb-3">
+            {is404 ? 'Page Not Found' : 'An unexpected error occurred'}
+          </h1>
+          <p className="text-sm text-slate-400 mb-8">
+            {is404
+              ? 'The page you are looking for does not exist or has been moved.'
+              : 'Something went wrong. Please try again or contact support.'}
+          </p>
+          <Link
+            to="/"
+            className="inline-block bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 rounded-xl py-2.5 px-5 text-xs font-bold shadow-md hover:shadow-orange-500/10 active:scale-[0.98] transition-all"
+          >
+            Back to Home
+          </Link>
+        </div>
+        <Scripts />
+      </body>
+    </html>
+  );
 }
 
 export default function App() {
