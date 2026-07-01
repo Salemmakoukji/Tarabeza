@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, MapPin, Phone, Sparkles, Globe, Star, X, Loader2, Share2, Check, Heart, Clock, Wifi, Eye, EyeOff, Bell, PhoneCall, CreditCard, HelpCircle } from 'lucide-react';
+import { Search, MapPin, Phone, Sparkles, Globe, Star, X, Loader2, Share2, Check, Heart, Clock, Wifi, Eye, EyeOff, Bell, PhoneCall, CreditCard, HelpCircle, ShoppingBag, Minus, Plus, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase/client';
 
 const translateDay = (day) => {
@@ -74,6 +74,47 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
   const [submittingCall, setSubmittingCall] = useState(false);
   const [callSuccess, setCallSuccess] = useState(false);
   const [callError, setCallError] = useState('');
+
+  // Cart / Ordering state
+  const [cart, setCart] = useState([]);
+  const [showCartModal, setShowCartModal] = useState(false);
+  const [customerName, setCustomerName] = useState('');
+  const [specialNotes, setSpecialNotes] = useState('');
+  const [submittingOrder, setSubmittingOrder] = useState(false);
+  const [orderSuccess, setOrderSuccess] = useState(false);
+  const [orderError, setOrderError] = useState('');
+
+  const addToCart = (item) => {
+    setCart(prev => {
+      const existing = prev.find(i => i.menu_item_id === item.id);
+      if (existing) {
+        return prev.map(i => i.menu_item_id === item.id ? { ...i, quantity: i.quantity + 1 } : i);
+      }
+      return [...prev, {
+        menu_item_id: item.id,
+        item_name: item.name,
+        item_name_ar: item.name_ar,
+        unit_price: parseFloat(item.price),
+        quantity: 1,
+        notes: ''
+      }];
+    });
+  };
+
+  const updateCartQty = (menuItemId, delta) => {
+    setCart(prev => prev.map(i => {
+      if (i.menu_item_id !== menuItemId) return i;
+      const newQty = i.quantity + delta;
+      return newQty <= 0 ? null : { ...i, quantity: newQty };
+    }).filter(Boolean));
+  };
+
+  const updateCartNotes = (menuItemId, notes) => {
+    setCart(prev => prev.map(i => i.menu_item_id === menuItemId ? { ...i, notes } : i));
+  };
+
+  const cartTotal = cart.reduce((sum, i) => sum + i.unit_price * i.quantity, 0);
+  const cartCount = cart.reduce((sum, i) => sum + i.quantity, 0);
 
   // Fetch table info
   const [tableInfo, setTableInfo] = useState(null);
@@ -552,7 +593,17 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
               <span className="font-bold text-[14px] text-[var(--accent)]">
                 {formatPrice(item.price)}
               </span>
-              {item.badge && renderBadge(item.badge)}
+              <div className="flex items-center gap-1.5">
+                {item.badge && renderBadge(item.badge)}
+                {tableId && item.available && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); addToCart(item); }}
+                    className="h-7 w-7 rounded-full bg-[var(--accent)] text-white flex items-center justify-center text-sm font-bold hover:scale-110 active:scale-95 transition-all duration-200 shadow-sm"
+                  >
+                    +
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -570,9 +621,19 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
         <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5 text-start">
           <div className="space-y-1">
             <div className="flex justify-between items-start gap-2">
-              <h4 className="font-semibold text-[13px] sm:text-sm leading-snug line-clamp-2 text-[var(--text)]">
-                {displayName}
-              </h4>
+              <div className="flex items-center gap-2 min-w-0">
+                {tableId && item.available && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); addToCart(item); }}
+                    className="h-6 w-6 rounded-full bg-[var(--accent)] text-white flex items-center justify-center text-xs font-bold hover:scale-110 active:scale-95 transition-all duration-200 shrink-0 shadow-sm"
+                  >
+                    +
+                  </button>
+                )}
+                <h4 className="font-semibold text-[13px] sm:text-sm leading-snug line-clamp-2 text-[var(--text)]">
+                  {displayName}
+                </h4>
+              </div>
               <span className="font-bold text-[14px] text-[var(--accent)] shrink-0">
                 {formatPrice(item.price)}
               </span>
@@ -1133,6 +1194,20 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
         )}
       </main>
 
+      {/* Order Cart FAB — visible when items in cart */}
+      {tableId && cartCount > 0 && (
+        <button
+          onClick={() => setShowCartModal(true)}
+          className="fixed bottom-20 left-4 z-40 h-14 w-14 rounded-full bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/30 flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-200"
+          style={{ backgroundColor: 'var(--accent)' }}
+        >
+          <ShoppingBag className="h-6 w-6" />
+          <span className="absolute -top-1 -right-1 h-5 min-w-[20px] flex items-center justify-center rounded-full bg-white text-[10px] font-bold px-1" style={{ color: 'var(--accent)' }}>
+            {cartCount > 99 ? '99+' : cartCount}
+          </span>
+        </button>
+      )}
+
       {/* Call Waiter FAB — visible when diner scans a table QR */}
       {tableId && (
         <button
@@ -1519,6 +1594,167 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
                   </form>
                 )}
               </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Cart / Order Modal */}
+      {showCartModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] flex items-end justify-center">
+          <div
+            className="w-full max-w-[480px] bg-[var(--bg)] rounded-t-3xl overflow-hidden flex flex-col max-h-[85vh] shadow-2xl border-t border-[var(--border)]"
+            style={{ animation: 'slideUp 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)] shrink-0">
+              <h3 className="text-sm font-bold tracking-widest uppercase">
+                {isRtl ? 'طلبي' : 'My Order'}
+              </h3>
+              <span className="text-xs text-[var(--text-2)]">{cartCount} {isRtl ? 'صنف' : 'items'}</span>
+            </div>
+
+            {orderSuccess ? (
+              <div className="flex-1 flex flex-col items-center justify-center py-16 px-6 text-center space-y-4">
+                <div className="h-16 w-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                  <Check className="h-8 w-8 text-emerald-500" />
+                </div>
+                <h3 className="text-lg font-bold">{isRtl ? 'تم إرسال الطلب!' : 'Order Sent!'}</h3>
+                <p className="text-sm text-[var(--text-2)] max-w-xs">
+                  {isRtl
+                    ? 'تم إرسال طلبك إلى المطبخ. سيتم تجهيزه قريباً.'
+                    : 'Your order has been sent to the kitchen. It will be prepared shortly.'}
+                </p>
+                {tableInfo && (
+                  <p className="text-xs font-bold text-[var(--accent)]">
+                    {isRtl ? `طاولة ${tableInfo.table_number}` : `Table ${tableInfo.table_number}`}
+                  </p>
+                )}
+                <button
+                  onClick={() => { setShowCartModal(false); setOrderSuccess(false); setCart([]); setCustomerName(''); setSpecialNotes(''); }}
+                  className="mt-2 px-6 py-2.5 rounded-xl bg-[var(--text)] text-[var(--bg)] text-xs font-bold hover:opacity-90 transition-all"
+                >
+                  {isRtl ? 'إغلاق' : 'Close'}
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3 no-scrollbar">
+                  {cart.length === 0 ? (
+                    <div className="text-center py-12 text-[var(--text-2)] text-sm">
+                      {isRtl ? 'سلة الطلبات فارغة' : 'Your cart is empty'}
+                    </div>
+                  ) : (
+                    cart.map((item) => (
+                      <div key={item.menu_item_id} className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-semibold text-[var(--text)]">{isRtl && item.item_name_ar ? item.item_name_ar : item.item_name}</h4>
+                          <span className="text-sm font-bold text-[var(--accent)]">${(item.unit_price * item.quantity).toFixed(2)}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => updateCartQty(item.menu_item_id, -1)}
+                              className="h-7 w-7 rounded-lg border border-[var(--border)] flex items-center justify-center text-[var(--text-2)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-all"
+                            >
+                              {item.quantity === 1 ? <Trash2 className="h-3.5 w-3.5 text-rose-400" /> : <Minus className="h-3.5 w-3.5" />}
+                            </button>
+                            <span className="text-sm font-bold text-[var(--text)] min-w-[20px] text-center">{item.quantity}</span>
+                            <button
+                              onClick={() => updateCartQty(item.menu_item_id, 1)}
+                              className="h-7 w-7 rounded-lg border border-[var(--border)] flex items-center justify-center text-[var(--text-2)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-all"
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                          <span className="text-[10px] text-[var(--text-2)]">${item.unit_price.toFixed(2)} {isRtl ? 'للقطعة' : 'each'}</span>
+                        </div>
+                        <input
+                          type="text"
+                          placeholder={isRtl ? 'ملاحظات إضافية...' : 'Add special instructions...'}
+                          value={item.notes}
+                          onChange={(e) => updateCartNotes(item.menu_item_id, e.target.value)}
+                          className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-xs text-[var(--text)] placeholder-[var(--text-2)]/60 focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                        />
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="shrink-0 border-t border-[var(--border)] px-6 py-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder={isRtl ? 'اسمك (اختياري)' : 'Your name (optional)'}
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      className="flex-1 bg-[var(--card)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-xs text-[var(--text)] placeholder-[var(--text-2)]/60 focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                    />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder={isRtl ? 'ملاحظات عامة للطلب (اختياري)' : 'General order notes (optional)'}
+                    value={specialNotes}
+                    onChange={(e) => setSpecialNotes(e.target.value)}
+                    className="w-full bg-[var(--card)] border border-[var(--border)] rounded-xl px-4 py-2.5 text-xs text-[var(--text)] placeholder-[var(--text-2)]/60 focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                  />
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-[var(--text)]">{isRtl ? 'المجموع' : 'Total'}</span>
+                    <span className="text-lg font-bold text-[var(--accent)]">${cartTotal.toFixed(2)}</span>
+                  </div>
+                  {orderError && (
+                    <p className="text-xs text-rose-500 font-semibold text-center">{orderError}</p>
+                  )}
+                  <button
+                    onClick={async () => {
+                      if (cart.length === 0) return;
+                      setSubmittingOrder(true);
+                      setOrderError('');
+                      try {
+                        const { data: order, error: orderErr } = await supabase
+                          .from('orders')
+                          .insert({
+                            restaurant_id: profile.id,
+                            table_id: tableId,
+                            customer_name: customerName.trim() || null,
+                            special_notes: specialNotes.trim() || null,
+                            status: 'pending',
+                            total_amount: cartTotal
+                          })
+                          .select('id')
+                          .single();
+                        if (orderErr) throw orderErr;
+
+                        const itemsPayload = cart.map(i => ({
+                          order_id: order.id,
+                          menu_item_id: i.menu_item_id,
+                          item_name: i.item_name,
+                          item_name_ar: i.item_name_ar,
+                          quantity: i.quantity,
+                          unit_price: i.unit_price,
+                          notes: i.notes || null
+                        }));
+
+                        const { error: itemsErr } = await supabase.from('order_items').insert(itemsPayload);
+                        if (itemsErr) throw itemsErr;
+
+                        setOrderSuccess(true);
+                      } catch (err) {
+                        setOrderError(err.message || (isRtl ? 'فشل إرسال الطلب' : 'Failed to place order'));
+                      } finally {
+                        setSubmittingOrder(false);
+                      }
+                    }}
+                    disabled={cart.length === 0 || submittingOrder}
+                    className="w-full py-3 rounded-xl bg-[var(--accent)] text-white text-xs font-bold hover:opacity-90 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {submittingOrder ? (
+                      <><Loader2 className="h-4 w-4 animate-spin" /><span>{isRtl ? 'جاري الإرسال...' : 'Placing Order...'}</span></>
+                    ) : (
+                      <span>{isRtl ? 'إرسال الطلب' : 'Place Order'}</span>
+                    )}
+                  </button>
+                </div>
+              </>
             )}
           </div>
         </div>

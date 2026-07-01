@@ -171,6 +171,32 @@ CREATE TABLE public.waiter_calls (
     resolved_at TIMESTAMP WITH TIME ZONE
 );
 
+-- 13. ORDERS
+CREATE TABLE public.orders (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    restaurant_id UUID NOT NULL REFERENCES public.restaurants(id) ON DELETE CASCADE,
+    table_id UUID REFERENCES public.restaurant_tables(id) ON DELETE SET NULL,
+    customer_name TEXT,
+    special_notes TEXT,
+    status TEXT DEFAULT 'pending' NOT NULL CHECK (status IN ('pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled')),
+    total_amount NUMERIC(10, 2) DEFAULT 0 NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- 14. ORDER ITEMS
+CREATE TABLE public.order_items (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id UUID NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
+    menu_item_id UUID REFERENCES public.menu_items(id) ON DELETE SET NULL,
+    item_name TEXT NOT NULL,
+    item_name_ar TEXT,
+    quantity INTEGER DEFAULT 1 NOT NULL CHECK (quantity > 0),
+    unit_price NUMERIC(10, 2) NOT NULL,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
 -- ==========================================
 -- INDEXES FOR PERFORMANCE OPTIMIZATION
 -- ==========================================
@@ -187,6 +213,10 @@ CREATE INDEX idx_subscriptions_restaurant ON public.subscriptions(restaurant_id)
 CREATE INDEX idx_restaurant_tables_restaurant ON public.restaurant_tables(restaurant_id);
 CREATE INDEX idx_waiter_calls_restaurant ON public.waiter_calls(restaurant_id);
 CREATE INDEX idx_waiter_calls_status ON public.waiter_calls(status);
+CREATE INDEX idx_orders_restaurant ON public.orders(restaurant_id);
+CREATE INDEX idx_orders_status ON public.orders(status);
+CREATE INDEX idx_orders_table ON public.orders(table_id);
+CREATE INDEX idx_order_items_order ON public.order_items(order_id);
 
 -- ==========================================
 -- ROW LEVEL SECURITY (RLS) HELPERS
@@ -203,6 +233,8 @@ ALTER TABLE public.support_tickets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.restaurant_tables ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.waiter_calls ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
 
 -- EXAMPLE RLS POLICIES (Can be modified based on requirements)
 
@@ -255,6 +287,31 @@ CREATE POLICY "Owners can view and manage calls" ON public.waiter_calls
             AND public.restaurants.owner_id = auth.uid()
         )
     );
+
+-- Orders: anyone can insert (diner ordering), owners manage
+DROP POLICY IF EXISTS "Anyone can place orders" ON public.orders;
+CREATE POLICY "Anyone can place orders" ON public.orders
+    FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Anyone can view orders" ON public.orders;
+CREATE POLICY "Anyone can view orders" ON public.orders
+    FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Owners can manage orders" ON public.orders;
+CREATE POLICY "Owners can manage orders" ON public.orders
+    FOR UPDATE USING (
+        EXISTS (
+            SELECT 1 FROM public.restaurants
+            WHERE public.restaurants.id = public.orders.restaurant_id
+            AND public.restaurants.owner_id = auth.uid()
+        )
+    );
+
+-- Order items: anyone can insert, owners can view
+DROP POLICY IF EXISTS "Anyone can add order items" ON public.order_items;
+CREATE POLICY "Anyone can add order items" ON public.order_items
+    FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Anyone can view order items" ON public.order_items;
+CREATE POLICY "Anyone can view order items" ON public.order_items
+    FOR SELECT USING (true);
 
 CREATE POLICY "Owners can manage their menu items" ON public.menu_items
     FOR ALL USING (

@@ -23,6 +23,7 @@ export default [
     route("qr", "routes/dashboard-qr.jsx"),
     route("tables", "routes/dashboard-tables.jsx"),
     route("calls", "routes/dashboard-calls.jsx"),
+    route("orders", "routes/dashboard-orders.jsx"),
     route("billing", "routes/dashboard-billing.jsx"),
     route("settings", "routes/dashboard-settings.jsx"),
   ]),

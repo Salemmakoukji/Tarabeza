@@ -104,7 +104,7 @@ export default function DashboardTables() {
   };
 
   const getTableUrl = (table) => {
-    return `${window.location.origin}/menu/${profile.slug}?table=${table.id}`;
+    return `${window.location.origin}/menu/${profile.slug}?table=${table.id}&qr=true`;
   };
 
   const handleBulkDownloadQr = async () => {
