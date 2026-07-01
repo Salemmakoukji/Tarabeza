@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router';
 import { Clock, CheckCircle, ChefHat, Bell, X, Loader2, Eye, ShoppingBag } from 'lucide-react';
 import { supabase } from '../lib/supabase/client';
-import { cn } from '../lib/utils';
+import { cn, formatPrice } from '../lib/utils';
 import { playNotificationSound } from '../lib/notification-sound';
 
 const ORDER_STATUSES = [
@@ -192,7 +192,7 @@ export default function DashboardOrders() {
                         )}>
                           {order.status}
                         </span>
-                        <span className="text-xs font-bold text-orange-400">${Number(order.total_amount).toFixed(2)}</span>
+                        <span className="text-xs font-bold text-orange-400">{formatPrice(order.total_amount, profile?.currency || 'USD')}</span>
                       </div>
                       <div className="flex items-center gap-3 mt-1.5 text-xs text-slate-400">
                         {order.customer_name && <span className="font-semibold">{order.customer_name}</span>}
@@ -272,7 +272,7 @@ export default function DashboardOrders() {
                     )}
                   </div>
                   <span className="text-sm font-bold text-slate-200 shrink-0 ml-4">
-                    ${(item.unit_price * item.quantity).toFixed(2)}
+                    {formatPrice(item.unit_price * item.quantity, profile?.currency || 'USD')}
                   </span>
                 </div>
               ))}
@@ -287,7 +287,7 @@ export default function DashboardOrders() {
               )}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-bold text-slate-400">Total</span>
-                <span className="text-lg font-bold text-orange-400">${Number(selectedOrder.total_amount).toFixed(2)}</span>
+                <span className="text-lg font-bold text-orange-400">{formatPrice(selectedOrder.total_amount, profile?.currency || 'USD')}</span>
               </div>
               <div className="flex gap-3">
                 <button
@@ -312,8 +312,8 @@ export default function DashboardOrders() {
               <p className="text-sm font-bold text-white">New Order</p>
               <p className="text-xs text-slate-400">
                 {newOrderToast.customer_name
-                  ? `${newOrderToast.customer_name} — $${Number(newOrderToast.total_amount).toFixed(2)}`
-                  : `$${Number(newOrderToast.total_amount).toFixed(2)}`}
+                  ? `${newOrderToast.customer_name} — ${formatPrice(newOrderToast.total_amount, profile?.currency || 'USD')}`
+                  : formatPrice(newOrderToast.total_amount, profile?.currency || 'USD')}
               </p>
             </div>
             <button

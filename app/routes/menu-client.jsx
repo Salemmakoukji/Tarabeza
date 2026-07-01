@@ -50,9 +50,10 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
   };
   
   const formatPrice = (price) => {
-    const currency = profile.currency || '$';
-    const position = profile.customization?.currencyPosition || 'left';
-    return position === 'right' ? `${price} ${currency}` : `${currency} ${price}`;
+    const c = profile.currency || 'USD';
+    const p = profile.customization?.currencyPosition || 'left';
+    const formatted = Number(price).toFixed(2);
+    return p === 'right' ? `${formatted} ${c}` : `${c} ${formatted}`;
   };
 
   useEffect(() => {
@@ -1648,7 +1649,7 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
                       <div key={item.menu_item_id} className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3 space-y-2">
                         <div className="flex items-center justify-between">
                           <h4 className="text-sm font-semibold text-[var(--text)]">{isRtl && item.item_name_ar ? item.item_name_ar : item.item_name}</h4>
-                          <span className="text-sm font-bold text-[var(--accent)]">${(item.unit_price * item.quantity).toFixed(2)}</span>
+                          <span className="text-sm font-bold text-[var(--accent)]">{formatPrice(item.unit_price * item.quantity)}</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
@@ -1666,7 +1667,7 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
                               <Plus className="h-3.5 w-3.5" />
                             </button>
                           </div>
-                          <span className="text-[10px] text-[var(--text-2)]">${item.unit_price.toFixed(2)} {isRtl ? 'للقطعة' : 'each'}</span>
+                          <span className="text-[10px] text-[var(--text-2)]">{formatPrice(item.unit_price)} {isRtl ? 'للقطعة' : 'each'}</span>
                         </div>
                         <input
                           type="text"
@@ -1699,7 +1700,7 @@ export default function MenuViewClient({ profile, categories = [], menuItems = [
                   />
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-bold text-[var(--text)]">{isRtl ? 'المجموع' : 'Total'}</span>
-                    <span className="text-lg font-bold text-[var(--accent)]">${cartTotal.toFixed(2)}</span>
+                    <span className="text-lg font-bold text-[var(--accent)]">{formatPrice(cartTotal)}</span>
                   </div>
                   {orderError && (
                     <p className="text-xs text-rose-500 font-semibold text-center">{orderError}</p>
